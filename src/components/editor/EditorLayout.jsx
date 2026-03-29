@@ -15,7 +15,7 @@ import './EditorLayout.css';
 const EditorLayout = () => {
   // Multi-file state
   const [files, setFiles] = useState([
-    { id: 1, name: 'main.bql', content: 'ALGORITHMEMonPremierProgramme;\nVARIABLES:\n  nom : CHAINE DE CARACTERE;\nDEBUT\n  nom <- "Monde";\n  ECRIRE("Bonjour ", nom, " !");\nFIN' }
+    { id: 1, name: 'main.bql', content: '' }
   ]);
   const [activeFileId, setActiveFileId] = useState(1);
   const [fileCounter, setFileCounter] = useState(2);
