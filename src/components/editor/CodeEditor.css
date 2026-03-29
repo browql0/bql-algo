@@ -1,0 +1,109 @@
+/* ═══════════════════════════════════════════════════════════════════
+   CODE EDITOR — BQL Algo (Custom Layered UI)
+════════════════════════════════════════════════════════════════════ */
+
+.code-editor-wrapper {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  background-color: #0d0f1e;
+  position: relative;
+  overflow: hidden; /* Cacher le débordement des scrolls absolus */
+}
+
+/* ── LINE NUMBERS ── */
+.line-numbers {
+  padding: 1rem 0.5rem 1rem 1rem;
+  text-align: right;
+  background-color: #0b0d19;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  color: #4b5563; /* Slate 600 */
+  user-select: none;
+  overflow-y: hidden;
+  min-width: 3rem;
+  z-index: 10;
+}
+
+.line-number {
+  height: 1.6em; /* Synchronisé avec le line-height global */
+}
+
+/* ── CONTENEUR SUPERPOSÉ (Texte & Surlignage) ── */
+.editor-layers {
+  position: relative;
+  flex: 1;
+  overflow: hidden; /* Le scroll est géré par les couches internes */
+  background: transparent;
+}
+
+/* Règles communes pour aligner parfaitement le calque et le textarea */
+.shared-editor-styles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: 1rem;
+  margin: 0;
+  border: none;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  white-space: inherit;
+  word-break: inherit;
+  tab-size: inherit;
+}
+
+/* ── CALQUE DE COLORATION SYNTAXIQUE (Highlight) ── */
+.highlight-layer {
+  color: #e2e8f0; /* Default texte */
+  overflow: auto; /* Les scrollbars apparaissent ici */
+  pointer-events: none; /* Les clics passent à travers vers le textarea */
+}
+
+/* ── TEXTAREA TRANSPARENT (Input) ── */
+.code-textarea {
+  color: transparent !important;   /* Le texte est invisible */
+  background: transparent;         /* Le fond est invisible */
+  caret-color: #60a5fa;            /* Curseur visible (bleu clair) */
+  outline: none;
+  resize: none;
+  overflow: auto;                  /* Active les événements onScroll */
+  z-index: 5;
+}
+
+/* Assure que la sélection (surlignage au drag) soit visible sur fond transparent */
+.code-textarea::selection {
+  background-color: rgba(96, 165, 250, 0.3); /* Bleu translucide */
+  color: transparent;
+}
+
+/* Cacher la barre de défilement du textarea natif pour ne voir que celle du div coloré */
+.code-textarea::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.code-textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+.code-textarea::-webkit-scrollbar-thumb {
+  background: transparent; /* Caché */
+}
+
+/* Custom Scrollbar pour le calque de coloration (visible) */
+.highlight-layer::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  pointer-events: auto; /* Pour cliquer sur la scrollbar */
+}
+.highlight-layer::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2); 
+}
+.highlight-layer::-webkit-scrollbar-thumb {
+  background: #1e293b; 
+  border-radius: 4px;
+}
+.highlight-layer::-webkit-scrollbar-thumb:hover {
+  background: #334155; 
+}

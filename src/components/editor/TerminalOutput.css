@@ -1,0 +1,70 @@
+/* ═══════════════════════════════════════
+   TERMINAL OUTPUT — BQL Algo
+═══════════════════════════════════════ */
+.terminal-container {
+  width: 100%;
+  height: 100%;
+  background-color: rgba(10, 12, 24, 0.95);
+  position: relative;
+  overflow: hidden;
+}
+
+.terminal-output {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 1.5rem;
+  color: #a7f3d0;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.7;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+/* ── Ligne individuelle ─────── */
+.terminal-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 1px 0;
+}
+.terminal-prompt {
+  color: #34d399;
+  font-weight: bold;
+  flex-shrink: 0;
+  user-select: none;
+}
+.terminal-text {
+  white-space: pre-wrap;
+  word-break: break-all;
+  flex: 1;
+}
+
+/* ── État vide ─────────────── */
+.terminal-empty {
+  color: #475569;
+  font-style: italic;
+}
+
+/* Dim out standard executing text to gray, highlight success/errors */
+/* In a full parser, we'd wrap lines in spans. For now, text relies on the global green/blue aesthetic */
+.terminal-container.theme-ocean .terminal-output {
+  color: #60a5fa; /* light ocean blue */
+}
+
+/* Scrollbar */
+.terminal-output::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.terminal-output::-webkit-scrollbar-track {
+  background: transparent; 
+}
+.terminal-output::-webkit-scrollbar-thumb {
+  background: #334155; 
+  border-radius: 4px;
+}
+.terminal-output::-webkit-scrollbar-thumb:hover {
+  background: #475569; 
+}

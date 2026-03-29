@@ -1,0 +1,54 @@
+/* ═══════════════════════════════════════════════════════════════════
+   TOKEN STYLES — BQL Algo (Syntax Highlighting)
+════════════════════════════════════════════════════════════════════ */
+
+.token-keyword {
+  color: #c084fc; /* Mauve */
+  font-weight: 600;
+}
+
+.token-type {
+  color: #fb7185; /* Rose/Orange */
+}
+
+.token-function {
+  color: #a78bfa; /* Violet clair */
+}
+
+.token-boolean {
+  color: #f97316; /* Orange clair */
+  font-style: italic;
+}
+
+.token-string {
+  color: #4ade80; /* Vert */
+}
+
+.token-number {
+  color: #facc15; /* Jaune */
+}
+
+.token-comment {
+  color: #64748b; /* Gris */
+  font-style: italic;
+}
+
+.token-identifier {
+  color: #60a5fa; /* Bleu clair pour les variables */
+}
+
+.token-operator {
+  color: #cbd5e1; /* Gris clair */
+}
+
+.token-punctuation {
+  color: #94a3b8; /* Gris moyen */
+}
+
+.token-whitespace {
+  background: transparent;
+}
+
+.token-unknown {
+  color: #ef4444; /* Rouge pour symboles bizarres */
+}

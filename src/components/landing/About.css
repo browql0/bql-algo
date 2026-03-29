@@ -1,0 +1,161 @@
+/* ═══════════════════════════════════════
+   ABOUT — BQL Algo
+═══════════════════════════════════════ */
+.about-section {
+  padding: var(--section-py) 0;
+  background: var(--bg-primary);
+  position: relative;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Subtle glow */
+.about-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -5%;
+  width: 50%;
+  height: 60%;
+  background: radial-gradient(ellipse at top right, rgba(139,92,246,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ─── Section header ─── */
+.about-section .section-header {
+  margin-bottom: 4rem;
+  max-width: 660px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.text-center { text-align: center; }
+
+/* ─── Grid ─── */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* ─── Card base ─── */
+.feature-card {
+  background: rgba(18, 20, 36, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 2.5rem 2rem;
+  transition: transform 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out), border-color 0.3s, background 0.3s;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* Top accent bar */
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  opacity: 0;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  transition: opacity 0.3s;
+}
+
+.feature-card.blue-gradient::before    { background: linear-gradient(90deg, var(--primary), #818cf8); }
+.feature-card.purple-gradient::before  { background: linear-gradient(90deg, var(--secondary), #c4b5fd); }
+.feature-card.emerald-gradient::before { background: linear-gradient(90deg, var(--accent), #67e8f9); }
+
+.feature-card:hover::before { opacity: 1; }
+
+.feature-card:hover {
+  transform: translateY(-6px);
+  background: rgba(26, 29, 52, 0.85);
+  border-color: var(--border-brand);
+  box-shadow: var(--shadow-md), 0 16px 36px rgba(99,102,241,0.09);
+}
+
+/* ─── Icon wrapper ─── */
+.feature-icon-wrapper {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  margin-bottom: 1.75rem;
+  flex-shrink: 0;
+  transition: transform 0.25s var(--ease-out), box-shadow 0.25s;
+}
+
+.feature-card:hover .feature-icon-wrapper {
+  transform: translateY(-4px) scale(1.04);
+  box-shadow: var(--shadow-sm);
+}
+
+/* icon color shades */
+.text-blue    { color: #60a5fa; }   /* blue */
+.text-purple  { color: #a78bfa; }   /* violet */
+.text-emerald { color: #34d399; }   /* emerald */
+
+/* icon bg on hover */
+.feature-card.blue-gradient:hover    .feature-icon-wrapper { background: rgba(59,130,246,0.1);  border-color: rgba(59,130,246,0.25); }
+.feature-card.purple-gradient:hover  .feature-icon-wrapper { background: rgba(139,92,246,0.1); border-color: rgba(139,92,246,0.25); }
+.feature-card.emerald-gradient:hover .feature-icon-wrapper { background: rgba(52,211,153,0.1);  border-color: rgba(52,211,153,0.25); }
+
+/* ─── Text ─── */
+.feature-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+  color: var(--text-main);
+  letter-spacing: -0.2px;
+}
+
+.feature-desc {
+  color: var(--text-sub);
+  line-height: 1.7;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+/* ═══ Responsive ═══ */
+@media (max-width: 1024px) {
+  .features-grid { gap: 1.25rem; }
+  .feature-card  { padding: 2rem 1.75rem; }
+}
+
+@media (max-width: 900px) {
+  .features-grid { grid-template-columns: repeat(2, 1fr); }
+  .feature-card:last-child { grid-column: span 2; }
+}
+
+@media (max-width: 768px) {
+  .about-section { padding: var(--section-py-m) 0; }
+  .about-section .section-header { margin-bottom: 2.5rem; }
+
+  .features-grid { grid-template-columns: 1fr; gap: 1rem; }
+  .feature-card:last-child { grid-column: auto; }
+  .feature-card { padding: 2rem 1.5rem; border-radius: var(--radius-lg); }
+
+  .feature-icon-wrapper { width: 52px; height: 52px; margin-bottom: 1.5rem; }
+  .feature-title { font-size: 1.1rem; }
+  .feature-desc  { font-size: 0.9rem; }
+}
+
+@media (max-width: 480px) {
+  .about-section { padding: var(--section-py-s) 0; }
+  .feature-card  { padding: 1.75rem 1.25rem; }
+}

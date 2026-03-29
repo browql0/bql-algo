@@ -1,0 +1,196 @@
+/* ═══════════════════════════════════════════════════════════════════
+   INTERACTIVE TERMINAL — BQL Algo
+   Terminal avec support LIRE() interactif
+════════════════════════════════════════════════════════════════════ */
+
+.iterm-container {
+  width: 100%;
+  height: 100%;
+  background: rgba(10, 12, 24, 0.97);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Zone de sortie scrollable ───────────────────────────────────── */
+.iterm-output {
+  flex: 1;
+  padding: 1.25rem 1.5rem;
+  overflow-y: auto;
+  color: #a7f3d0;
+  line-height: 1.75;
+  box-sizing: border-box;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────────── */
+.iterm-output::-webkit-scrollbar        { width: 8px; }
+.iterm-output::-webkit-scrollbar-track  { background: transparent; }
+.iterm-output::-webkit-scrollbar-thumb  { background: #334155; border-radius: 4px; }
+.iterm-output::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+/* ── Lignes de sortie ────────────────────────────────────────────── */
+.iterm-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 1px 0;
+}
+
+.iterm-prompt {
+  color: #34d399;
+  font-weight: bold;
+  flex-shrink: 0;
+  user-select: none;
+  min-width: 14px;
+}
+
+.iterm-text {
+  white-space: pre-wrap;
+  word-break: break-all;
+  flex: 1;
+}
+
+/* Variantes de ligne */
+.iterm-line--warn .iterm-text  { color: #fbbf24; }
+.iterm-line--error .iterm-text { color: #f87171; }
+
+/* ── État vide / chargement ─────────────────────────────────────── */
+.iterm-empty {
+  color: #475569;
+  font-style: italic;
+}
+
+.iterm-running {
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.iterm-dot-anim {
+  animation: dotPulse 1.2s ease-in-out infinite;
+  letter-spacing: 4px;
+}
+
+@keyframes dotPulse {
+  0%, 100% { opacity: 0.3; }
+  50%       { opacity: 1;   }
+}
+
+/* ── Zone d'input interactif (LIRE) ─────────────────────────────── */
+.iterm-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 8px 0;
+  border-top: 1px solid rgba(52, 211, 153, 0.15);
+  animation: inputAppear 0.2s ease;
+}
+
+@keyframes inputAppear {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.iterm-prompt--input {
+  color: #60a5fa;
+  font-size: 1.1em;
+}
+
+.iterm-input-form {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.iterm-input-field {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(96, 165, 250, 0.4);
+  border-radius: 6px;
+  color: #e2e8f0;
+  padding: 0.4rem 0.75rem;
+  font-family: inherit;
+  font-size: inherit;
+  outline: none;
+  caret-color: #60a5fa;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.iterm-input-field:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.15);
+}
+
+.iterm-input-field::placeholder {
+  color: #475569;
+  font-style: italic;
+}
+
+/* Bouton soumettre */
+.iterm-submit-btn {
+  background: rgba(96, 165, 250, 0.1);
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  color: #60a5fa;
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  font-size: 1.1em;
+  line-height: 1;
+  transition: background 0.2s, transform 0.1s;
+  flex-shrink: 0;
+}
+
+.iterm-submit-btn:hover {
+  background: rgba(96, 165, 250, 0.2);
+  transform: scale(1.05);
+}
+
+.iterm-submit-btn:active {
+  transform: scale(0.97);
+}
+
+/* ── Hint de type ────────────────────────────────────────────────── */
+.iterm-hint {
+  font-size: 0.8em;
+  color: #64748b;
+  padding: 4px 0 8px 22px;
+  line-height: 1.5;
+}
+
+.iterm-hint code {
+  color: #a78bfa;
+  background: rgba(167, 139, 250, 0.1);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.iterm-hint strong {
+  color: #94a3b8;
+}
+
+/* ── Thème Ocean ─────────────────────────────────────────────────── */
+.iterm-theme-ocean .iterm-output { color: #60a5fa; }
+.iterm-theme-ocean .iterm-prompt { color: #38bdf8; }
+
+/* ── Responsive mobile ───────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .iterm-output {
+    padding: 0.75rem 1rem;
+    font-size: 13px;
+  }
+
+  .iterm-input-field {
+    padding: 0.5rem 0.6rem;
+    font-size: 13px;
+  }
+
+  .iterm-submit-btn {
+    padding: 0.5rem 0.7rem;
+    font-size: 1.2em;
+  }
+}

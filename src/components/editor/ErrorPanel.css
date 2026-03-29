@@ -1,0 +1,216 @@
+/* ─── ErrorPanel.css ────────────────────────────────────────────────────────── */
+
+.error-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  height: 100%;
+  overflow-y: auto;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 13px;
+}
+
+/* ── État vide ─────────────────────────────────────────────────────────────── */
+.error-panel--empty {
+  align-items: center;
+  justify-content: center;
+  color: #4ade80;
+  gap: 8px;
+}
+.error-panel__empty-icon {
+  font-size: 32px;
+}
+.error-panel--empty p {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+/* ── En-tête du panel ──────────────────────────────────────────────────────── */
+.error-panel__header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 4px;
+  border-bottom: 1px solid rgba(239, 68, 68, 0.2);
+  margin-bottom: 2px;
+}
+
+.error-panel__count-badge {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #ef4444;
+}
+
+.error-panel__subtitle {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+/* ── Badges de catégorie ────────────────────────────────────────────────────── */
+.error-panel__category-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.error-panel__cat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid currentColor;
+  opacity: 0.9;
+}
+
+.error-panel__cat-badge--lexical  { color: #fbbf24; background: rgba(251,191,36,0.08); }
+.error-panel__cat-badge--syntax   { color: #ef4444; background: rgba(239,68,68,0.08);  }
+.error-panel__cat-badge--semantic { color: #a78bfa; background: rgba(167,139,250,0.08);}
+.error-panel__cat-badge--runtime  { color: #fb923c; background: rgba(249,115,22,0.08); }
+
+/* ── Carte d'erreur ────────────────────────────────────────────────────────── */
+.error-card {
+  border-radius: 8px;
+  border: 1px solid;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.02);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.error-card:hover {
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+
+/* ── Couleurs par type ──────────────────────────────────────────────────────── */
+.error-card--lexical  { border-color: rgba(251, 191, 36, 0.4);  }
+.error-card--syntax   { border-color: rgba(239, 68, 68, 0.4);   }
+.error-card--semantic { border-color: rgba(139, 92, 246, 0.4);  }
+.error-card--runtime  { border-color: rgba(249, 115, 22, 0.4);  }
+.error-card--unknown  { border-color: rgba(148, 163, 184, 0.3); }
+
+/* ── En-tête de carte ──────────────────────────────────────────────────────── */
+.error-card__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  user-select: none;
+}
+.error-card__header:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.error-card__index {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  min-width: 20px;
+}
+
+.error-card__icon {
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.error-card__type-label {
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+/* Label color by type */
+.error-card--lexical  .error-card__type-label { color: #fbbf24; }
+.error-card--syntax   .error-card__type-label { color: #ef4444; }
+.error-card--semantic .error-card__type-label { color: #a78bfa; }
+.error-card--runtime  .error-card__type-label { color: #fb923c; }
+.error-card--unknown  .error-card__type-label { color: #94a3b8; }
+
+.error-card__position {
+  margin-left: auto;
+  font-size: 11px;
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.08);
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  white-space: nowrap;
+}
+
+.error-card__toggle {
+  font-size: 12px;
+  color: #64748b;
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+
+/* ── Corps de la carte ─────────────────────────────────────────────────────── */
+.error-card__body {
+  animation: fadeIn 0.15s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Bloc code ─────────────────────────────────────────────────────────────── */
+.error-card__code-block {
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.error-card__code-line {
+  margin: 0;
+  color: #e2e8f0;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-size: 12px;
+}
+.error-card__arrow {
+  margin: 0;
+  font-weight: bold;
+  white-space: pre;
+  font-size: 12px;
+}
+.error-card--lexical  .error-card__arrow { color: #fbbf24; }
+.error-card--syntax   .error-card__arrow { color: #ef4444; }
+.error-card--semantic .error-card__arrow { color: #a78bfa; }
+.error-card--runtime  .error-card__arrow { color: #fb923c; }
+
+/* ── Message principal ─────────────────────────────────────────────────────── */
+.error-card__message {
+  margin: 0;
+  padding: 10px 12px 6px;
+  color: #e2e8f0;
+  line-height: 1.6;
+  font-size: 12.5px;
+}
+
+/* ── Hint / suggestion pédagogique ─────────────────────────────────────────── */
+.error-card__hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 6px 12px 10px;
+  color: #86efac;
+  font-size: 12px;
+  line-height: 1.5;
+  border-top: 1px solid rgba(134, 239, 172, 0.08);
+  background: rgba(134, 239, 172, 0.03);
+}
+.error-card__hint-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.error-card__hint-text {
+  color: #86efac;
+}
