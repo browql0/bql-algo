@@ -40,11 +40,12 @@ const InteractiveTerminal = ({
   const scrollRef  = useRef(null);
   const inputRef   = useRef(null);
 
-  // Font style dynamique
+  // Style dynamique (vitesse gérée au niveau de l'interpréteur / layout)
   const fontStyle = {
-    fontSize: `${settings?.fontSize || 14}px`,
+    fontSize: `${settings?.terminalFontSize || 15}px`,
     fontFamily: settings?.fontFamily === 'fira'     ? "'Fira Code', monospace"
               : settings?.fontFamily === 'consolas' ? "'Consolas', monospace"
+              : settings?.fontFamily === 'ubuntu'   ? "'Ubuntu Mono', monospace"
               : "'JetBrains Mono', monospace",
   };
 
@@ -77,7 +78,7 @@ const InteractiveTerminal = ({
     }
   };
 
-  const theme = settings?.theme || 'hacker';
+  const theme = settings?.terminalTheme || 'hacker';
 
   return (
     <div className={`iterm-container iterm-theme-${theme}`} style={fontStyle}>

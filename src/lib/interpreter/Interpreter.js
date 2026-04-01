@@ -33,11 +33,16 @@ class Interpreter {
    *                                        Signature : (varName: string, type: string) => Promise<string>
    * @param {string[]} [options.inputs]   - Valeurs mockées pour les tests batch (legacy)
    * @param {number}   [options.maxSteps] - Garde-fou anti-boucle infinie
+   * @param {Function} [options.onArrayUpdate] - Callback animation tableaux (name, action, index, arr)
    */
-  constructor({ output = null, input = null, inputs = [], maxSteps = 100_000 } = {}) {
+  constructor({ output = null, input = null, inputs = [], maxSteps = 100_000, onArrayUpdate = null, terminalSpeed = 'instant', onStep = null, onSnapshot = null, waitStep = null } = {}) {
     // Mode interactif (React) : callbacks fournis
     this._outputFn = output;
     this._inputFn  = input;
+    this._onArrayUpdate = onArrayUpdate;
+    this._onStep = onStep;
+    this._onSnapshot = onSnapshot;
+    this._waitStepFn = waitStep;
 
     // Mode batch (tests) : tableau de valeurs prédéfinies (legacy)
     this._inputs   = [...inputs];
@@ -46,6 +51,17 @@ class Interpreter {
     this.maxSteps  = maxSteps;
     this._steps    = 0;
     this.env       = new Environment();
+
+    // Vitesse du terminal (Lot 2)
+    this._delayMs = terminalSpeed === 'typewriter' ? 150 : (terminalSpeed === 'normal' ? 40 : 0);
+  }
+
+  // ── Communication UI ────────────────────────────────────────────────────────
+  async _reportArrayUpdate(name, action, index, arr) {
+    if (this._onArrayUpdate) {
+      // On envoie une copie du tableau et les détails de l'action
+      await this._onArrayUpdate(name, action, index, [...arr]);
+    }
   }
 
   // ── API publique ────────────────────────────────────────────────────────────
@@ -57,7 +73,7 @@ class Interpreter {
    */
   async run(ast) {
     for (const decl of ast.declarations) {
-      this._executeVarDecl(decl);
+      await this._executeVarDecl(decl);
     }
     await this._executeBlock(ast.body);
     return { output: this.output, env: this.env };
@@ -74,15 +90,26 @@ class Interpreter {
   async _execute(node) {
     this._tick();
 
+    // Notification pédagogique (Lot 3)
+    if (this._onStep) this._onStep(node.line);
+    if (this._onSnapshot) this._onSnapshot(this.env.getAllVariables());
+    
+    // Pause Pas-à-pas (Lot 3)
+    if (this._waitStepFn) {
+      await this._waitStepFn();
+    }
+
     switch (node.type) {
-      case NodeType.VAR_DECL:   return this._executeVarDecl(node);
-      case NodeType.ASSIGN:     return this._executeAssign(node);
-      case NodeType.IF:         return this._executeIf(node);
-      case NodeType.WHILE:      return this._executeWhile(node);
-      case NodeType.FOR:        return this._executeFor(node);
-      case NodeType.DO_WHILE:   return this._executeDoWhile(node);
-      case NodeType.PRINT:      return this._executePrint(node);
-      case NodeType.INPUT:      return this._executeInput(node);   // async
+      case NodeType.ASSIGN:       return this._executeAssign(node);
+      case NodeType.ARRAY_ASSIGN: return this._executeArrayAssign(node);
+      case NodeType.IF:           return this._executeIf(node);
+      case NodeType.WHILE:        return this._executeWhile(node);
+      case NodeType.FOR:          return this._executeFor(node);
+      case NodeType.DO_WHILE:     return this._executeDoWhile(node);
+      case NodeType.PRINT:        return this._executePrint(node);
+      case NodeType.INPUT:        return this._executeInput(node);   // async
+      case NodeType.ARRAY_DECL:   return this._executeArrayDecl(node);
+      case NodeType.SWITCH:       return this._executeSwitch(node);
       default:
         throw new AlgoRuntimeError({
           message: `Instruction inconnue : '${node.type}'`,
@@ -94,10 +121,60 @@ class Interpreter {
 
   // ── Déclaration de variables ─────────────────────────────────────────────────
 
-  _executeVarDecl(node) {
+  async _executeVarDecl(node) {
+    if (node.type === NodeType.ARRAY_DECL) {
+      return await this._executeArrayDecl(node);
+    }
     for (const name of node.names) {
       this.env.declare(name, node.varType, node.line);
     }
+  }
+
+  async _executeArrayDecl(node) {
+    const dimLengths = [];
+    for (const sizeNode of node.sizes) {
+      const sizeValue = await this._evaluate(sizeNode);
+
+      if (typeof sizeValue === 'number' && !Number.isInteger(sizeValue)) {
+        throw new AlgoRuntimeError({
+          message: `La taille d'un tableau doit être un nombre entier (reçu: ${sizeValue})`,
+          line: node.line,
+        });
+      }
+
+      const nSize = Math.floor(this._toNumber(sizeValue, node.line));
+      if (nSize <= 0) {
+        throw new AlgoRuntimeError({
+          message: `La taille d'une dimension doit être strictement positive (reçue: ${nSize})`,
+          line: node.line,
+        });
+      }
+      dimLengths.push(nSize);
+    }
+
+    // Valeur par défaut selon le type
+    let defaultValue = 0;
+    if (node.varType === 'chaine')    defaultValue = "";
+    if (node.varType === 'caractere') defaultValue = " ";
+    if (node.varType === 'booleen')   defaultValue = false;
+
+    let arr;
+    if (dimLengths.length === 1) {
+      arr = new Array(dimLengths[0]).fill(defaultValue);
+    } else if (dimLengths.length === 2) {
+      arr = Array.from({ length: dimLengths[0] }, () => new Array(dimLengths[1]).fill(defaultValue));
+    } else {
+      throw new AlgoRuntimeError({
+        message: `La dimensionnalité supérieure à 2 n'est pas supportée.`,
+        line: node.line,
+      });
+    }
+
+    this.env.declare(node.name, `${node.varType}[]`, node.line);
+    this.env.set(node.name, arr, node.line);
+    
+    // Notification de création/allocation
+    await this._reportArrayUpdate(node.name, 'create', null, arr);
   }
 
   // ── Affectation ─────────────────────────────────────────────────────────────
@@ -109,6 +186,62 @@ class Interpreter {
       this.env.declare(node.name, type, node.line);
     }
     this.env.set(node.name, value, node.line);
+  }
+
+  async _executeArrayAssign(node) {
+    const arr = this.env.get(node.name, node.line);
+    if (!Array.isArray(arr)) {
+      throw new AlgoRuntimeError({
+        message: `'${node.name}' n'est pas un tableau`,
+        line: node.line,
+      });
+    }
+
+    const indices = [];
+    for (const idxNode of node.indices) {
+      const idxValue = await this._evaluate(idxNode);
+      indices.push(Math.floor(this._toNumber(idxValue, node.line)));
+    }
+
+    const value = await this._evaluate(node.value);
+
+    if (indices.length === 1) {
+      const idx = indices[0];
+      if (idx < 0 || idx >= arr.length) {
+        throw new AlgoRuntimeError({
+          message: `Indice de tableau hors bornes : ${idx} (taille: ${arr.length})`,
+          line: node.line,
+          hint: `Les indices valides sont de 0 à ${arr.length - 1}.`
+        });
+      }
+      arr[idx] = value;
+      // Notification de modification
+      await this._reportArrayUpdate(node.name, 'write', [idx], arr);
+    } else if (indices.length === 2) {
+      const row = indices[0];
+      const col = indices[1];
+      if (row < 0 || row >= arr.length) {
+        throw new AlgoRuntimeError({
+          message: `Indice de ligne hors bornes : ${row} (lignes: ${arr.length})`,
+          line: node.line,
+        });
+      }
+      if (!Array.isArray(arr[row])) {
+         throw new AlgoRuntimeError({
+           message: `Impossible d'accéder à l'élément 2D - le tableau est 1D`,
+           line: node.line
+         });
+      }
+      if (col < 0 || col >= arr[row].length) {
+        throw new AlgoRuntimeError({
+          message: `Indice de colonne hors bornes : ${col} (colonnes: ${arr[row].length})`,
+          line: node.line,
+        });
+      }
+      arr[row][col] = value;
+      // Notification de modification
+      await this._reportArrayUpdate(node.name, 'write', indices, arr);
+    }
   }
 
   // ── Condition ────────────────────────────────────────────────────────────────
@@ -129,6 +262,27 @@ class Interpreter {
     }
   }
 
+  // ── Structure SELON ──────────────────────────────────────────────────────────
+
+  async _executeSwitch(node) {
+    const switchValue = await this._evaluate(node.expression);
+
+    if (Array.isArray(node.cases)) {
+      for (const clause of node.cases) {
+        const caseValue = await this._evaluate(clause.value);
+        // On compare la valeur finale au cas.
+        if (switchValue === caseValue || String(switchValue) === String(caseValue)) {
+          await this._executeBlock(clause.body);
+          return; // on exécute un seul bloc CAS puis on quitte le SELON
+        }
+      }
+    }
+
+    if (node.defaultBlock) {
+      await this._executeBlock(node.defaultBlock);
+    }
+  }
+
   // ── Boucle TANTQUE ───────────────────────────────────────────────────────────
 
   async _executeWhile(node) {
@@ -141,16 +295,26 @@ class Interpreter {
   // ── Boucle POUR ─────────────────────────────────────────────────────────────
 
   async _executeFor(node) {
-    let from    = this._toNumber(await this._evaluate(node.from), node.line);
-    const to    = this._toNumber(await this._evaluate(node.to),   node.line);
-    const step  = this._toNumber(await this._evaluate(node.step), node.line);
+    const from = this._toNumber(await this._evaluate(node.from), node.line);
+    const to   = this._toNumber(await this._evaluate(node.to),   node.line);
 
-    if (step === 0) {
-      throw new AlgoRuntimeError({
-        message: `Le pas de la boucle POUR ne peut pas être 0`,
-        hint: `Utilisez un pas différent de zéro, ex: POUR i DE 1 A 10 PAS 1`,
-        line: node.line,
-      });
+    // step = null → PAS absent en source → pas implicite de 1
+    // step = nœud → PAS valeur écrit explicitement (valeur != 0, != 1)
+    let step;
+    if (node.step === null) {
+      // Pas implicite : direction selon from → to
+      // Si from <= to → +1, sinon → -1 (comportement naturel)
+      step = from <= to ? 1 : -1;
+    } else {
+      step = this._toNumber(await this._evaluate(node.step), node.line);
+      // Validation runtime pour les pas dynamiques (ex: PAS maVariable)
+      if (step === 0) {
+        throw new AlgoRuntimeError({
+          message: `Le pas de la boucle POUR ne peut pas être 0`,
+          hint: `Utilisez un pas non nul, ex : PAS 2 ou PAS -1`,
+          line: node.line,
+        });
+      }
     }
 
     if (!this.env.has(node.variable)) {
@@ -171,6 +335,7 @@ class Interpreter {
     }
   }
 
+
   // ── Boucle REPETER ───────────────────────────────────────────────────────────
 
   async _executeDoWhile(node) {
@@ -188,42 +353,86 @@ class Interpreter {
     );
     const line = parts.join('');
     this.output.push(line);
+    
     // Appeler le callback React immédiatement (streaming du terminal)
-    if (this._outputFn) this._outputFn(line);
+    if (this._outputFn) {
+      this._outputFn(line);
+      // Simuler une vitesse d'affichage (Lot 2)
+      if (this._delayMs > 0) {
+        await new Promise(r => setTimeout(r, this._delayMs));
+      }
+    }
   }
 
   // ── Entrée LIRE ──────────────────────────────────────────────────────────────
 
   async _executeInput(node) {
-    const varName = node.variable;
-    const entry   = this.env.has(varName)
-      ? this.env.getEntry(varName, node.line)
-      : null;
-    const type = entry?.type ?? 'chaine';
+    // node.target = nœud AST complet (IdentifierNode ou ArrayAccessNode) — nouveau format
+    // node.variable = string du nom de base — rétrocompatibilité
+    const target = node.target ?? node.variable;
+    let varName;
+    let entry;
+    let isArrayAccess = false;
+    let arr = null;
+    let idx = -1;
 
+    if (target && typeof target === 'object' && target.type === NodeType.ARRAY_ACCESS) {
+      isArrayAccess = true;
+      varName = target.name;
+      arr = this.env.get(varName, node.line);
+      if (!Array.isArray(arr)) throw new AlgoRuntimeError({ message: `'${varName}' n'est pas un tableau`, line: node.line });
+      
+      const indices = [];
+      for (const idxNode of target.indices) {
+        const idxVal = await this._evaluate(idxNode);
+        indices.push(Math.floor(this._toNumber(idxVal, node.line)));
+      }
+      
+      if (indices.length === 1) {
+        if (indices[0] < 0 || indices[0] >= arr.length) {
+          throw new AlgoRuntimeError({ message: `Indice hors bornes : ${indices[0]} (taille: ${arr.length})`, line: node.line });
+        }
+      } else if (indices.length === 2) {
+        if (indices[0] < 0 || indices[0] >= arr.length || !Array.isArray(arr[indices[0]]) || indices[1] < 0 || indices[1] >= arr[indices[0]].length) {
+          throw new AlgoRuntimeError({ message: `Indices hors bornes : [${indices[0]}, ${indices[1]}]`, line: node.line });
+        }
+      }
+      idx = indices;
+      
+      entry = this.env.getEntry(varName, node.line);
+    } else {
+      // Variable simple (string ou IdentifierNode)
+      varName = typeof target === 'object' ? target.name : target;
+      if (!this.env.has(varName)) {
+        this.env.declare(varName, 'chaine', node.line);
+      }
+      entry = this.env.getEntry(varName, node.line);
+    }
+
+    const type = entry?.type.endsWith('[]') ? entry.type.slice(0, -2) : (entry?.type ?? 'chaine');
     let raw;
 
     if (this._inputFn) {
-      // ── Mode interactif React : on attend que l'utilisateur saisisse ──────
       raw = await this._inputFn(varName, type);
     } else if (this._inputs.length > 0) {
-      // ── Mode batch (tests) : consommer la valeur pré-fournie ─────────────
       raw = this._inputs.shift();
     } else {
-      // ── Aucune source d'input : valeur vide avec avertissement ────────────
       raw = '';
-      const msg = `[LIRE] Aucune valeur fournie pour '${varName}' — utilisation de '' par défaut`;
-      this.output.push(msg);
-      if (this._outputFn) this._outputFn(msg);
     }
 
-    if (!this.env.has(varName)) {
-      this.env.declare(varName, type, node.line);
-    }
-
-    // ── Conversion selon le type déclaré ─────────────────────────────────────
     const coerced = this._coerceInput(raw, type, varName, node.line);
-    this.env.set(varName, coerced, node.line);
+    
+    if (isArrayAccess) {
+      if (idx.length === 1) {
+        arr[idx[0]] = coerced;
+      } else {
+        arr[idx[0]][idx[1]] = coerced;
+      }
+      // Notification suite à saisie clavier
+      await this._reportArrayUpdate(varName, 'write', idx, arr);
+    } else {
+      this.env.set(varName, coerced, node.line);
+    }
   }
 
   /**
@@ -297,6 +506,43 @@ class Interpreter {
 
       case NodeType.IDENTIFIER:
         return this.env.get(node.name, node.line);
+
+      case NodeType.ARRAY_ACCESS: {
+        const arr = this.env.get(node.name, node.line);
+        if (!Array.isArray(arr)) {
+          throw new AlgoRuntimeError({
+            message: `'${node.name}' n'est pas un tableau`,
+            line: node.line,
+          });
+        }
+        
+        const indices = [];
+        for (const idxNode of node.indices) {
+          const index = await this._evaluate(idxNode);
+          indices.push(Math.floor(this._toNumber(index, node.line)));
+        }
+
+        if (indices.length === 1) {
+          if (indices[0] < 0 || indices[0] >= arr.length) {
+            throw new AlgoRuntimeError({
+              message: `Accès hors bornes : ${indices[0]} (taille: ${arr.length})`,
+              line: node.line,
+              hint: `L'indice doit être compris entre 0 et ${arr.length - 1}.`
+            });
+          }
+          await this._reportArrayUpdate(node.name, 'read', indices, arr);
+          return arr[indices[0]];
+        } else if (indices.length === 2) {
+          if (indices[0] < 0 || indices[0] >= arr.length || !Array.isArray(arr[indices[0]]) || indices[1] < 0 || indices[1] >= arr[indices[0]].length) {
+            throw new AlgoRuntimeError({
+              message: `Accès hors bornes : [${indices[0]}, ${indices[1]}]`,
+              line: node.line
+            });
+          }
+          await this._reportArrayUpdate(node.name, 'read', indices, arr);
+          return arr[indices[0]][indices[1]];
+        }
+      }
 
       case NodeType.UNARY_OP:
         return this._evalUnary(node);

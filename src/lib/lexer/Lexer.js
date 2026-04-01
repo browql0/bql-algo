@@ -273,6 +273,10 @@ class Lexer {
    *  Le nom peut être collé directement ou séparé par un underscore :
    *    ALGORITHMECALCULMOYENNE   →  ALGORITHME + IDENTIFIER(CALCULMOYENNE)
    *    ALGORITHME_CALCULMOYENNE  →  ALGORITHME + IDENTIFIER(CALCULMOYENNE)
+   * 
+   * Règle importante : Les mots-clés ne sont reconnus que s'ils sont en MAJUSCULES.
+   * Cela permet d'utiliser des variables en minuscules comme 'a', 'i', 'x', etc.
+   * Les mots-clés doivent être écrits en majuscules : DEBUT, FIN, LIRE, ECRIRE, etc.
    */
   _readIdentifierOrKeyword(line, col) {
     // Lit le premier mot (inclut les underscores)
@@ -295,7 +299,8 @@ class Lexer {
     }
 
     // ── Tentative de correspondance avec un mot-clé composé ─────────────────
-    const compound = this._tryMatchCompoundKeyword(firstWordUpper, line, col);
+    // Les mots-clés sont insensibles à la casse, donc on vérifie `firstWordUpper`
+    let compound = this._tryMatchCompoundKeyword(firstWordUpper, line, col);
     if (compound) return;
 
     // ── Mot-clé simple ───────────────────────────────────────────────────────

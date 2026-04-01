@@ -62,7 +62,23 @@ export function useAutocomplete(code, onChange, textareaRef) {
     if (!textareaRef.current) return;
     const el = textareaRef.current;
     
-    const textToInsert = suggestion.insertText;
+    // Récupérer l'indentation de la ligne courante
+    const textBeforeWord = code.substring(0, currentWordState.start);
+    const lastNewline = textBeforeWord.lastIndexOf('\n');
+    const currentLine = textBeforeWord.substring(lastNewline + 1);
+    const indentMatch = currentLine.match(/^\s*/);
+    const currentIndent = indentMatch ? indentMatch[0] : '';
+
+    let textToInsert = suggestion.insertText;
+    const originalLength = textToInsert.length;
+    
+    // Si c'est un snippet multi-lignes, on injecte l'indentation parente
+    if (suggestion.type === 'snippet' && textToInsert.includes('\n')) {
+      // On n'indente pas la première ligne, mais toutes les suivantes
+      const lines = textToInsert.split('\n');
+      textToInsert = lines[0] + '\n' + lines.slice(1).map(l => currentIndent + l).join('\n');
+    }
+
     const newCode = 
       code.substring(0, currentWordState.start) + 
       textToInsert + 
@@ -72,8 +88,19 @@ export function useAutocomplete(code, onChange, textareaRef) {
     setIsOpen(false);
 
     setTimeout(() => {
-      const offset = typeof suggestion.cursorOffset === 'number' ? suggestion.cursorOffset : 0;
-      const newPos = currentWordState.start + textToInsert.length + offset;
+      let offset = typeof suggestion.cursorOffset === 'number' ? suggestion.cursorOffset : 0;
+      
+      // Si on a ajouté de l'indentation APRÈS la position cible du curseur, 
+      // le décalage négatif par rapport à la fin (cursorOffset) doit être ajusté 
+      // pour rester fixe par rapport au début.
+      const addedChars = textToInsert.length - originalLength;
+      
+      // La plupart des snippets ont le curseur sur la première ligne.
+      // Dans ce cas, 'addedChars' ne doit pas impacter la position.
+      // On recalcule une position absolue par rapport au début de l'insertion.
+      const originalTargetFromStart = originalLength + offset; 
+      const newPos = currentWordState.start + originalTargetFromStart;
+
       el.focus();
       el.setSelectionRange(newPos, newPos);
     }, 0);

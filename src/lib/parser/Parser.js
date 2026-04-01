@@ -32,11 +32,12 @@
 
 import TokenType from '../lexer/tokenTypes.js';
 import {
-  ProgramNode, BlockNode, VarDeclNode,
+  ProgramNode, BlockNode, VarDeclNode, ArrayDeclNode,
   NumberNode, StringNode, CharNode, BooleanNode, IdentifierNode,
+  ArrayAccessNode,
   BinaryOpNode, UnaryOpNode,
-  AssignNode, IfNode, WhileNode, ForNode, DoWhileNode,
-  PrintNode, InputNode,
+  AssignNode, ArrayAssignNode, IfNode, WhileNode, ForNode, DoWhileNode,
+  PrintNode, InputNode, SwitchNode, CaseNode,
 } from './AST/nodes.js';
 import AlgoSyntaxError from '../errors/SyntaxError.js';
 
@@ -55,7 +56,7 @@ class Parser {
       t => t.type !== TokenType.NEWLINE && t.type !== TokenType.UNKNOWN
     );
     this.pos = 0;
-
+       
     /** @type {AlgoSyntaxError[]} Toutes les erreurs collectées, sans doublons */
     this.errors = [];
 
@@ -127,6 +128,7 @@ class Parser {
   _peek(offset = 1)      { return this.tokens[this.pos + offset] ?? this.tokens[this.tokens.length - 1]; }
   _isAtEnd()             { return this._current().type === TokenType.EOF; }
   _check(type)           { return this._current().type === type; }
+  _isSoftKeyword(word)   { return this._check(TokenType.IDENTIFIER) && this._current().value.toUpperCase() === word; }
 
   /**
    * Retourne le dernier token CONSOMMÉ (position pos - 1).
@@ -352,23 +354,24 @@ class Parser {
       this._check(TokenType.VARIABLE) ||
       this._check(TokenType.VARIABLES)
     ) {
-      declarations.push(...this._parseVarBlock());
+      declarations.push(...this._parseVariablesSection());
     }
 
     // ── DEBUT ───────────────────────────────────────────────────────────────
     if (!this._check(TokenType.DEBUT)) {
-      this.errors.push(this._makeError(
+      this._addError(this._makeError(
         'Le mot-clé DEBUT est obligatoire pour commencer le bloc principal',
         this._current(),
         { hint: 'Ajoutez "DEBUT" avant les instructions du programme.' }
       ));
-      // Tente de s'avancer jusqu'à DEBUT pour récupérer
-      while (!this._isAtEnd() && !this._check(TokenType.DEBUT) && !this._check(TokenType.FIN)) {
-        this._advance();
-      }
+      // Try to recover by advancing until we find DEBUT or FIN
+      this._synchronize(TokenType.DEBUT, TokenType.FIN);
     }
-    const debutToken = this._match(TokenType.DEBUT) ? null : null; // déjà vérifié ci-dessus
-    if (this._check(TokenType.DEBUT)) this._advance(); // consommer DEBUT si encore là
+    
+    // Consommer DEBUT si présent
+    if (this._check(TokenType.DEBUT)) {
+      this._advance();
+    }
     this._skipSemicolons();
 
     // ── Corps du programme ───────────────────────────────────────────────────
@@ -376,7 +379,7 @@ class Parser {
 
     // ── FIN ─────────────────────────────────────────────────────────────────
     if (!this._check(TokenType.FIN)) {
-      this.errors.push(this._makeError(
+      this._addError(this._makeError(
         'Le mot-clé FIN est obligatoire pour terminer le programme',
         this._current(),
         { hint: 'Ajoutez "FIN" à la fin du programme.' }
@@ -394,7 +397,7 @@ class Parser {
     this._skipSemicolons();
     if (!this._isAtEnd()) {
       const tok = this._current();
-      this.errors.push(this._makeError(
+      this._addError(this._makeError(
         'Instructions ou tokens inattendus en dehors du bloc principal',
         tok,
         { hint: 'Aucune instruction ne peut apparaître après FIN.' }
@@ -424,12 +427,12 @@ class Parser {
     const algoCol   = algoToken.column;
 
     // Position attendue du premier caractère du nom (collé = juste après les 10 chars)
-    const expectedNameCol = algoCol + 10; // 'ALGORITHME' fait exactement 10 caractères
+    let expectedNameCol = algoCol + 10; // 'ALGORITHME' fait exactement 10 caractères
 
     // ── 1. Vérification de la présence du nom ────────────────────────────────
     if (!this._check(TokenType.IDENTIFIER)) {
       // Pas d'identifiant du tout : soit ';', soit un mot-clé, soit EOF
-      this.errors.push(this._makeError(
+      this._addError(this._makeError(
         'Nom de l\'algorithme manquant après ALGORITHME',
         algoToken,
         {
@@ -449,33 +452,28 @@ class Parser {
     //
     // Le lexer place le token IDENTIFIER à la colonne exacte où il a commencé.
     // Si algoCol = 1 et name commence à col 11, le nom est collé (valide).
-    // Si name commence à col 12+, il y a un espace ou un caractère intermédiaire.
+    // Si name commence à col 12, on vérifie si le 11e char est un underscore.
     //
+    const lineText = this.sourceLines[algoLine - 1] ?? '';
+    const gapChar  = lineText[algoCol + 9]; // char immédiatement après ALGORITHME
+    const isUnderscore = gapChar === '_';
+    expectedNameCol = algoCol + 10 + (isUnderscore ? 1 : 0);
+
     if (nameTok.line !== algoLine || nameTok.column !== expectedNameCol) {
       // Déterminer le type de séparateur pour un message précis
       let separatorDesc = 'caractère inconnu';
 
       if (nameTok.line !== algoLine) {
-        // Le nom est sur une ligne différente
         separatorDesc = 'saut de ligne';
-      } else {
-        // Inspecter le caractère source situé juste après "ALGORITHME"
-        // Colonnes 1-indexées → index 0-indexé = algoCol - 1
-        // Position après ALGORITHME = (algoCol - 1) + 10 = algoCol + 9
-        const lineText   = this.sourceLines[algoLine - 1] ?? '';
-        const gapChar    = lineText[algoCol + 9]; // char immédiatement après ALGORITHME
-        if (gapChar === '_') {
-          separatorDesc = 'underscore (_)';
-        } else if (gapChar === ' ' || gapChar === '\t') {
-          separatorDesc = 'espace';
-        }
+      } else if (gapChar === ' ' || gapChar === '\t') {
+        separatorDesc = 'espace';
       }
 
-      this.errors.push(this._makeError(
-        `Le nom de l'algorithme doit être collé à ALGORITHME sans ${separatorDesc} (ex: ALGORITHME${name})`,
+      this._addError(this._makeError(
+        `Le nom de l'algorithme doit être collé à ALGORITHME (ex: ALGORITHME${name} ou ALGORITHME_${name})`,
         algoToken,
         {
-          hint: `Retirez le ${separatorDesc} entre ALGORITHME et le nom. Écrivez : ALGORITHME${name};`,
+          hint: `Retirez l'${separatorDesc} invalide entre ALGORITHME et le nom. Écrivez : ALGORITHME_${name};`,
           columnOverride: expectedNameCol, // flèche ^ pointe au début du séparateur
         }
       ));
@@ -491,7 +489,7 @@ class Parser {
       this._skipSemicolons(); // saute les ';' consécutifs
     } else {
       const errCol = nameTok.column + name.length; // juste après le dernier char du nom
-      this.errors.push(this._makeError(
+      this._addError(this._makeError(
         `Point-virgule manquant après l'en-tête de l'algorithme (ALGORITHME${name})`,
         nameTok,
         {
@@ -507,60 +505,134 @@ class Parser {
   // ── Déclarations de variables ─────────────────────────────────────────────────
 
   /**
-   * varBlock → (VARIABLE|VARIABLES) : décl+
-   * décl     → nom : type ;
+   * Parse le bloc VARIABLES: decl*
+   * decl → IDENTIFIER : TYPE ;
+   *
+   * S'arrête proprement quand on rencontre DEBUT, FIN, ou EOF.
+   * Ne génère PAS d'erreurs parasites sur les tokens de structure.
+   *
+   * @returns {VarDeclNode[]}
    */
-  _parseVarBlock() {
-    const keyword = this._advance(); // VARIABLE ou VARIABLES
+  _parseVariablesSection() {
+    const keyword = this._advance(); // VARIABLES or VARIABLE
+    const keywordValue = keyword.value;
 
     // ':' obligatoire après VARIABLES
     if (!this._check(TokenType.COLON)) {
-      this.errors.push(this._makeError(
-        `Deux-points manquant après ${keyword.value}`,
+      this._addError(this._makeError(
+        `Deux-points manquant après ${keywordValue}`,
         this._current(),
-        { hint: `Écrivez "${keyword.value}:" suivi des déclarations.` }
+        { hint: `Écrivez "${keywordValue}:" suivi des déclarations.` }
       ));
-      // Tenter de récupérer
-      this._synchronize(TokenType.DEBUT, TokenType.IDENTIFIER);
+      // Try to find the colon or just continue parsing declarations
+      // Don't advance on DEBUT since we need it later
+      if (!this._check(TokenType.DEBUT) && !this._check(TokenType.FIN) && !this._isAtEnd()) {
+        this._advance();
+      }
     } else {
-      this._advance(); // consommer ':'
+      this._advance(); // consume ':'
     }
     this._skipSemicolons();
 
     const decls = [];
 
-    while (this._check(TokenType.IDENTIFIER)) {
-      const nameTok = this._advance();
-      const name    = nameTok.value;
-
-      // ':' entre nom et type
-      if (!this._check(TokenType.COLON)) {
-        this.errors.push(this._makeError(
-          `Deux-points manquant après le nom de variable '${name}'`,
-          this._current(),
-          { hint: `Écrivez : ${name} : TYPE;  (ex: ${name} : ENTIER;)` }
-        ));
-        this._synchronize(TokenType.IDENTIFIER, TokenType.DEBUT);
-        continue;
-      }
-      this._advance(); // consommer ':'
-
-      // Type de la variable
-      const varType = this._parseTypeName();
-      if (!varType) {
-        // L'erreur a déjà été enregistrée dans _parseTypeName
-        this._synchronize(TokenType.IDENTIFIER, TokenType.DEBUT);
-        continue;
-      }
-
-      // ';' obligatoire après chaque déclaration
-      this._expectSemicolon(`la déclaration de la variable '${name}'`);
+    // Parse declarations until we encounter DEBUT, FIN, VARIABLES, VARIABLE or EOF
+    while (!this._isAtEnd()) {
+      // Skip any semicolons between declarations
       this._skipSemicolons();
 
-      decls.push(new VarDeclNode([name], varType, nameTok));
+      // Stop conditions: structural keywords that end the VARIABLES block
+      if (
+        this._check(TokenType.DEBUT)    ||
+        this._check(TokenType.FIN)      ||
+        this._check(TokenType.VARIABLES)||
+        this._check(TokenType.VARIABLE)
+      ) {
+        break;
+      }
+
+      // Stop at EOF
+      if (this._isAtEnd()) break;
+
+      // A valid declaration MUST start with TABLEAU or IDENTIFIER
+      if (!this._check(TokenType.IDENTIFIER) && !this._check(TokenType.TABLEAU)) {
+        const tok = this._current();
+        const isTypeKeyword = [
+          TokenType.TYPE_ENTIER, TokenType.TYPE_REEL,
+          TokenType.TYPE_CHAINE, TokenType.TYPE_CARACTERE,
+          TokenType.TYPE_BOOLEEN,
+        ].includes(tok.type);
+
+        if (isTypeKeyword) {
+          this._addError(this._makeError(
+            `Nom de variable manquant avant le type "${tok.value ?? tok.type}"`,
+            tok,
+            { hint: `Une déclaration doit suivre le format : nom : TYPE; (ou Tableau nom[taille] : TYPE;)` }
+          ));
+          this._advance();
+          continue;
+        }
+
+        this._addError(this._makeError(
+          `Déclaration invalide : "${tok.value ?? tok.type}"`,
+          tok,
+          { hint: `Une déclaration commence par un identifiant ou le mot-clé TABLEAU.` }
+        ));
+        this._advance();
+        continue;
+      }
+
+      if (this._check(TokenType.TABLEAU)) {
+        const arrDecl = this._parseArrayDecl();
+        if (arrDecl) decls.push(arrDecl);
+      } else {
+        // NORMAL VARIABLE DECLARATION
+        const nameTok = this._advance(); // consume IDENTIFIER
+        const names = [nameTok.value];
+
+        // Allow multiple variables separated by commas
+        while (this._match(TokenType.COMMA)) {
+          if (!this._check(TokenType.IDENTIFIER)) {
+            this._addError(this._makeError(
+              `Nom de variable attendu après la virgule`,
+              this._current(),
+              { hint: `Écrivez plusieurs variables séparées par des virgules (ex: a, b : ENTIER;)` }
+            ));
+            break; 
+          }
+          names.push(this._advance().value);
+        }
+
+        if (!this._check(TokenType.COLON)) {
+          this._addError(this._makeError(
+            `Deux-points manquant après le(s) nom(s) de variable(s) '${names.join(', ')}'`,
+            this._current(),
+            { hint: `Écrivez : ${names.join(', ')} : TYPE;  (ex: ${names[0]} : ENTIER;)` }
+          ));
+          this._synchronize(TokenType.SEMICOLON);
+          continue;
+        }
+        this._advance(); 
+
+        const varType = this._parseTypeName();
+        if (!varType) {
+          this._synchronize(TokenType.SEMICOLON);
+          continue;
+        }
+
+        this._expectSemicolon(`la déclaration de '${names.join(', ')}'`);
+        decls.push(new VarDeclNode(names, varType, nameTok));
+      }
     }
 
     return decls;
+  }
+
+  /**
+   * @deprecated Use _parseVariablesSection() instead
+   */
+  _parseVarBlock() {
+    return this._parseVariablesSection();
   }
 
   /**
@@ -643,31 +715,49 @@ class Parser {
 
     switch (tok.type) {
       case TokenType.IDENTIFIER: return this._parseAssignment();
+      case TokenType.TABLEAU:    return this._parseArrayDecl();
       case TokenType.SI:         return this._parseIf();
       case TokenType.TANTQUE:    return this._parseWhile();
       case TokenType.POUR:       return this._parseFor();
       case TokenType.REPETER:    return this._parseDoWhile();
       case TokenType.ECRIRE:     return this._parsePrint();
       case TokenType.LIRE:       return this._parseInput();
+      case TokenType.SELON:      return this._parseSwitch();
 
-      // Mots-clés de fermeture → gérés par le parent, pas une instruction
+      // FINSI/FINTANTQUE/FINPOUR orphelins (sans ouverture correspondante) ou mal placés
       case TokenType.FINSI:
       case TokenType.FINTANTQUE:
       case TokenType.FINPOUR:
+      case TokenType.FINSELON:
       case TokenType.SINON:
       case TokenType.SINON_SI:
+      case TokenType.CAS:
+      case TokenType.AUTRE:
       case TokenType.FIN:
       case TokenType.JUSQUA:
       case TokenType.ALORS:
       case TokenType.FAIRE:
-        return null;
-
-      // FINSI/FINTANTQUE/FINPOUR orphelins (sans ouverture correspondante)
+      case TokenType.ALLANT:
+      case TokenType.ALLANT_DE:
       default: {
+        let hint = 'Vérifiez l\'orthographe et la structure de votre programme.';
+        if (tok.type === TokenType.SINON || tok.type === TokenType.SINON_SI) {
+          hint = 'Un mot-clé SINON ou SINON SI est mal placé. "SINON" ne peut être suivi d\'un "SINON SI".';
+        } else if (tok.type === TokenType.FINSI) {
+          hint = 'FINSI orphelin, aucun bloc SI ne correspond.';
+        } else if (tok.type === TokenType.FINPOUR) {
+          hint = 'FINPOUR orphelin, aucun bloc POUR ne correspond.';
+        } else if (tok.type === TokenType.CAS || tok.type === TokenType.AUTRE) {
+          hint = 'CAS ou AUTRE inattendu hors d\'un bloc SELON.';
+        } else if (tok.type === TokenType.FINSELON) {
+          hint = 'FINSELON orphelin, aucun bloc SELON ne correspond.';
+        } else if (tok.type === TokenType.ALLANT || tok.type === TokenType.ALLANT_DE) {
+          hint = '"ALLANT DE" inattendu : utilisez la syntaxe POUR i ALLANT DE debut A fin FAIRE.';
+        }
         const err = this._makeError(
           `Instruction ou mot-clé inattendu : "${tok.value ?? tok.type}"`,
           tok,
-          { hint: 'Vérifiez l\'orthographe et la structure de votre programme.' }
+          { hint }
         );
         this._advance(); // consume the bad token to avoid infinite loop
         throw err;
@@ -675,14 +765,132 @@ class Parser {
     }
   }
 
+
+  // ── Affectation ──────────────────────────────────────────────────────────────
+  
+  /** Tableau Nom[taille] : TYPE; */
+  _parseArrayDecl() {
+    const declTok = this._advance(); // consomme TABLEAU
+    
+    if (!this._check(TokenType.IDENTIFIER)) {
+      this._addError(this._makeError(
+        `Nom du tableau manquant après TABLEAU`,
+        this._current(),
+        { hint: `Écrivez : Tableau nom[taille] : TYPE;` }
+      ));
+      this._synchronize(TokenType.SEMICOLON);
+      return null;
+    }
+    const nameTok = this._advance();
+    
+    if (!this._check(TokenType.LBRACKET)) {
+      this._addError(this._makeError(
+        `Crochet ouvrant "[" manquant après le nom du tableau "${nameTok.value}"`,
+        this._current(),
+        { hint: `Définissez la taille entre crochets : Tableau ${nameTok.value}[taille] : TYPE;` }
+      ));
+    } else {
+      this._advance(); // '['
+    }
+    
+    let sizes = [];
+    if (this._check(TokenType.RBRACKET) || this._check(TokenType.COLON)) {
+      this._addError(this._makeError(
+        `Taille du tableau manquante`,
+        this._current(),
+        { hint: `Indiquez la taille. Ex: Tableau ${nameTok.value}[10] ou Tableau ${nameTok.value}[3,4]` }
+      ));
+      sizes.push(new NumberNode(0, this._current()));
+    } else {
+      sizes.push(this._parseExpression());
+      while (this._match(TokenType.COMMA)) {
+        if (this._check(TokenType.RBRACKET) || this._check(TokenType.COLON)) {
+          this._addError(this._makeError(`Dimension manquante après la virgule`, this._current(), { hint: `Exemple : Tableau ${nameTok.value}[3,4] : TYPE;` }));
+          sizes.push(new NumberNode(0, this._current()));
+          break;
+        }
+        sizes.push(this._parseExpression());
+      }
+    }
+    
+    if (sizes.length > 2) {
+      this._addError(this._makeError(`Trop de dimensions pour le tableau '${nameTok.value}'`, this._current(), { hint: `Le langage supporte uniquement 1 ou 2 dimensions (ex: Tableau T[3,4]).` }));
+    }
+
+    if (!this._check(TokenType.RBRACKET)) {
+      this._addError(this._makeError(
+        `Crochet fermant "]" manquant après les tailles du tableau`,
+        this._current(),
+        { hint: `Fermez les crochets : Tableau ${nameTok.value}[...] : TYPE;` }
+      ));
+    } else {
+      this._advance(); // ']'
+    }
+    
+    if (!this._check(TokenType.COLON)) {
+      this._addError(this._makeError(
+        `Deux-points manquant après la définition du tableau`,
+        this._current(),
+        { hint: `Écrivez : Tableau ${nameTok.value}[...] : TYPE;` }
+      ));
+      this._synchronize(TokenType.SEMICOLON);
+      return null;
+    }
+    this._advance(); // ':'
+    
+    const varType = this._parseTypeName();
+    if (!varType) {
+      this._synchronize(TokenType.SEMICOLON);
+      return null;
+    }
+    
+    this._expectSemicolon(`la déclaration du tableau '${nameTok.value}'`);
+    return new ArrayDeclNode(nameTok.value, sizes, varType, declTok);
+  }
+
   // ── Affectation ──────────────────────────────────────────────────────────────
 
-  /** ident <- expr ; */
+  /** ident <- expr ; OR ident [ expr ] <- expr ; */
   _parseAssignment() {
     const nameTok = this._advance(); // IDENTIFIER
 
+    // Cas du tableau : ident [ idx1, idx2 ] <- valeur
+    if (this._match(TokenType.LBRACKET)) {
+      const indices = [];
+      indices.push(this._parseExpression());
+
+      while (this._match(TokenType.COMMA)) {
+        indices.push(this._parseExpression());
+      }
+      
+      if (!this._match(TokenType.RBRACKET)) {
+        this._addError(this._makeError(
+          `Crochet fermant "]" manquant après l'indice du tableau '${nameTok.value}'`,
+          this._current(),
+          { hint: `Ajoutez "]" après l'index. Ex: ${nameTok.value}[i, j] <- valeur;` }
+        ));
+      }
+
+      if (!this._check(TokenType.ASSIGN)) {
+        this._addError(this._makeError(
+          `Opérateur d'affectation "<-" manquant pour le tableau '${nameTok.value}'`,
+          this._current(),
+          { hint: `Utilisez "<-" pour affecter : ${nameTok.value}[...] <- valeur;` }
+        ));
+        this._synchronize();
+        return null;
+      }
+      this._advance(); // <-
+
+      const value = this._parseExpression();
+      this._expectSemicolon(`l'affectation de '${nameTok.value}[...]'`);
+
+      return new ArrayAssignNode(nameTok.value, indices, value, nameTok);
+    }
+
+    // Cas de l'affectation simple : ident <- valeur
     if (!this._check(TokenType.ASSIGN)) {
-      this.errors.push(this._makeError(
+      this._addError(this._makeError(
         `Opérateur d'affectation manquant après '${nameTok.value}'`,
         this._current(),
         { hint: `Utilisez "<-" pour affecter une valeur : ${nameTok.value} <- valeur;` }
@@ -709,22 +917,43 @@ class Parser {
   _parseIf() {
     const siTok = this._advance(); // SI
 
-    // Condition obligatoire
-    if (this._check(TokenType.ALORS)) {
-      this.errors.push(this._makeError(
-        'Condition manquante après SI',
+    if (!this._check(TokenType.LPAREN)) {
+      this._addError(this._makeError(
+        'Parenthèse ouvrante manquante après SI',
         this._current(),
-        { hint: 'Écrivez : SI <condition> ALORS' }
+        { hint: 'Écrivez : SI (condition) ALORS' }
       ));
+    } else {
+      this._advance(); // consommer '('
     }
-    const cond = this._parseExpression();
 
-    // ALORS obligatoire
+    let cond = null;
+    if (this._check(TokenType.RPAREN) || this._check(TokenType.ALORS)) {
+      this._addError(this._makeError(
+        'Condition manquante dans le SI',
+        this._current(),
+        { hint: 'Écrivez la condition entre les parenthèses : SI (condition) ALORS' }
+      ));
+      cond = new BooleanNode(true, this._current());
+    } else {
+      cond = this._parseExpression();
+    }
+
+    if (!this._check(TokenType.RPAREN)) {
+      this._addError(this._makeError(
+        'Parenthèse fermante manquante après la condition du SI',
+        this._current(),
+        { hint: 'Ajoutez ")" après la condition.' }
+      ));
+    } else {
+      this._advance(); // consommer ')'
+    }
+
     if (!this._check(TokenType.ALORS)) {
-      this.errors.push(this._makeError(
+      this._addError(this._makeError(
         'Le mot-clé ALORS est obligatoire après la condition du SI',
         this._current(),
-        { hint: 'Écrivez : SI <condition> ALORS' }
+        { hint: 'Écrivez : SI (condition) ALORS' }
       ));
     } else {
       this._advance(); // consommer ALORS
@@ -735,20 +964,44 @@ class Parser {
       TokenType.SINON_SI, TokenType.SINON, TokenType.FINSI,
     ]);
 
-    // SINON SI clauses
     const elseifClauses = [];
     while (this._check(TokenType.SINON_SI)) {
       this._advance();
-      if (this._check(TokenType.ALORS)) {
-        this.errors.push(this._makeError(
-          'Condition manquante après SINON SI',
+      
+      if (!this._check(TokenType.LPAREN)) {
+        this._addError(this._makeError(
+          'Parenthèse ouvrante manquante après SINON SI',
           this._current(),
-          { hint: 'Écrivez : SINON SI <condition> ALORS' }
+          { hint: 'Écrivez : SINON SI (condition) ALORS' }
         ));
+      } else {
+        this._advance();
       }
-      const elseifCond = this._parseExpression();
+
+      let elseifCond = null;
+      if (this._check(TokenType.RPAREN) || this._check(TokenType.ALORS)) {
+        this._addError(this._makeError(
+          'Condition manquante dans le SINON SI',
+          this._current(),
+          { hint: 'Écrivez la condition entre les parenthèses : SINON SI (condition) ALORS' }
+        ));
+        elseifCond = new BooleanNode(true, this._current());
+      } else {
+        elseifCond = this._parseExpression();
+      }
+
+      if (!this._check(TokenType.RPAREN)) {
+        this._addError(this._makeError(
+          'Parenthèse fermante manquante après la condition du SINON SI',
+          this._current(),
+          { hint: 'Ajoutez ")" après la condition.' }
+        ));
+      } else {
+        this._advance();
+      }
+
       if (!this._check(TokenType.ALORS)) {
-        this.errors.push(this._makeError(
+        this._addError(this._makeError(
           'ALORS manquant après la condition de SINON SI',
           this._current(),
           { hint: 'Ajoutez ALORS après la condition.' }
@@ -757,26 +1010,29 @@ class Parser {
         this._advance();
       }
       this._skipSemicolons();
+
       const elseifBlock = this._parseBlock([
         TokenType.SINON_SI, TokenType.SINON, TokenType.FINSI,
       ]);
       elseifClauses.push({ condition: elseifCond, block: elseifBlock });
     }
 
-    // SINON
     let elseBlock = null;
     if (this._check(TokenType.SINON)) {
       this._advance();
       this._skipSemicolons();
+      
+      // On s'assure de s'arrêter à FINSI. 
+      // Tout SINON ou SINON SI rencontré lèvera une erreur 
+      // car ils ne sont pas dans stopTypes.
       elseBlock = this._parseBlock([TokenType.FINSI]);
     }
 
-    // FINSI obligatoire
     if (!this._check(TokenType.FINSI)) {
-      this.errors.push(this._makeError(
-        'Le bloc SI doit se terminer par FINSI',
+      this._addError(this._makeError(
+        'FINSI manquant : Le bloc SI doit être fermé',
         this._current(),
-        { hint: 'Ajoutez "FINSI" pour fermer le bloc SI.' }
+        { hint: 'Ajoutez "FINSI" à la fin de la structure conditionnelle.' }
       ));
     } else {
       this._advance(); // consommer FINSI
@@ -786,44 +1042,178 @@ class Parser {
     return new IfNode(cond, thenBlock, elseifClauses, elseBlock, siTok);
   }
 
-  // ── Boucle TANTQUE ───────────────────────────────────────────────────────────
+  // ── Structure SELON ──────────────────────────────────────────────────────────
 
-  /** TANTQUE cond FAIRE bloc FINTANTQUE */
-  _parseWhile() {
-    const tok = this._advance(); // TANTQUE
+  /**
+   * SELON ( expression ) FAIRE
+   *   CAS expression : bloc
+   *   (AUTRE : bloc)?
+   * FINSELON
+   */
+  _parseSwitch() {
+    const selonTok = this._advance(); // consommer SELON
 
-    if (this._check(TokenType.FAIRE)) {
-      this.errors.push(this._makeError(
-        'Condition manquante après TANTQUE',
-        this._current(),
-        { hint: 'Écrivez : TANTQUE <condition> FAIRE' }
-      ));
-    }
-    const cond = this._parseExpression();
-
-    // FAIRE obligatoire
-    if (!this._check(TokenType.FAIRE)) {
-      this.errors.push(this._makeError(
-        'Le mot-clé FAIRE est obligatoire dans une boucle TANTQUE',
-        this._current(),
-        { hint: 'Écrivez : TANTQUE <condition> FAIRE' }
-      ));
+    if (!this._check(TokenType.LPAREN)) {
+      this._addError(this._makeError('Parenthèse ouvrante manquante après SELON', this._current(), { hint: 'Écrivez : SELON (expression) FAIRE' }));
     } else {
-      this._advance();
+      this._advance(); // consommer '('
+    }
+
+    let expression = null;
+    if (this._check(TokenType.RPAREN) || this._check(TokenType.FAIRE)) {
+      this._addError(this._makeError('Expression manquante dans SELON', this._current(), { hint: 'Écrivez l\'expression entre les parenthèses : SELON (expression) FAIRE' }));
+    } else {
+      expression = this._parseExpression();
+    }
+
+    if (!this._check(TokenType.RPAREN)) {
+      this._addError(this._makeError('Parenthèse fermante manquante après l\'expression du SELON', this._current(), { hint: 'Ajoutez ")" après l\'expression.' }));
+    } else {
+      this._advance(); // consommer ')'
+    }
+
+    if (!this._check(TokenType.FAIRE)) {
+      this._addError(this._makeError('Le mot-clé FAIRE est obligatoire après SELON(...)', this._current(), { hint: 'Écrivez : SELON (expression) FAIRE' }));
+    } else {
+      this._advance(); // consommer FAIRE
     }
     this._skipSemicolons();
 
+    const cases = [];
+    let defaultBlock = null;
+
+    if (!this._check(TokenType.CAS)) {
+       this._addError(this._makeError('Aucun CAS trouvé dans le bloc SELON', this._current(), { hint: 'Un bloc SELON doit contenir au moins un CAS.' }));
+    }
+
+    while (this._check(TokenType.CAS)) {
+      const casTok = this._advance(); // consommer CAS
+
+      let value = null;
+      if (this._check(TokenType.COLON) || this._check(TokenType.CAS) || this._check(TokenType.AUTRE) || this._check(TokenType.FINSELON)) {
+         this._addError(this._makeError('Valeur manquante après CAS', this._current(), { hint: 'Écrivez : CAS <valeur> :' }));
+      } else {
+         try {
+             value = this._parsePrimary(); 
+             // Validation strict littérale
+             const validLiteral = ['NUMBER', 'STRING', 'CHAR', 'BOOLEAN'].includes(value.type);
+             if (!validLiteral) {
+                 this._addError(this._makeError('La valeur d\'un CAS doit être un littéral (nombre, chaîne, caractère, booléen)', this._current(), { hint: 'Utilisez une valeur directe comme 1, "test", VRAI.' }));
+             }
+         } catch(e) {
+             value = new StringNode('?', this._current());
+         }
+      }
+
+      if (!this._check(TokenType.COLON)) {
+        this._addError(this._makeError('Deux-points manquant après la valeur du CAS', this._current(), { hint: 'Ajoutez ":" après la valeur.' }));
+      } else {
+        this._advance(); // consommer ':'
+      }
+      this._skipSemicolons();
+
+      const body = this._parseBlock([TokenType.CAS, TokenType.AUTRE, TokenType.FINSELON]);
+      cases.push(new CaseNode(value, body, casTok));
+    }
+
+    if (this._check(TokenType.AUTRE)) {
+      this._advance(); // consommer AUTRE
+
+      if (!this._check(TokenType.COLON)) {
+        this._addError(this._makeError('Deux-points manquant après AUTRE', this._current(), { hint: 'Ajoutez ":" après AUTRE.' }));
+      } else {
+        this._advance(); // consommer ':'
+      }
+      this._skipSemicolons();
+
+      defaultBlock = this._parseBlock([TokenType.FINSELON]);
+
+      if (this._check(TokenType.CAS)) {
+         this._addError(this._makeError('CAS interdit après AUTRE', this._current(), { hint: 'Le bloc AUTRE doit être le dernier bloc d\'un SELON.' }));
+         while(this._check(TokenType.CAS) || this._check(TokenType.AUTRE)) {
+             this._addError(this._makeError('Bloc invalide ignoré', this._advance()));
+             this._skipSemicolons();
+             this._parseBlock([TokenType.FINSELON]);
+         }
+      }
+    }
+
+    if (!this._check(TokenType.FINSELON)) {
+      this._addError(this._makeError('FINSELON manquant : Le bloc SELON doit être fermé', this._current(), { hint: 'Ajoutez "FINSELON" à la fin de la structure.' }));
+      this._synchronize();
+    } else {
+      this._advance(); // consommer FINSELON
+    }
+    this._skipSemicolons();
+
+    return new SwitchNode(expression, cases, defaultBlock, selonTok);
+  }
+
+  // ── Boucle TANTQUE ───────────────────────────────────────────────────────────
+
+  /** TANTQUE ( cond ) FAIRE bloc FINTANTQUE */
+  _parseWhile() {
+    const tok = this._advance(); // TANTQUE
+
+    // Parenthèse ouvrante obligatoire
+    if (!this._check(TokenType.LPAREN)) {
+      this._addError(this._makeError(
+        'Parenthèse ouvrante manquante après TANTQUE',
+        this._current(),
+        { hint: 'Écrivez : TANTQUE (condition) FAIRE' }
+      ));
+    } else {
+      this._advance(); // consommer '('
+    }
+
+    let cond = null;
+    // Condition obligatoire
+    if (this._check(TokenType.RPAREN) || this._check(TokenType.FAIRE)) {
+      this._addError(this._makeError(
+        'Condition manquante dans la boucle TANTQUE',
+        this._current(),
+        { hint: 'Écrivez la condition entre les parenthèses : TANTQUE (condition) FAIRE' }
+      ));
+      cond = new BooleanNode(true, this._current());
+    } else {
+      cond = this._parseExpression();
+    }
+
+    // Parenthèse fermante obligatoire
+    if (!this._check(TokenType.RPAREN)) {
+      this._addError(this._makeError(
+        'Parenthèse fermante manquante après la condition du TANTQUE',
+        this._current(),
+        { hint: 'Ajoutez ")" après la condition.' }
+      ));
+    } else {
+      this._advance(); // consommer ')'
+    }
+
+    // FAIRE obligatoire
+    if (!this._check(TokenType.FAIRE)) {
+      this._addError(this._makeError(
+        'Le mot-clé FAIRE est obligatoire après la condition du TANTQUE',
+        this._current(),
+        { hint: 'Écrivez : TANTQUE (condition) FAIRE' }
+      ));
+    } else {
+      this._advance(); // consommer FAIRE
+    }
+    this._skipSemicolons();
+
+    // Block
     const body = this._parseBlock([TokenType.FINTANTQUE]);
 
     // FINTANTQUE obligatoire
     if (!this._check(TokenType.FINTANTQUE)) {
-      this.errors.push(this._makeError(
+      this._addError(this._makeError(
         'La boucle TANTQUE doit se terminer par FINTANTQUE',
         this._current(),
         { hint: 'Ajoutez "FINTANTQUE" pour fermer la boucle.' }
       ));
     } else {
-      this._advance();
+      this._advance(); // consommer FINTANTQUE
     }
     this._skipSemicolons();
 
@@ -832,106 +1222,218 @@ class Parser {
 
   // ── Boucle POUR ──────────────────────────────────────────────────────────────
 
-  /** POUR ident DE expr A expr PAS expr bloc FINPOUR */
+  /**
+   * POUR ident ALLANT DE expr A expr [PAS expr] FAIRE bloc FINPOUR
+   *
+   * Syntaxe complète :
+   *   POUR i ALLANT DE debut A fin FAIRE           ← pas implicite = 1
+   *   POUR i ALLANT DE debut A fin PAS valeur FAIRE ← pas explicite ≠ 0 et ≠ 1
+   *
+   * Règles du PAS :
+   *   - Absent    → pas implicite de 1 (step = null dans l'AST)
+   *   - PAS 1     → ERREUR : inutile, doit être omis
+   *   - PAS 0     → ERREUR : boucle infinie
+   *   - PAS n≠0,1 → valide (ex: PAS 2, PAS -1, PAS 5)
+   */
   _parseFor() {
-    const tok = this._advance(); // POUR
+    const tok = this._advance(); // consommer POUR
+    const v = tok.value ?? 'POUR';
 
-    // Variable de boucle
+    // ── 1. Variable de boucle (identifiant valide) ────────────────────────────
     if (!this._check(TokenType.IDENTIFIER)) {
-      this.errors.push(this._makeError(
+      this._addError(this._makeError(
         'Variable de boucle manquante après POUR',
         this._current(),
-        { hint: 'Écrivez : POUR i DE 1 A 10 PAS 1' }
+        { hint: 'Écrivez : POUR i ALLANT DE debut A fin FAIRE' }
       ));
       this._synchronize(TokenType.FINPOUR, TokenType.FIN);
-      return new ForNode('i', new NumberNode(1, tok), new NumberNode(1, tok), new NumberNode(1, tok), new BlockNode([]), tok);
+      return new ForNode('i', new NumberNode(1, tok), new NumberNode(1, tok), null, new BlockNode([]), tok);
     }
-    const varTok = this._advance();
+    const varTok = this._advance(); // consommer IDENTIFIER
+    const varName = varTok.value;
 
-    // DE obligatoire
-    if (!this._check(TokenType.DE)) {
-      this.errors.push(this._makeError(
-        'Le mot-clé DE est obligatoire dans une boucle POUR',
+    // ── 2. ALLANT DE obligatoire ──────────────────────────────────────────────
+    if (this._check(TokenType.ALLANT_DE)) {
+      // Forme correcte : "ALLANT DE" tokenisé en un seul token composé
+      this._advance(); // consommer ALLANT_DE
+    } else if (this._isSoftKeyword('DE')) {
+      // "DE" seul sans "ALLANT" → erreur, "ALLANT" manquant
+      this._addError(this._makeError(
+        `"ALLANT" manquant avant "DE" dans la boucle POUR`,
         this._current(),
-        { hint: `Écrivez : POUR ${varTok.value} DE <début> A <fin> PAS <pas>` }
+        { hint: `Écrivez : POUR ${varName} ALLANT DE debut A fin FAIRE` }
       ));
+      this._advance(); // consommer DE quand même pour continuer le parsing
+    } else if (this._check(TokenType.ALLANT)) {
+      // "ALLANT" seul sans "DE" → erreur, "DE" manquant
+      this._addError(this._makeError(
+        `"DE" manquant après "ALLANT" dans la boucle POUR`,
+        this._current(),
+        { hint: `Écrivez : POUR ${varName} ALLANT DE debut A fin FAIRE` }
+      ));
+      this._advance(); // consommer ALLANT
     } else {
-      this._advance();
+      // Ni "ALLANT DE", ni "DE", ni "ALLANT" → structure complètement incorrecte
+      this._addError(this._makeError(
+        `"ALLANT DE" manquant dans la boucle POUR`,
+        this._current(),
+        { hint: `Écrivez : POUR ${varName} ALLANT DE debut A fin FAIRE` }
+      ));
+      // Chercher A ou FAIRE pour récupérer partiellement
+      // A est un soft-keyword : IDENTIFIER avec valeur 'A'
+      while (
+        !this._isAtEnd() &&
+        !this._isSoftKeyword('A') &&
+        !this._check(TokenType.FAIRE) &&
+        !this._check(TokenType.FINPOUR) &&
+        !this._check(TokenType.FIN)
+      ) {
+        this._advance();
+      }
     }
 
-    // Borne de départ
-    if (this._check(TokenType.A) || this._check(TokenType.PAS) || this._check(TokenType.FINPOUR)) {
-      this.errors.push(this._makeError(
-        'Borne de départ manquante dans la boucle POUR',
+    // ── 3. Borne de départ ───────────────────────────────────────────────────
+    // A et PAS sont des soft-keywords : IDENTIFIER avec valeur 'A' / 'PAS'
+    if (
+      this._isSoftKeyword('A') ||
+      this._isSoftKeyword('PAS') ||
+      this._check(TokenType.FAIRE) ||
+      this._check(TokenType.FINPOUR)
+    ) {
+      this._addError(this._makeError(
+        `Borne de départ manquante après "ALLANT DE" dans la boucle POUR`,
         this._current(),
-        { hint: 'Précisez la valeur de début après DE.' }
+        { hint: `Précisez la valeur de début. Ex : POUR ${varName} ALLANT DE 1 A 10 FAIRE` }
       ));
     }
     const from = this._parseExpression();
 
-    // A obligatoire
-    if (!this._check(TokenType.A)) {
-      this.errors.push(this._makeError(
-        'Le mot-clé A est obligatoire dans la boucle POUR',
+    // ── 4. A obligatoire ─────────────────────────────────────────────────────
+    // A est un soft-keyword : IDENTIFIER avec valeur 'A'
+    if (!this._isSoftKeyword('A')) {
+      this._addError(this._makeError(
+        `"A" manquant dans la boucle POUR (après la borne de départ)`,
         this._current(),
-        { hint: `Écrivez : POUR ${varTok.value} DE <début> A <fin> PAS <pas>` }
+        { hint: `Écrivez : POUR ${varName} ALLANT DE debut A fin FAIRE` }
       ));
     } else {
-      this._advance();
+      this._advance(); // consommer A
     }
 
-    // Borne de fin
-    if (this._check(TokenType.PAS) || this._check(TokenType.FINPOUR)) {
-      this.errors.push(this._makeError(
-        'Borne de fin manquante dans la boucle POUR',
+    // ── 5. Borne de fin ──────────────────────────────────────────────────────
+    // PAS est un soft-keyword : IDENTIFIER avec valeur 'PAS'
+    if (
+      this._isSoftKeyword('PAS') ||
+      this._check(TokenType.FAIRE) ||
+      this._check(TokenType.FINPOUR)
+    ) {
+      this._addError(this._makeError(
+        `Borne de fin manquante après "A" dans la boucle POUR`,
         this._current(),
-        { hint: 'Précisez la valeur de fin après A.' }
+        { hint: `Précisez la valeur de fin. Ex : POUR ${varName} ALLANT DE 1 A 10 FAIRE` }
       ));
     }
     const to = this._parseExpression();
 
-    // PAS obligatoire
-    if (!this._check(TokenType.PAS)) {
-      this.errors.push(this._makeError(
-        'Le mot-clé PAS est obligatoire dans la boucle POUR',
+    // ── 6. PAS (optionnel) ───────────────────────────────────────────────────
+    //   • Absent    → step = null (pas implicite = 1 à l'exécution)
+    //   • PAS 1     → ERREUR : interdit (inutile)
+    //   • PAS 0     → ERREUR : interdit (boucle infinie)
+    //   • PAS n≠0,1 → valide
+    let step = null; // null = PAS absent = pas implicite de 1
+
+    // PAS est un soft-keyword : IDENTIFIER avec valeur 'PAS'
+    if (this._isSoftKeyword('PAS')) {
+      const pasTok = this._advance(); // consommer PAS
+
+      // Vérifier qu'une valeur suit PAS
+      if (
+        this._check(TokenType.FAIRE) ||
+        this._check(TokenType.FINPOUR) ||
+        this._isAtEnd()
+      ) {
+        this._addError(this._makeError(
+          `Valeur manquante après "PAS" dans la boucle POUR`,
+          this._current(),
+          { hint: `Précisez la valeur du pas. Ex : PAS 2, PAS -1` }
+        ));
+        // step reste null pour récupération gracieuse
+      } else {
+        // Analyser la valeur du pas (peut être négatif : PAS -1)
+        const stepExpr = this._parseExpression();
+
+        // ── Validation statique du pas (seulement si c'est un nombre littéral) ──
+        //    Pour les variables ou expressions dynamiques on ne peut pas valider
+        //    statiquement → on laissera l'interpréteur vérifier à l'exécution.
+        const isNumberLiteral = stepExpr.type === 'NUMBER';
+        const isNegLiteral = (
+          stepExpr.type === 'UNARY_OP' &&
+          stepExpr.operator === '-' &&
+          stepExpr.operand?.type === 'NUMBER'
+        );
+
+        if (isNumberLiteral || isNegLiteral) {
+          const rawVal = isNegLiteral
+            ? -(stepExpr.operand.value)
+            : stepExpr.value;
+
+          if (rawVal === 0) {
+            this._addError(this._makeError(
+              `PAS 0 interdit : le pas d'une boucle POUR ne peut pas être nul (boucle infinie)`,
+              pasTok,
+              { hint: `Utilisez un pas non nul, ex : PAS 2 ou PAS -1` }
+            ));
+          } else if (rawVal === 1) {
+            this._addError(this._makeError(
+              `PAS 1 interdit : le pas de 1 est implicite, n'écrivez pas "PAS 1"`,
+              pasTok,
+              { hint: `Supprimez "PAS 1". Ex : POUR ${varName} ALLANT DE 1 A 10 FAIRE` }
+            ));
+          } else {
+            step = stepExpr; // pas valide, on l'utilise
+          }
+        } else {
+          // Pas dynamique (variable ou expression) : on l'accepte pour l'AST,
+          // l'interpréteur sera responsable de la validation à l'exécution.
+          step = stepExpr;
+        }
+      }
+    }
+
+    // ── 7. FAIRE obligatoire ─────────────────────────────────────────────────
+    if (!this._check(TokenType.FAIRE)) {
+      this._addError(this._makeError(
+        `"FAIRE" manquant dans la boucle POUR (après la borne de fin${step !== null ? ' et le pas' : ''})`,
         this._current(),
-        { hint: `Écrivez : POUR ${varTok.value} DE <début> A <fin> PAS 1` }
+        { hint: `Écrivez : POUR ${varName} ALLANT DE debut A fin FAIRE` }
       ));
     } else {
-      this._advance();
+      this._advance(); // consommer FAIRE
     }
-
-    // Valeur du pas
-    if (this._check(TokenType.FINPOUR) || this._isAtEnd()) {
-      this.errors.push(this._makeError(
-        'Valeur du pas manquante dans la boucle POUR',
-        this._current(),
-        { hint: 'Précisez la valeur du pas après PAS (ex: PAS 1).' }
-      ));
-    }
-    const step = this._parseExpression();
     this._skipSemicolons();
 
+    // ── 8. Corps de la boucle ────────────────────────────────────────────────
     const body = this._parseBlock([TokenType.FINPOUR]);
 
-    // FINPOUR obligatoire
+    // ── 9. FINPOUR obligatoire ───────────────────────────────────────────────
     if (!this._check(TokenType.FINPOUR)) {
-      this.errors.push(this._makeError(
-        'La boucle POUR doit se terminer par FINPOUR',
+      this._addError(this._makeError(
+        `La boucle POUR doit se terminer par FINPOUR`,
         this._current(),
-        { hint: 'Ajoutez "FINPOUR" pour fermer la boucle.' }
+        { hint: `Ajoutez "FINPOUR" pour fermer la boucle.` }
       ));
     } else {
-      this._advance();
+      this._advance(); // consommer FINPOUR
     }
     this._skipSemicolons();
 
-    return new ForNode(varTok.value, from, to, step, body, tok);
+    return new ForNode(varName, from, to, step, body, tok);
   }
+
 
   // ── Boucle REPETER ───────────────────────────────────────────────────────────
 
-  /** REPETER bloc JUSQUA cond ; */
+  /** REPETER bloc JUSQUA ( cond ) */
   _parseDoWhile() {
     const tok = this._advance(); // REPETER
     this._skipSemicolons();
@@ -940,46 +1442,53 @@ class Parser {
 
     // JUSQUA obligatoire
     if (!this._check(TokenType.JUSQUA)) {
-      this.errors.push(this._makeError(
+      this._addError(this._makeError(
         'Le bloc REPETER doit se terminer par JUSQUA suivi d\'une condition',
         this._current(),
-        { hint: 'Ajoutez "JUSQUA <condition>" pour fermer le bloc REPETER.' }
+        { hint: 'Ajoutez "JUSQUA (condition)" pour fermer le bloc REPETER.' }
       ));
       return new DoWhileNode(body, new BooleanNode(true, tok), tok);
     }
     this._advance(); // consommer JUSQUA
 
-    // Condition obligatoire après JUSQUA
-    if (
-      this._isAtEnd() ||
-      this._check(TokenType.SEMICOLON) ||
-      this._check(TokenType.FIN)
-    ) {
-      this.errors.push(this._makeError(
-        'Condition manquante après JUSQUA',
+    // Parenthèse ouvrante obligatoire
+    if (!this._check(TokenType.LPAREN)) {
+      this._addError(this._makeError(
+        'Parenthèse ouvrante manquante après JUSQUA',
         this._current(),
-        { hint: 'Écrivez : JUSQUA <condition>' }
+        { hint: 'Écrivez : JUSQUA (condition)' }
       ));
-      this._skipSemicolons();
-      return new DoWhileNode(body, new BooleanNode(true, tok), tok);
+    } else {
+      this._advance(); // consommer '('
     }
 
-    // Condition — avec ou sans parenthèses
-    let cond;
-    if (this._check(TokenType.LPAREN)) {
-      this._advance();
-      cond = this._parseExpression();
-      if (!this._check(TokenType.RPAREN)) {
-        this.errors.push(this._makeError(
-          'Parenthèse fermante manquante après la condition de JUSQUA',
-          this._current(),
-          { hint: 'Ajoutez ")" pour fermer la condition.' }
-        ));
-      } else {
-        this._advance();
-      }
+    let cond = null;
+    // Condition obligatoire
+    if (
+      this._check(TokenType.RPAREN) ||
+      this._check(TokenType.SEMICOLON) ||
+      this._check(TokenType.FIN) ||
+      this._isAtEnd()
+    ) {
+      this._addError(this._makeError(
+        'Condition manquante dans la boucle REPETER',
+        this._current(),
+        { hint: 'Écrivez la condition entre les parenthèses : JUSQUA (condition)' }
+      ));
+      cond = new BooleanNode(true, this._current());
     } else {
       cond = this._parseExpression();
+    }
+
+    // Parenthèse fermante obligatoire
+    if (!this._check(TokenType.RPAREN)) {
+      this._addError(this._makeError(
+        'Parenthèse fermante manquante après la condition du JUSQUA',
+        this._current(),
+        { hint: 'Ajoutez ")" après la condition.' }
+      ));
+    } else {
+      this._advance(); // consommer ')'
     }
     this._skipSemicolons();
 
@@ -988,12 +1497,20 @@ class Parser {
 
   // ── Entrée / Sortie ──────────────────────────────────────────────────────────
 
-  /** ECRIRE ( expr, expr, … ) ; */
+  /**
+   * ECRIRE ( expr, expr, … ) ;
+   *
+   * Accepte n'importe quelle expression comme argument :
+   *   ECRIRE("bonjour");
+   *   ECRIRE(a);
+   *   ECRIRE(42);
+   *   ECRIRE("valeur :", a, "\n");
+   */
   _parsePrint() {
     const tok = this._advance(); // ECRIRE
 
     if (!this._check(TokenType.LPAREN)) {
-      this.errors.push(this._makeError(
+      this._addError(this._makeError(
         'Parenthèse ouvrante manquante après ECRIRE',
         this._current(),
         { hint: 'Écrivez : ECRIRE(expression);' }
@@ -1004,23 +1521,29 @@ class Parser {
     this._advance(); // consommer '('
 
     const args = [];
-    if (!this._check(TokenType.RPAREN)) {
-      args.push(this._parseExpression());
+
+    // Parse arguments (one or more expressions separated by commas)
+    if (!this._check(TokenType.RPAREN) && !this._isAtEnd()) {
+      const firstArg = this._parsePrintArgument();
+      if (firstArg !== null) args.push(firstArg);
+
       while (this._match(TokenType.COMMA)) {
         if (this._check(TokenType.RPAREN)) {
-          this.errors.push(this._makeError(
+          this._addError(this._makeError(
             'Virgule mal placée dans ECRIRE : expression manquante après la virgule',
             this._current(),
             { hint: 'Supprimez la virgule finale ou ajoutez une expression.' }
           ));
           break;
         }
-        args.push(this._parseExpression());
+        if (this._isAtEnd()) break;
+        const arg = this._parsePrintArgument();
+        if (arg !== null) args.push(arg);
       }
     }
 
     if (!this._check(TokenType.RPAREN)) {
-      this.errors.push(this._makeError(
+      this._addError(this._makeError(
         'Parenthèse fermante manquante dans ECRIRE',
         this._current(),
         { hint: 'Ajoutez ")" pour fermer l\'appel ECRIRE.' }
@@ -1033,34 +1556,111 @@ class Parser {
     return new PrintNode(args, tok);
   }
 
-  /** LIRE ( ident ) ; */
+  /**
+   * Parse un seul argument de ECRIRE.
+   * Un argument peut être :
+   *  - une chaîne STRING
+   *  - un nombre NUMBER
+   *  - un booléen BOOLEAN
+   *  - un identifiant IDENTIFIER
+   *  - n'importe quelle expression valide
+   *
+   * @returns {object|null} nœud AST ou null si invalide
+   */
+  _parsePrintArgument() {
+    // Vérification préventive : si on est pas sur un token valable, on signale
+    const tok = this._current();
+    const validStartTypes = [
+      TokenType.STRING,
+      TokenType.NUMBER,
+      TokenType.CHAR,
+      TokenType.BOOLEAN,
+      TokenType.IDENTIFIER,
+      TokenType.LPAREN,
+      TokenType.MINUS,
+      TokenType.NON,
+    ];
+
+    if (!validStartTypes.includes(tok.type)) {
+      this._addError(this._makeError(
+        `Argument invalide dans ECRIRE : "${tok.value ?? tok.type}"`,
+        tok,
+        { hint: 'ECRIRE attend une expression : variable, nombre, chaîne ou expression.' }
+      ));
+      return null;
+    }
+
+    return this._parseExpression();
+  }
+
+  /**
+   * LIRE ( cible ) ;
+   *
+   * Accepte :
+   *   LIRE(nomVariable);    → variable simple
+   *   LIRE(T[i]);           → accès tableau 1D
+   *
+   * La cible est parsée comme un nœud AST (IdentifierNode ou ArrayAccessNode).
+   */
   _parseInput() {
     const tok = this._advance(); // LIRE
 
     if (!this._check(TokenType.LPAREN)) {
-      this.errors.push(this._makeError(
+      this._addError(this._makeError(
         'Parenthèse ouvrante manquante après LIRE',
         this._current(),
-        { hint: 'Écrivez : LIRE(nom_variable);' }
+        { hint: 'Écrivez : LIRE(nomVariable); ou LIRE(T[i]);' }
       ));
       this._synchronize();
       return new InputNode('?', tok);
     }
     this._advance(); // consommer '('
 
+    // La cible doit commencer par un IDENTIFIER
     if (!this._check(TokenType.IDENTIFIER)) {
-      this.errors.push(this._makeError(
+      this._addError(this._makeError(
         'Nom de variable manquant dans LIRE',
         this._current(),
-        { hint: 'LIRE attend le nom d\'une variable : LIRE(maVariable);' }
+        { hint: 'LIRE attend le nom d\'une variable : LIRE(maVariable); ou LIRE(T[i]);' }
       ));
-      this._synchronize();
+      // Récupération : avancer jusqu'à ')' ou ';'
+      while (!this._isAtEnd() && !this._check(TokenType.RPAREN) && !this._check(TokenType.SEMICOLON)) {
+        this._advance();
+      }
+      if (this._check(TokenType.RPAREN)) this._advance();
+      this._skipSemicolons();
       return new InputNode('?', tok);
     }
-    const varTok = this._advance();
+
+    const varTok = this._advance(); // consomme IDENTIFIER
+
+    // ── Accès Tableau : LIRE(T[i, j]) ───────────────────────────────────────────
+    let targetNode;
+    if (this._match(TokenType.LBRACKET)) {
+      // Parse des indices
+      const indices = [];
+      indices.push(this._parseExpression());
+
+      while (this._match(TokenType.COMMA)) {
+        indices.push(this._parseExpression());
+      }
+
+      if (!this._match(TokenType.RBRACKET)) {
+        this._addError(this._makeError(
+          `Crochet fermant "]" manquant après les indices dans LIRE('${varTok.value}[...]')`,
+          this._current(),
+          { hint: `Ajoutez "]" après les indices. Ex: LIRE(${varTok.value}[i, j]);` }
+        ));
+      }
+
+      targetNode = new ArrayAccessNode(varTok.value, indices, varTok);
+    } else {
+      // Variable simple
+      targetNode = new IdentifierNode(varTok.value, varTok);
+    }
 
     if (!this._check(TokenType.RPAREN)) {
-      this.errors.push(this._makeError(
+      this._addError(this._makeError(
         'Parenthèse fermante manquante dans LIRE',
         this._current(),
         { hint: 'Ajoutez ")" pour fermer l\'appel LIRE.' }
@@ -1070,7 +1670,7 @@ class Parser {
     }
 
     this._expectSemicolon('LIRE(...)');
-    return new InputNode(varTok.value, tok);
+    return new InputNode(targetNode, tok);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1186,14 +1786,35 @@ class Parser {
       return new BooleanNode(tok.value, tok);
     }
     if (this._check(TokenType.IDENTIFIER)) {
-      this._advance();
-      return new IdentifierNode(tok.value, tok);
+      const idTok = this._advance();
+      
+      // Si on trouve '[', c'est un accès tableau
+      if (this._match(TokenType.LBRACKET)) {
+        const indices = [];
+        indices.push(this._parseExpression());
+
+        while (this._match(TokenType.COMMA)) {
+          indices.push(this._parseExpression());
+        }
+        
+        if (!this._match(TokenType.RBRACKET)) {
+          this._addError(this._makeError(
+            `Crochet fermant "]" manquant après les indices du tableau '${idTok.value}'`,
+            this._current(),
+            { hint: `Ajoutez "]" après les indices. Ex: ${idTok.value}[i, j]` }
+          ));
+        }
+
+        return new ArrayAccessNode(idTok.value, indices, idTok);
+      }
+      
+      return new IdentifierNode(idTok.value, idTok);
     }
     if (this._check(TokenType.LPAREN)) {
       this._advance();
       const expr = this._parseExpression();
       if (!this._check(TokenType.RPAREN)) {
-        this.errors.push(this._makeError(
+        this._addError(this._makeError(
           'Parenthèse fermante manquante',
           this._current(),
           { hint: 'Ajoutez ")" pour fermer l\'expression.' }

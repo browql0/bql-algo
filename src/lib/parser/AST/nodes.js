@@ -17,6 +17,7 @@ export const NodeType = Object.freeze({
   PROGRAM:     'PROGRAM',
   BLOCK:       'BLOCK',
   VAR_DECL:    'VAR_DECL',
+  ARRAY_DECL:  'ARRAY_DECL',
 
   // Littéraux
   NUMBER:      'NUMBER',
@@ -26,6 +27,7 @@ export const NodeType = Object.freeze({
 
   // Références
   IDENTIFIER:  'IDENTIFIER',
+  ARRAY_ACCESS:'ARRAY_ACCESS',
 
   // Opérations
   BINARY_OP:   'BINARY_OP',
@@ -33,12 +35,15 @@ export const NodeType = Object.freeze({
 
   // Instructions
   ASSIGN:      'ASSIGN',
+  ARRAY_ASSIGN:'ARRAY_ASSIGN',
   IF:          'IF',
   WHILE:       'WHILE',
   FOR:         'FOR',
   DO_WHILE:    'DO_WHILE',
   PRINT:       'PRINT',
   INPUT:       'INPUT',
+  SWITCH:      'SWITCH',
+  CASE:        'CASE',
 });
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -103,6 +108,16 @@ export class VarDeclNode {
   }
 }
 
+export class ArrayDeclNode {
+  constructor(name, sizes, varType, token) {
+    this.type    = NodeType.ARRAY_DECL;
+    this.name    = name;
+    this.sizes   = sizes;    // ExpressionNode[] (tailles du tableau)
+    this.varType = varType;  // string type
+    Object.assign(this, pos(token));
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // Nœuds littéraux
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -156,6 +171,16 @@ export class IdentifierNode {
   }
 }
 
+/** Accès à un tableau. ex: T[i], M[i,j] */
+export class ArrayAccessNode {
+  constructor(name, indices, token) {
+    this.type    = NodeType.ARRAY_ACCESS;
+    this.name    = name;
+    this.indices = indices; // ExpressionNode[]
+    Object.assign(this, pos(token));
+  }
+}
+
 /**
  * Opération binaire.
  * left OP right — ex: a + b, x >= 10, a ET b
@@ -203,6 +228,17 @@ export class AssignNode {
   }
 }
 
+/** Affectation Tableau : name[idx1, idx2] <- value */
+export class ArrayAssignNode {
+  constructor(name, indices, value, token) {
+    this.type    = NodeType.ARRAY_ASSIGN;
+    this.name    = name;    // string
+    this.indices = indices; // ExpressionNode[]
+    this.value   = value;   // nœud expression
+    Object.assign(this, pos(token));
+  }
+}
+
 /**
  * Condition : SI … ALORS … (SINON SI … ALORS …)* (SINON …)? FINSI
  */
@@ -235,23 +271,29 @@ export class WhileNode {
 }
 
 /**
- * Boucle POUR variable DE from A to PAS step … FINPOUR
+ * Boucle POUR variable ALLANT DE from A to [PAS step] FAIRE … FINPOUR
+ *
+ * Syntaxe : POUR i ALLANT DE debut A fin [PAS valeur] FAIRE … FINPOUR
+ *
+ * Règles sur le pas :
+ *   - si step est null  → pas implicite de 1 (PAS absent de la source)
+ *   - si step est fourni → PAS valeur explicite (valeur != 0 et != 1 obligatoire)
  */
 export class ForNode {
   /**
-   * @param {string}  variable - Nom de la variable de contrôle
-   * @param {*}       from     - Nœud valeur de départ
-   * @param {*}       to       - Nœud valeur de fin
-   * @param {*}       step     - Nœud pas (NumberNode(1) par défaut)
-   * @param {BlockNode} body
-   * @param {object}  token
+   * @param {string}     variable - Nom de la variable de contrôle
+   * @param {*}          from     - Nœud valeur de départ
+   * @param {*}          to       - Nœud valeur de fin
+   * @param {*|null}     step     - Nœud pas (null = implicite 1, pas de PAS écrit)
+   * @param {BlockNode}  body
+   * @param {object}     token
    */
   constructor(variable, from, to, step, body, token) {
     this.type     = NodeType.FOR;
     this.variable = variable;
     this.from     = from;
     this.to       = to;
-    this.step     = step;
+    this.step     = step;   // null = implicite 1 (PAS absent)
     this.body     = body;
     Object.assign(this, pos(token));
   }
@@ -277,11 +319,68 @@ export class PrintNode {
   }
 }
 
-/** Instruction LIRE(variable) */
+/**
+ * Instruction LIRE(cible)
+ *
+ * La cible peut être :
+ *   - un IdentifierNode  → LIRE(x)
+ *   - un ArrayAccessNode → LIRE(T[i])
+ *
+ * Le champ `variable` est conservé pour rétrocompatibilité (string du nom de
+ * la variable racine). Le champ `target` est le nœud AST complet.
+ */
 export class InputNode {
-  constructor(variable, token) {
-    this.type     = NodeType.INPUT;
-    this.variable = variable; // string (nom de la variable)
+  /**
+   * @param {IdentifierNode|ArrayAccessNode|string} target  - Nœud cible (ou string legacy)
+   * @param {object} token
+   */
+  constructor(target, token) {
+    this.type = NodeType.INPUT;
+    // Support du mode legacy (string) et du mode nœud AST
+    if (typeof target === 'string') {
+      this.variable = target;   // rétrocompatibilité
+      this.target   = null;     // pas de nœud dans ce cas
+    } else {
+      // Nœud AST : extraire le nom de base pour `variable`
+      this.target   = target;
+      this.variable = target?.name ?? '?';
+    }
+    Object.assign(this, pos(token));
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Structure SELON (Switch / Case)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/** Structure conditionnelle à choix multiples (SELON) */
+export class SwitchNode {
+  /**
+   * @param {object} expression - Expression évaluée par le SELON
+   * @param {CaseNode[]} cases - Liste des blocs CAS
+   * @param {BlockNode|null} defaultBlock - Bloc par défaut (AUTRE), null si absent
+   * @param {object} token - Token SELON pour la trace de l'erreur
+   */
+  constructor(expression, cases, defaultBlock, token) {
+    this.type         = NodeType.SWITCH;
+    this.expression   = expression;
+    this.cases        = cases;
+    this.defaultBlock = defaultBlock;
+    Object.assign(this, pos(token));
+  }
+}
+
+/** Branche individuelle d'un bloc SELON (CAS) */
+export class CaseNode {
+  /**
+   * @param {object} value - Expression de test
+   * @param {BlockNode} body - Bloc d'instructions propre à ce cas
+   * @param {object} token - Token CAS pour trace
+   */
+  constructor(value, body, token) {
+    this.type  = NodeType.CASE;
+    this.value = value;
+    this.body  = body;
     Object.assign(this, pos(token));
   }
 }

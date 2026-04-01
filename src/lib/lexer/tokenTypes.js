@@ -19,6 +19,7 @@ const TokenType = Object.freeze({
   ALGORITHME:   'ALGORITHME',
   VARIABLES:    'VARIABLES',   // déclaration : plusieurs variables
   VARIABLE:     'VARIABLE',   // déclaration : une seule variable
+  TABLEAU:      'TABLEAU',    // déclaration de tableau
   DEBUT:        'DEBUT',
   FIN:          'FIN',
 
@@ -29,12 +30,17 @@ const TokenType = Object.freeze({
   SINON:        'SINON',
   FINSI:        'FINSI',
   SELON:        'SELON',
+  CAS:          'CAS',          // valeur:
+  AUTRE:        'AUTRE',        // optionnel, fallback
+  FINSELON:     'FINSELON',     // fin du bloc SELON
   FAIRE:        'FAIRE',        // utilisé aussi dans SELON … FAIRE
 
   // ── Mots-clés de boucle ────────────────────────────────────────────────────
   TANTQUE:      'TANTQUE',
   FINTANTQUE:   'FINTANTQUE',
   POUR:         'POUR',
+  ALLANT:       'ALLANT',       // ALLANT (partie de "ALLANT DE")
+  ALLANT_DE:    'ALLANT_DE',   // ALLANT DE (token composé)
   DE:           'DE',
   A:            'A',
   PAS:          'PAS',

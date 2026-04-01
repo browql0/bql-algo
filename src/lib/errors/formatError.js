@@ -105,19 +105,14 @@ export function formatErrors(errors, sourceCode = '', options = {}) {
  *
  * @param {import('./BaseError.js').default} error
  * @param {string} [sourceCode]
- * @returns {{
- *   label: string,
- *   position: string,
- *   codeLine: string|null,
- *   arrow: string|null,
- *   message: string,
- *   hint: string|null,
- *   type: string,
- * }}
+ * @param {object} [options]
+ * @returns {object}
  */
-export function formatErrorReact(error, sourceCode = '') {
-  const label    = TYPE_LABELS[error.type] ?? 'Erreur';
-  const position = error.line > 0 ? `Ligne ${error.line}, colonne ${error.column}` : '';
+export function formatErrorReact(error, sourceCode = '', options = {}) {
+  // simplifiedErrors (Lot 3) : on réduit le label au minimum
+  const label    = options.simplifiedErrors ? 'ERREUR' : (TYPE_LABELS[error.type] ?? 'Erreur');
+  
+  const position = error.line > 0 ? `Ligne ${error.line}${options.simplifiedErrors ? '' : `, colonne ${error.column}`}` : '';
   const codeLine = error.codeLine ?? _extractLine(sourceCode, error.line);
   const arrow    = (codeLine !== null && error.column > 0)
     ? ' '.repeat(Math.max(0, error.column - 1)) + '^'
@@ -126,6 +121,9 @@ export function formatErrorReact(error, sourceCode = '') {
     ? `${error.message} : "${error.value}"`
     : error.message;
 
+  // showCorrectionSuggestions / beginnerMode (Lot 3)
+  const hint = (options.showCorrectionSuggestions !== false) ? (error.hint ?? null) : null;
+
   return {
     // Champs pour le rendu React
     label,
@@ -133,7 +131,7 @@ export function formatErrorReact(error, sourceCode = '') {
     codeLine,
     arrow,
     message,
-    hint:   error.hint  ?? null,
+    hint,
     type:   error.type,
 
     // Champs numériques pour le tri dans ErrorPanel (sans recalcul)

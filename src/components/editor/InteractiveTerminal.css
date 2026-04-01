@@ -5,15 +5,50 @@
 
 .iterm-container {
   width: 100%;
-  height: 100%;
-  background: rgba(10, 12, 24, 0.97);
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   position: relative;
+  transition: background 0.3s;
 }
 
+/* Default Theme (Hacker) */
+.iterm-theme-hacker { background: rgba(5, 7, 15, 0.98); }
+.iterm-theme-hacker .iterm-output { color: #34d399; }
+.iterm-theme-hacker .iterm-prompt { color: #10b981; }
+.iterm-theme-hacker .iterm-empty { color: #334155; }
+
+/* Matrix Theme */
+.iterm-theme-matrix { background: #000; border: 1px solid #003300; }
+.iterm-theme-matrix .iterm-output { color: #00ff41; text-shadow: 0 0 5px rgba(0, 255, 65, 0.5); }
+.iterm-theme-matrix .iterm-prompt { color: #008f11; }
+
+/* Classic Console (White on Black) */
+.iterm-theme-classic { background: #000; }
+.iterm-theme-classic .iterm-output { color: #eee; }
+.iterm-theme-classic .iterm-prompt { color: #aaa; }
+
+/* Light Theme (Solarized-like) */
+.iterm-theme-light { background: #fdf6e3; }
+.iterm-theme-light .iterm-output { color: #586e75; }
+.iterm-theme-light .iterm-prompt { color: #2aa198; }
+.iterm-theme-light .iterm-input-field { background: #eee8d5; color: #073642; border-color: #93a1a1; }
+
+/* Ocean Theme */
+.iterm-theme-ocean { background: #001b2a; }
+.iterm-theme-ocean .iterm-output { color: #7dd3fc; }
+.iterm-theme-ocean .iterm-prompt { color: #0ea5e9; }
+
+/* BQL Special Theme */
+.iterm-theme-bql { background: #0f1223; }
+.iterm-theme-bql .iterm-output { color: #60a5fa; }
+.iterm-theme-bql .iterm-prompt { color: #3b82f6; }
+
+
 /* ── Zone de sortie scrollable ───────────────────────────────────── */
+
 .iterm-output {
   flex: 1;
   padding: 1.25rem 1.5rem;
@@ -172,10 +207,6 @@
 .iterm-hint strong {
   color: #94a3b8;
 }
-
-/* ── Thème Ocean ─────────────────────────────────────────────────── */
-.iterm-theme-ocean .iterm-output { color: #60a5fa; }
-.iterm-theme-ocean .iterm-prompt { color: #38bdf8; }
 
 /* ── Responsive mobile ───────────────────────────────────────────── */
 @media (max-width: 768px) {

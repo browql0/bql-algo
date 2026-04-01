@@ -52,3 +52,15 @@
 .token-unknown {
   color: #ef4444; /* Rouge pour symboles bizarres */
 }
+
+/* ── Light / Girly Theme Overrides (Better contrast on light bg) ── */
+.global-theme-light .token-keyword { color: #9333ea; }
+.global-theme-light .token-type { color: #db2777; }
+.global-theme-light .token-function { color: #7c3aed; }
+.global-theme-light .token-string { color: #059669; }
+.global-theme-light .token-number { color: #d97706; }
+.global-theme-light .token-identifier { color: #2563eb; }
+.global-theme-light .token-operator { color: #475569; }
+.global-theme-light .token-punctuation { color: #64748b; }
+.global-theme-light .token-comment { color: #94a3b8; }
+

@@ -1,0 +1,231 @@
+/* ArrayVisualizer.css */
+
+.av-panel {
+  /* Fait partie intégrante de l'interface du terminal */
+  background: rgba(10, 12, 24, 0.8);
+  border-top: 1px solid rgba(255, 255, 255, 0.08); /* Ligne de séparation subtile */
+  border-radius: 0; /* Plus de bulle flottante */
+  padding: 16px 20px;
+  margin-top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-family: var(--font-mono, 'JetBrains Mono', Consolas, monospace);
+  color: #e2e8f0;
+}
+
+.av-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 0.9em;
+}
+
+.av-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #cbd5e1;
+}
+
+.av-panel-icon {
+  font-size: 1.2em;
+  color: #8b5cf6;
+}
+
+.av-last-action {
+  font-size: 0.8em;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px 10px;
+  border-radius: 12px;
+  animation: fadeIn 0.3s ease;
+}
+
+.av-action-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #8b5cf6;
+}
+
+.av-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-x: auto;
+  padding: 4px 4px 12px 4px; /* Un peu d'espace pour l'animation */
+}
+
+.av-no-arrays {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-size: 0.85em;
+  text-align: center;
+  padding: 12px 0;
+}
+
+.av-no-arrays-icon { display: none; }
+.av-no-arrays-hint { display: none; }
+
+/* ── Grille du tableau ── */
+.av-array-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.av-array-header {
+  font-size: 0.95em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.av-array-name {
+  font-weight: 700;
+  color: #38bdf8; /* Bleu ciel vif */
+  font-size: 1.2em;
+}
+
+.av-array-meta {
+  color: #475569;
+  font-size: 0.85em;
+  font-style: italic;
+}
+
+.av-array-strip {
+  display: flex;
+  width: max-content;
+  align-items: flex-start;
+}
+
+.av-cell-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Design exact du croquis : cases collées avec bordure épaisse */
+.av-cell {
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.4);
+  
+  /* Bordure Orange-Rouge pour imiter le feutre du dessin */
+  border: 2px solid #ea580c; 
+  margin-left: -2px; /* Superpose les bordures pour éviter un double trait */
+  
+  font-size: 1.25em;
+  font-weight: 700;
+  color: #fff;
+  position: relative;
+}
+
+.av-cell-wrapper:first-child .av-cell {
+  margin-left: 0;
+  border-top-left-radius: 4px; /* Uniquement les coins extérieurs */
+  border-bottom-left-radius: 4px;
+}
+
+.av-cell-wrapper:last-child .av-cell {
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+
+.av-cell-index {
+  font-size: 0.85em;
+  color: #fb923c; /* Orange clair pour les indices */
+  font-weight: 700;
+  font-family: inherit;
+}
+
+.av-empty-msg {
+  color: #64748b;
+  font-size: 0.85em;
+  font-style: italic;
+  padding: 8px;
+}
+
+/* ── Animations ── */
+@keyframes writePulseGrid {
+  0%   { background: rgba(15, 23, 42, 0.4); border-color: #ea580c; z-index: 10; transform: scale(1); }
+  30%  { background: rgba(52, 211, 153, 0.3); border-color: #34d399; box-shadow: 0 0 20px rgba(52,211,153,0.6); z-index: 10; transform: scale(1.15); color: #fff;}
+  100% { background: rgba(15, 23, 42, 0.4); border-color: #ea580c; z-index: 1; transform: scale(1); }
+}
+
+@keyframes readPulseGrid {
+  0%   { background: rgba(15, 23, 42, 0.4); border-color: #ea580c; z-index: 10; transform: scale(1); }
+  40%  { background: rgba(59, 130, 246, 0.3); border-color: #3b82f6; box-shadow: 0 0 20px rgba(59,130,246,0.6); z-index: 10; transform: scale(1.15); color: #fff;}
+  100% { background: rgba(15, 23, 42, 0.4); border-color: #ea580c; z-index: 1; transform: scale(1); }
+}
+
+.cell-write {
+  animation: writePulseGrid 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 10 !important; /* Pour passer par-dessus les bordures adjacentes */
+}
+
+.cell-read {
+  animation: readPulseGrid 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 10 !important;
+}
+
+/* Scrollbar styling for the array strip */
+.av-panel-body::-webkit-scrollbar { height: 8px; margin-top: 4px; }
+.av-panel-body::-webkit-scrollbar-track { background: transparent; }
+.av-panel-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+.av-panel-body::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+
+/* ── RESPONSIVE MOBILE ── */
+@media (max-width: 768px) {
+  .av-panel {
+    padding: 12px 10px;
+    gap: 12px;
+  }
+
+  .av-cell {
+    width: 40px;
+    height: 40px;
+    font-size: 1.05em;
+  }
+
+  .av-array-name {
+    font-size: 1.1em;
+  }
+
+  .av-cell-index {
+    font-size: 0.75em;
+  }
+
+  /* Animations plus légères (pas de scale excessif qui décale la mise en page sur petit écran) */
+  .cell-write {
+    animation: writePulseLight 0.6s ease;
+  }
+  .cell-read {
+    animation: readPulseLight 0.6s ease;
+  }
+
+  @keyframes writePulseLight {
+    0%   { background: rgba(15, 23, 42, 0.4); border-color: #ea580c; z-index: 10; }
+    30%  { background: rgba(52, 211, 153, 0.4); border-color: #34d399; box-shadow: 0 0 10px rgba(52,211,153,0.5); z-index: 10; color: #fff; transform: scale(1.05);}
+    100% { background: rgba(15, 23, 42, 0.4); border-color: #ea580c; z-index: 1; }
+  }
+
+  @keyframes readPulseLight {
+    0%   { background: rgba(15, 23, 42, 0.4); border-color: #ea580c; z-index: 10; }
+    40%  { background: rgba(59, 130, 246, 0.4); border-color: #3b82f6; box-shadow: 0 0 10px rgba(59,130,246,0.5); z-index: 10; color: #fff; transform: scale(1.05);}
+    100% { background: rgba(15, 23, 42, 0.4); border-color: #ea580c; z-index: 1; }
+  }
+}
+

@@ -58,11 +58,12 @@ import { formatErrors, formatErrorReact } from './errors/formatError.js';
  * @param {Function} [options.output]    - Callback streaming : (line: string) => void
  * @param {Function} [options.input]     - Callback async interactif : (varName, type) => Promise<string>
  * @param {number}   [options.maxSteps]  - Limite anti-boucle infinie
+ * @param {Function} [options.onArrayUpdate] - Callback pour animation de tableaux : async (name, action, index, values) => void
  * @returns {Promise<object>}
  */
 export async function executeCode(
   sourceCode,
-  { inputs = [], output = null, input = null, maxSteps = 100_000 } = {}
+  { inputs = [], output = null, input = null, maxSteps = 100_000, onArrayUpdate = null, terminalSpeed = 'instant', onStep = null, onSnapshot = null, waitStep = null } = {}
 ) {
 
   // ── Collecte par catégorie ─────────────────────────────────────────────────
@@ -146,7 +147,12 @@ export async function executeCode(
         inputs,
         output,   // callback streaming pour ECRIRE (→ terminal React temps réel)
         input,    // callback async pour LIRE (→ attend saisie utilisateur)
+        onArrayUpdate, // callback d'animation tableau
         maxSteps,
+        terminalSpeed,
+        onStep,
+        onSnapshot,
+        waitStep,
       });
       const { output: out, env } = await interpreter.run(ast);
       outLines = out ?? [];
@@ -177,10 +183,11 @@ export async function executeCode(
  *
  * @param {BaseError[]} errors
  * @param {string}      sourceCode
+ * @param {object}      [options]
  * @returns {object[]}
  */
-export function getStructuredErrors(errors, sourceCode) {
-  return errors.map(err => formatErrorReact(err, sourceCode));
+export function getStructuredErrors(errors, sourceCode, options = {}) {
+  return errors.map(err => formatErrorReact(err, sourceCode, options));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

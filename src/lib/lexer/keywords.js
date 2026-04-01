@@ -24,9 +24,11 @@ import TokenType from './tokenTypes.js';
 export const COMPOUND_KEYWORDS = [
   { words: ['SINON', 'SI'],                 type: TokenType.SINON_SI    },
   { words: ['CHAINE', 'DE', 'CARACTERE'],   type: TokenType.TYPE_CHAINE },
+  { words: ['ALLANT', 'DE'],                type: TokenType.ALLANT_DE   }, // ALLANT DE → token composé pour POUR
   { words: ['FIN', 'TANTQUE'],              type: TokenType.FINTANTQUE  },
   { words: ['FIN', 'POUR'],                 type: TokenType.FINPOUR     },
   { words: ['FIN', 'SI'],                   type: TokenType.FINSI       },
+  { words: ['FIN', 'SELON'],                type: TokenType.FINSELON    },
 ];
 
 // ── Mots-clés simples ─────────────────────────────────────────────────────────
@@ -35,6 +37,7 @@ export const SIMPLE_KEYWORDS = new Map([
   ['ALGORITHME',  TokenType.ALGORITHME  ],
   ['VARIABLES',   TokenType.VARIABLES   ],  // plusieurs variables
   ['VARIABLE',    TokenType.VARIABLE    ],  // une seule variable
+  ['TABLEAU',     TokenType.TABLEAU     ],
   ['DEBUT',       TokenType.DEBUT       ],
   ['FIN',         TokenType.FIN         ],
 
@@ -44,15 +47,16 @@ export const SIMPLE_KEYWORDS = new Map([
   ['SINON',       TokenType.SINON       ],
   ['FINSI',       TokenType.FINSI       ],
   ['SELON',       TokenType.SELON       ],
+  ['CAS',         TokenType.CAS         ],
+  ['AUTRE',       TokenType.AUTRE       ],
+  ['FINSELON',    TokenType.FINSELON    ],
   ['FAIRE',       TokenType.FAIRE       ],
 
   // Boucle
   ['TANTQUE',     TokenType.TANTQUE     ],
   ['FINTANTQUE',  TokenType.FINTANTQUE  ],
   ['POUR',        TokenType.POUR        ],
-  ['DE',          TokenType.DE          ],
-  ['A',           TokenType.A           ],
-  ['PAS',         TokenType.PAS         ],
+  ['ALLANT',      TokenType.ALLANT      ], // mot simple (cas où 'DE' ne suit pas)
   ['FINPOUR',     TokenType.FINPOUR     ],
   ['REPETER',     TokenType.REPETER     ],
   ['JUSQUA',      TokenType.JUSQUA      ],

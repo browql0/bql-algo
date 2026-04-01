@@ -44,10 +44,17 @@ class Environment {
    * @param {number} [line]
    */
   declare(name, type, line) {
-    if (!DEFAULT_VALUES.hasOwnProperty(type)) {
+    const isArray = type.endsWith('[]');
+    const baseType = isArray ? type.slice(0, -2) : type;
+
+    if (!DEFAULT_VALUES.hasOwnProperty(baseType)) {
       throw new AlgoRuntimeError({ message: `Type inconnu : '${type}'`, line });
     }
-    this.variables.set(name, { type, value: DEFAULT_VALUES[type] });
+    
+    this.variables.set(name, { 
+      type, 
+      value: isArray ? [] : DEFAULT_VALUES[type] 
+    });
   }
 
   // ── Lecture ─────────────────────────────────────────────────────────────────
@@ -140,6 +147,18 @@ class Environment {
   }
 
   /**
+   * Extrait toutes les variables visibles depuis cette portée (inclut parents).
+   * Utile pour la visualisation en direct (Lot 3).
+   */
+  getAllVariables() {
+    const all = this.parent ? this.parent.getAllVariables() : {};
+    for (const [name, entry] of this.variables) {
+      all[name] = { ...entry }; // Copie superficielle
+    }
+    return all;
+  }
+
+  /**
    * Coerce `value` vers le type attendu.
    * Génère une erreur si la conversion n'est pas possible.
    */
@@ -183,6 +202,10 @@ class Environment {
         return Boolean(value);
 
       default:
+        // Pour les tableaux (ex: entier[]), on accepte l'objet array tel quel
+        if (type.endsWith('[]') && Array.isArray(value)) {
+          return value;
+        }
         return value;
     }
   }

@@ -11,8 +11,9 @@
 const KEYWORDS = [
   'ALGORITHME', 'VARIABLES', 'DEBUT', 'FIN',
   'SI', 'ALORS', 'SINON', 'FINSI',
+  'SELON', 'CAS', 'AUTRE', 'FINSELON',
   'TANTQUE', 'FAIRE', 'FINTANTQUE',
-  'POUR', 'DE', 'A', 'PAS', 'FINPOUR',
+  'POUR', 'ALLANT', 'FINPOUR',
   'REPETER', 'JUSQUA'
 ];
 
@@ -120,4 +121,59 @@ export function tokenizeForHighlight(text) {
   }
   
   return tokens;
+}
+
+// ── Analyseur Structurel ───────────────────────────────────────────────────────
+
+export function tokenizeAndMapStructure(text) {
+  const codeLines = text.split('\n');
+  const result = [];
+  
+  const OPENERS = ['SI', 'SELON', 'POUR', 'TANTQUE', 'REPETER', 'DEBUT'];
+  const CLOSERS = ['FINSI', 'FINSELON', 'FINPOUR', 'FINTANTQUE', 'JUSQUA', 'FIN'];
+  // SINON, CAS, AUTRE sont des mots-clés de relais liés à un parent. On ne les empile pas.
+  
+  // La pile contient { kw: string, col: number, hasError: boolean }
+  let stack = [];
+  
+  for (let lineIdx = 0; lineIdx < codeLines.length; lineIdx++) {
+    const lineText = codeLines[lineIdx];
+    const tokens = tokenizeForHighlight(lineText);
+    
+    // On conserve la pile d'ouvertures AVANT de parcourir la ligne
+    const stackBefore = [...stack];
+    
+    let currentTokenCol = 0;
+    let lastRelevantKw = null;
+
+    for (const t of tokens) {
+      if (t.type === 'keyword' || t.type === 'identifier') {
+        const kw = t.value.toUpperCase();
+        
+        // Anti "SINON SI" : 
+        const isSinonSi = (kw === 'SI' && lastRelevantKw === 'SINON');
+        if (!isSinonSi && t.type === 'keyword') {
+          if (OPENERS.includes(kw)) {
+             stack.push({ kw, col: currentTokenCol, hasError: false });
+          } else if (CLOSERS.includes(kw)) {
+             if (stack.length > 0) stack.pop();
+          }
+        }
+        lastRelevantKw = kw;
+      }
+      currentTokenCol += t.value.length;
+    }
+    
+    // La ligne guide n'est visible que sur les lignes strictement internes.
+    // Exclusion parfaite de la ligne d'ouverture et de fermeture grâce à l'intersection.
+    const activeGuides = stackBefore.filter(b => stack.includes(b));
+    
+    result.push({
+       lineId: lineIdx,
+       tokens: tokens,
+       guides: activeGuides.map(g => ({ col: g.col, isError: g.hasError }))
+    });
+  }
+
+  return result;
 }
