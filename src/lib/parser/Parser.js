@@ -2153,18 +2153,11 @@ class Parser {
       varTok = this._advance();
     }
 
-    // ── Accès Tableau : LIRE(Tableau T[i, j]) ───────────────────────────────────────────
+    // ── Accès Tableau : LIRE(Tableau T[i, j]) ou LIRE(T[i].nom) ──────────────────────────
     let targetNode;
+    let hasArrayAccess = false;
     if (this._match(TokenType.LBRACKET)) {
-      if (!hasTableau) {
-        this._addError(this._makeError(
-          `Le mot-clé 'Tableau' est obligatoire pour modifier un tableau`,
-          this._current(),
-          { hint: `Écrivez : LIRE(Tableau ${varTok.value}[i]); au lieu de LIRE(${varTok.value}[i]);` }
-        ));
-        while (!this._check(TokenType.RBRACKET) && !this._isAtEnd()) this._advance();
-        if (this._check(TokenType.RBRACKET)) this._advance();
-      }
+      hasArrayAccess = true;
       
       // Parse des indices
       const indices = [];
@@ -2176,26 +2169,19 @@ class Parser {
 
       if (!this._match(TokenType.RBRACKET)) {
         this._addError(this._makeError(
-          `Crochet fermant "]" manquant après les indices dans LIRE('Tableau ${varTok.value}[...]')`,
+          `Crochet fermant "]" manquant après les indices dans LIRE`,
           this._current(),
-          { hint: `Ajoutez "]" après les indices. Ex: LIRE(Tableau ${varTok.value}[i, j]);` }
+          { hint: `Ajoutez "]" après les indices.` }
         ));
       }
 
       targetNode = new ArrayAccessNode(varTok.value, indices, varTok);
     } else {
-      if (hasTableau) {
-        this._addError(this._makeError(
-          `Crochets manquants après 'Tableau ${varTok.value}'`,
-          this._current(),
-          { hint: `Spécifiez des indices : LIRE(Tableau ${varTok.value}[i]);` }
-        ));
-      }
       // Variable simple
       targetNode = new IdentifierNode(varTok.value, varTok);
     }
     
-    // NOUVEAU : Lecture d'un champ d'enregistrement (ex: LIRE(e.nom) ou LIRE(Tableau T[i].nom))
+    // NOUVEAU : Lecture d'un champ d'enregistrement (ex: LIRE(e.nom) ou LIRE(T[i].nom))
     let hasMemberAccess = false;
     while (this._match(TokenType.DOT)) {
       hasMemberAccess = true;
@@ -2211,10 +2197,19 @@ class Parser {
       targetNode = new MemberAccessNode(targetNode, propTok.value, propTok);
     }
     
-    if (hasTableau && !hasMemberAccess && targetNode.type === NodeType.IDENTIFIER) {
-      // already errored above for missing brackets
-    } else if (!hasTableau && !hasMemberAccess && targetNode.type === NodeType.ARRAY_ACCESS) {
-       // Already errored inside the bracket match block
+    // Validation des règles sur le mot-clé 'Tableau'
+    if (hasArrayAccess && !hasMemberAccess && !hasTableau) {
+      this._addError(this._makeError(
+        `Le mot-clé 'Tableau' est obligatoire pour lire un tableau`,
+        varTok,
+        { hint: `Écrivez : LIRE(Tableau ${varTok.value}[i]); au lieu de LIRE(${varTok.value}[i]);` }
+      ));
+    } else if (hasTableau && !hasArrayAccess) {
+      this._addError(this._makeError(
+        `Crochets manquants après 'Tableau ${varTok.value}'`,
+        this._current(),
+        { hint: `Spécifiez des indices : LIRE(Tableau ${varTok.value}[i]);` }
+      ));
     }
 
     if (!this._check(TokenType.RPAREN)) {

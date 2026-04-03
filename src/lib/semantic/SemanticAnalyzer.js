@@ -651,7 +651,7 @@ class SemanticAnalyzer {
    * On l'ignore silencieusement pour éviter les fausses erreurs en cascade.
    */
   _analyzeInput(node) {
-    const target = node.variable; 
+    const target = node.target || node.variable; 
     
     // Si target est un noeud complexe géré par _analyzeTarget
     if (target && typeof target === 'object') {
@@ -661,6 +661,7 @@ class SemanticAnalyzer {
        }
     }
 
+    // Fallback pour compatibilité (si target est juste un nom en string)
     const name = typeof target === 'string' ? target : target?.name;
 
     if (!name || !isValidVariableName(name)) {
