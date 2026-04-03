@@ -1,8 +1,8 @@
 import fs from "fs";
-import Lexer from "./src/lib/lexer/Lexer.js";
-import Parser from "./src/lib/parser/Parser.js";
-import SemanticAnalyzer from "./src/lib/semantic/SemanticAnalyzer.js";
-import Interpreter from "./src/lib/interpreter/Interpreter.js";
+import Lexer from "../lexer/Lexer.js";
+import Parser from "../parser/Parser.js";
+import SemanticAnalyzer from "../semantic/SemanticAnalyzer.js";
+import Interpreter from "../interpreter/Interpreter.js";
 
 const code = `
 ALGORITHMETestTableau;

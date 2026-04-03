@@ -20,7 +20,7 @@ import AlgoRuntimeError from '../errors/RuntimeError.js';
 import Environment      from './Environment.js';
 import { NodeType }     from '../parser/AST/nodes.js';
 
-// ── Signal interne : sortie de boucle ─────────────────────────────────────────
+// ── Signal interne : sortie de boucle ────────────────────────────────────────────
 class BreakSignal {}
 
 // ── Interpréteur ──────────────────────────────────────────────────────────────
@@ -52,6 +52,10 @@ class Interpreter {
     this._steps    = 0;
     this.env       = new Environment();
 
+    // Table des constantes immuables (réinitialisée à chaque run)
+    /** @type {Map<string, { value: *, type: string }>} */
+    this._constants = new Map();
+
     // Vitesse du terminal (Lot 2)
     this._delayMs = terminalSpeed === 'typewriter' ? 150 : (terminalSpeed === 'normal' ? 40 : 0);
   }
@@ -72,9 +76,30 @@ class Interpreter {
    * @returns {Promise<{ output: string[], env: Environment }>}
    */
   async run(ast) {
+    if (!ast) return { output: this.output, env: this.env };
+
+    // 0. Types structurés
+    if (Array.isArray(ast.customTypes)) {
+      for (const t of ast.customTypes) {
+        const fieldsObj = {};
+        for (const f of t.fields) {
+           fieldsObj[f.name] = f.varType;
+        }
+        this.env.declareCustomType(t.name, fieldsObj);
+      }
+    }
+
+    // 1. Constantes (immuables, évaluées statiquement)
+    if (ast.constants) {
+      for (const decl of ast.constants) {
+        await this._executeConstDecl(decl);
+      }
+    }
+    // 2. Variables
     for (const decl of ast.declarations) {
       await this._executeVarDecl(decl);
     }
+    // 3. Corps principal
     await this._executeBlock(ast.body);
     return { output: this.output, env: this.env };
   }
@@ -109,6 +134,7 @@ class Interpreter {
       case NodeType.PRINT:        return this._executePrint(node);
       case NodeType.INPUT:        return this._executeInput(node);   // async
       case NodeType.ARRAY_DECL:   return this._executeArrayDecl(node);
+      case NodeType.ARRAY_ALLOCATION: return this._executeArrayAllocation(node);
       case NodeType.SWITCH:       return this._executeSwitch(node);
       default:
         throw new AlgoRuntimeError({
@@ -117,6 +143,33 @@ class Interpreter {
           line: node.line,
         });
     }
+  }
+
+  // ── Déclaration de constantes ──────────────────────────────────────────
+
+  async _executeConstDecl(node) {
+    // La valeur est un nœud AST "plat" stocké dans node.value
+    // On l'évalue directement (c'est toujours un littéral)
+    let value;
+    switch (node.value?.type) {
+      case 'NUMBER':  value = node.value.value; break;
+      case 'STRING':  value = node.value.value; break;
+      case 'CHAR':    value = node.value.value; break;
+      case 'BOOLEAN': value = node.value.value; break;
+      default:
+        value = node.value?.value ?? null;
+    }
+
+    // Coerce selon le type déclaré
+    if (node.constType === 'entier')  value = Math.trunc(Number(value));
+    if (node.constType === 'reel')    value = parseFloat(value);
+    if (node.constType === 'chaine')  value = String(value);
+    if (node.constType === 'booleen') value = Boolean(value);
+
+    this._constants.set(node.name, { value, type: node.constType, immutable: true });
+
+    // Déclarer aussi dans l'environnement pour que ECRIRE(Pi) fonctionne
+    this.env.declareConst(node.name, node.constType, value, node.line);
   }
 
   // ── Déclaration de variables ─────────────────────────────────────────────────
@@ -131,6 +184,14 @@ class Interpreter {
   }
 
   async _executeArrayDecl(node) {
+    const isDynamicPlaceholder = node.sizes.some(s => s === null);
+    
+    if (isDynamicPlaceholder) {
+      this.env.declare(node.name, `${node.varType}[]`, node.line);
+      this.env.set(node.name, null, node.line); // Non alloué
+      return;
+    }
+
     const dimLengths = [];
     for (const sizeNode of node.sizes) {
       const sizeValue = await this._evaluate(sizeNode);
@@ -177,20 +238,150 @@ class Interpreter {
     await this._reportArrayUpdate(node.name, 'create', null, arr);
   }
 
+  // ── Allocation de taille au runtime (après DEBUT) ───────────────
+
+  async _executeArrayAllocation(node) {
+    const entry = this.env.getEntry(node.name, node.line);
+    
+    // Sécurité: vérifier si c'est bien un type tableau
+    if (!entry.type.endsWith('[]')) {
+      throw new AlgoRuntimeError({
+        message: `'${node.name}' n'est pas un tableau`,
+        line: node.line,
+      });
+    }
+
+    const dimLengths = [];
+    for (const sizeNode of node.sizes) {
+      const sizeValue = await this._evaluate(sizeNode);
+
+      if (typeof sizeValue === 'number' && !Number.isInteger(sizeValue)) {
+        throw new AlgoRuntimeError({
+          message: `La taille d'un tableau doit être un nombre entier (reçu: ${sizeValue})`,
+          line: node.line,
+        });
+      }
+
+      const nSize = Math.floor(this._toNumber(sizeValue, node.line));
+      if (nSize <= 0) {
+        throw new AlgoRuntimeError({
+          message: `La taille d'une dimension doit être strictement positive (reçue: ${nSize})`,
+          line: node.line,
+        });
+      }
+      dimLengths.push(nSize);
+    }
+
+    const baseType = entry.type.slice(0, -2); // 'entier[]' -> 'entier'
+
+    // Valeur par défaut selon le type
+    let defaultValue = 0;
+    if (baseType === 'chaine')    defaultValue = "";
+    if (baseType === 'caractere') defaultValue = " ";
+    if (baseType === 'booleen')   defaultValue = false;
+
+    let arr;
+    if (dimLengths.length === 1) {
+      arr = new Array(dimLengths[0]).fill(defaultValue);
+    } else if (dimLengths.length === 2) {
+      arr = Array.from({ length: dimLengths[0] }, () => new Array(dimLengths[1]).fill(defaultValue));
+    } else {
+      throw new AlgoRuntimeError({
+        message: `La dimensionnalité supérieure à 2 n'est pas supportée.`,
+        line: node.line,
+      });
+    }
+
+    this.env.set(node.name, arr, node.line);
+    
+    // Notification de création/allocation (utile pour les animations UI)
+    await this._reportArrayUpdate(node.name, 'create', null, arr);
+  }
+
   // ── Affectation ─────────────────────────────────────────────────────────────
 
   async _executeAssign(node) {
     const value = await this._evaluate(node.value);
-    if (!this.env.has(node.name)) {
-      const type = this._inferType(value);
-      this.env.declare(node.name, type, node.line);
+    
+    // Assignation simple compat
+    if (!node.target) {
+       // Bloquer la modification d'une constante
+       const constEntry = this._constants.get(node.name);
+       if (constEntry?.immutable) {
+          throw new AlgoRuntimeError({
+            message: `Impossible de modifier la constante '${node.name}'`,
+            value: node.name,
+            line: node.line,
+          });
+       }
+
+       if (!this.env.has(node.name)) {
+          const type = this._inferType(value);
+          this.env.declare(node.name, type, node.line);
+       }
+       this.env.set(node.name, value, node.line);
+       return;
     }
-    this.env.set(node.name, value, node.line);
+
+    await this._setTargetValue(node.target, value);
+  }
+
+  /**
+   * Assigne une valeur à une cible (IDENTIFIER, ARRAY_ACCESS, MEMBER_ACCESS)
+   */
+  async _setTargetValue(targetNode, value) {
+    if (targetNode.type === NodeType.IDENTIFIER) {
+      const name = targetNode.name;
+      const constEntry = this._constants.get(name);
+      if (constEntry?.immutable) {
+         throw new AlgoRuntimeError({ message: `Impossible de modifier '${name}'`, line: targetNode.line });
+      }
+      this.env.set(name, value, targetNode.line);
+    } else if (targetNode.type === NodeType.ARRAY_ACCESS) {
+      const arr = this.env.get(targetNode.name, targetNode.line);
+      if (!Array.isArray(arr)) {
+         throw new AlgoRuntimeError({ message: `'${targetNode.name}' n'est pas un tableau assignable`, line: targetNode.line });
+      }
+      
+      const indices = [];
+      for (const idxNode of targetNode.indices) {
+         const idxValue = await this._evaluate(idxNode);
+         indices.push(Math.floor(this._toNumber(idxValue, targetNode.line)));
+      }
+      
+      if (indices.length === 1) {
+         const idx = indices[0];
+         if (idx < 0 || idx >= arr.length) throw new AlgoRuntimeError({ message: `Indice hors bornes`, line: targetNode.line });
+         arr[idx] = value;
+         await this._reportArrayUpdate(targetNode.name, 'write', [idx], arr);
+      } else if (indices.length === 2) {
+         const row = indices[0];
+         const col = indices[1];
+         if (row < 0 || row >= arr.length) throw new AlgoRuntimeError({ message: `Ligne hors bornes`, line: targetNode.line });
+         if (!Array.isArray(arr[row])) throw new AlgoRuntimeError({ message: `Tableau 1D accédé en 2D`, line: targetNode.line });
+         if (col < 0 || col >= arr[row].length) throw new AlgoRuntimeError({ message: `Colonne hors bornes`, line: targetNode.line });
+         arr[row][col] = value;
+         await this._reportArrayUpdate(targetNode.name, 'write', indices, arr);
+      }
+    } else if (targetNode.type === NodeType.MEMBER_ACCESS) {
+      const obj = await this._evaluate(targetNode.object);
+      if (!obj || typeof obj !== 'object') {
+         throw new AlgoRuntimeError({ message: `L'objet n'est pas un enregistrement`, line: targetNode.line });
+      }
+      obj[targetNode.property] = value;
+    }
   }
 
   async _executeArrayAssign(node) {
     const arr = this.env.get(node.name, node.line);
     if (!Array.isArray(arr)) {
+      if (arr === null) {
+        throw new AlgoRuntimeError({
+          message: `tableau '${node.name}' non alloué`,
+          line: node.line,
+          hint: `Vous devez utiliser 'Tableau ${node.name}[...]' après DEBUT pour allouer le tableau avant de l'utiliser.`,
+        });
+      }
       throw new AlgoRuntimeError({
         message: `'${node.name}' n'est pas un tableau`,
         line: node.line,
@@ -367,72 +558,34 @@ class Interpreter {
   // ── Entrée LIRE ──────────────────────────────────────────────────────────────
 
   async _executeInput(node) {
-    // node.target = nœud AST complet (IdentifierNode ou ArrayAccessNode) — nouveau format
-    // node.variable = string du nom de base — rétrocompatibilité
-    const target = node.target ?? node.variable;
-    let varName;
-    let entry;
-    let isArrayAccess = false;
-    let arr = null;
-    let idx = -1;
+    const targetNode = node.target ?? { type: NodeType.IDENTIFIER, name: node.variable, line: node.line };
 
-    if (target && typeof target === 'object' && target.type === NodeType.ARRAY_ACCESS) {
-      isArrayAccess = true;
-      varName = target.name;
-      arr = this.env.get(varName, node.line);
-      if (!Array.isArray(arr)) throw new AlgoRuntimeError({ message: `'${varName}' n'est pas un tableau`, line: node.line });
-      
-      const indices = [];
-      for (const idxNode of target.indices) {
-        const idxVal = await this._evaluate(idxNode);
-        indices.push(Math.floor(this._toNumber(idxVal, node.line)));
-      }
-      
-      if (indices.length === 1) {
-        if (indices[0] < 0 || indices[0] >= arr.length) {
-          throw new AlgoRuntimeError({ message: `Indice hors bornes : ${indices[0]} (taille: ${arr.length})`, line: node.line });
-        }
-      } else if (indices.length === 2) {
-        if (indices[0] < 0 || indices[0] >= arr.length || !Array.isArray(arr[indices[0]]) || indices[1] < 0 || indices[1] >= arr[indices[0]].length) {
-          throw new AlgoRuntimeError({ message: `Indices hors bornes : [${indices[0]}, ${indices[1]}]`, line: node.line });
-        }
-      }
-      idx = indices;
-      
-      entry = this.env.getEntry(varName, node.line);
-    } else {
-      // Variable simple (string ou IdentifierNode)
-      varName = typeof target === 'object' ? target.name : target;
-      if (!this.env.has(varName)) {
-        this.env.declare(varName, 'chaine', node.line);
-      }
-      entry = this.env.getEntry(varName, node.line);
+    if (!this._inputFn && this._inputs.length === 0) {
+      await this._setTargetValue(targetNode, "valeur_saisie");
+      return;
     }
 
-    const type = entry?.type.endsWith('[]') ? entry.type.slice(0, -2) : (entry?.type ?? 'chaine');
-    let raw;
+    let varNameForUI = "inconnue";
+    if (targetNode.type === NodeType.IDENTIFIER) varNameForUI = targetNode.name;
+    else if (targetNode.type === NodeType.ARRAY_ACCESS) varNameForUI = targetNode.name + "[...]";
+    else if (targetNode.type === NodeType.MEMBER_ACCESS) varNameForUI = targetNode.property;
 
-    if (this._inputFn) {
-      raw = await this._inputFn(varName, type);
-    } else if (this._inputs.length > 0) {
-      raw = this._inputs.shift();
-    } else {
-      raw = '';
-    }
-
-    const coerced = this._coerceInput(raw, type, varName, node.line);
+    const typeForUI = 'inconnu';
     
-    if (isArrayAccess) {
-      if (idx.length === 1) {
-        arr[idx[0]] = coerced;
-      } else {
-        arr[idx[0]][idx[1]] = coerced;
-      }
-      // Notification suite à saisie clavier
-      await this._reportArrayUpdate(varName, 'write', idx, arr);
+    let raw;
+    if (this._inputFn) {
+      raw = await this._inputFn(varNameForUI, typeForUI);
     } else {
-      this.env.set(varName, coerced, node.line);
+      raw = this._inputs.shift() ?? '';
     }
+
+    let finalValue = raw;
+    const num = Number(raw);
+    if (!isNaN(num) && String(raw).trim() !== '') {
+      finalValue = num;
+    }
+
+    await this._setTargetValue(targetNode, finalValue);
   }
 
   /**
@@ -510,6 +663,13 @@ class Interpreter {
       case NodeType.ARRAY_ACCESS: {
         const arr = this.env.get(node.name, node.line);
         if (!Array.isArray(arr)) {
+          if (arr === null) {
+            throw new AlgoRuntimeError({
+              message: `tableau '${node.name}' non alloué`,
+              line: node.line,
+              hint: `Vous devez utiliser 'Tableau ${node.name}[...]' après DEBUT pour allouer le tableau avant d'y accéder.`,
+            });
+          }
           throw new AlgoRuntimeError({
             message: `'${node.name}' n'est pas un tableau`,
             line: node.line,
@@ -542,6 +702,17 @@ class Interpreter {
           await this._reportArrayUpdate(node.name, 'read', indices, arr);
           return arr[indices[0]][indices[1]];
         }
+      }
+
+      case NodeType.MEMBER_ACCESS: {
+        const obj = await this._evaluate(node.object);
+        if (!obj || typeof obj !== 'object') {
+          throw new AlgoRuntimeError({
+            message: `Accès invalide: n'est pas un enregistrement`,
+            line: node.line
+          });
+        }
+        return obj[node.property];
       }
 
       case NodeType.UNARY_OP:

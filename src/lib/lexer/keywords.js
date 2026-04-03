@@ -37,7 +37,11 @@ export const SIMPLE_KEYWORDS = new Map([
   ['ALGORITHME',  TokenType.ALGORITHME  ],
   ['VARIABLES',   TokenType.VARIABLES   ],  // plusieurs variables
   ['VARIABLE',    TokenType.VARIABLE    ],  // une seule variable
+  ['CONSTANTES',  TokenType.CONSTANTES  ],  // plusieurs constantes
+  ['CONSTANTE',   TokenType.CONSTANTE   ],  // une seule constante
   ['TABLEAU',     TokenType.TABLEAU     ],
+  ['TYPE',        TokenType.TYPE        ],
+  ['ENREGISTREMENT', TokenType.ENREGISTREMENT ],
   ['DEBUT',       TokenType.DEBUT       ],
   ['FIN',         TokenType.FIN         ],
 

@@ -74,15 +74,13 @@ class SemanticAnalyzer {
     this.errors = [];
 
     /**
-     * Table des symboles : Map<name, { type, line, initialized }>
-     *
-     * Exemple après VARIABLES: a : ENTIER; b : ENTIER;
-     * {
-     *   'a': { type: 'entier', line: 3, initialized: false },
-     *   'b': { type: 'entier', line: 4, initialized: false }
-     * }
+     * Table des symboles structurée avec variables et constantes séparées
      */
-    this.symbols = new Map();
+    this.symbolTable = {
+      variables: {},
+      constantes: {},
+      customTypes: {}
+    };
   }
 
   // ── API publique ─────────────────────────────────────────────────────────────
@@ -93,20 +91,95 @@ class SemanticAnalyzer {
    * @returns {{ errors: AlgoSemanticError[], symbols: Map }}
    */
   analyze(ast) {
-    if (!ast) return { errors: this.errors, symbols: this.symbols };
+    if (!ast) return { errors: this.errors, symbolTable: this.symbolTable };
 
-    // 1. Enregistrer toutes les déclarations de variables depuis ast.declarations
-    //    C'est la source de vérité pour la table des symboles.
+    // 0. Enregistrer les types structurés (AVANT constantes et variables)
+    if (Array.isArray(ast.customTypes)) {
+      this._processCustomTypes(ast.customTypes);
+    }
+
+    // 1. Enregistrer les constantes (AVANT les variables — elles ont la priorité)
+    //    Les constantes sont immuables et toujours initialisées.
+    if (Array.isArray(ast.constants)) {
+      this._processConstants(ast.constants);
+    }
+
+    // 2. Enregistrer toutes les déclarations de variables depuis ast.declarations
     if (Array.isArray(ast.declarations)) {
       this._processDeclarations(ast.declarations);
     }
 
-    // 2. Analyser le corps du programme
+    // 3. Analyser le corps du programme
     if (ast.body) {
       this._analyzeBlock(ast.body);
     }
 
-    return { errors: this.errors, symbols: this.symbols };
+    return { errors: this.errors, symbolTable: this.symbolTable };
+  }
+
+  // ── Traitement des constantes & types structurés ────────────────────────────
+
+  _processCustomTypes(customTypes) {
+    if (!Array.isArray(customTypes)) return;
+
+    for (const typeDecl of customTypes) {
+      if (!typeDecl || !typeDecl.name) continue;
+      const tName = typeDecl.name;
+      
+      if (this.symbolTable.customTypes[tName]) {
+        this._addError({
+          message: `Le type '${tName}' est déjà déclaré`,
+          line: typeDecl.line,
+          column: typeDecl.column,
+          value: tName,
+        });
+      } else {
+        const fields = {};
+        for (const field of typeDecl.fields) {
+          if (fields[field.name]) {
+            this._addError({
+              message: `Le champ '${field.name}' est dupliqué dans l'enregistrement '${tName}'`,
+              line: field.line,
+              column: field.column,
+              value: field.name,
+            });
+          } else {
+            fields[field.name] = field.varType;
+          }
+        }
+        this.symbolTable.customTypes[tName] = { 
+          nom: tName,
+          fields: fields 
+        };
+      }
+    }
+  }
+
+  _processConstants(constants) {
+    if (!Array.isArray(constants)) return;
+
+    for (const decl of constants) {
+      if (!decl) continue;
+      const name = decl.name;
+      if (!isValidVariableName(name)) continue;
+
+      if (this.symbolTable.constantes[name] || this.symbolTable.variables[name]) {
+        this._addError({
+          message: `L'identifiant '${name}' est déjà déclaré`,
+          line: decl.line,
+          column: decl.column,
+          value: name,
+        });
+      } else {
+        this.symbolTable.constantes[name] = {
+          nom: name,
+          type: decl.constType || 'inconnu',
+          line: decl.line,
+          immutable: true,
+          initialized: true
+        };
+      }
+    }
   }
 
   // ── Traitement des déclarations ───────────────────────────────────────────────
@@ -128,7 +201,7 @@ class SemanticAnalyzer {
         const name = decl.name;
         if (!isValidVariableName(name)) continue;
 
-        if (this.symbols.has(name)) {
+        if (this.symbolTable.variables[name] || this.symbolTable.constantes[name]) {
           this._addError({
             message: `Le tableau '${name}' est déjà déclaré`,
             line: decl.line,
@@ -137,21 +210,25 @@ class SemanticAnalyzer {
             hint: `Chaque variable ou tableau ne peut être déclaré qu'une seule fois.`,
           });
         } else {
-          // Type enregistré: "entier[]", "reel[]", etc.
-          this.symbols.set(name, {
+          const isDynamicPlaceholder = decl.sizes.some(s => s === null);
+          this.symbolTable.variables[name] = {
             type: `${decl.varType}[]`,
             line: decl.line,
-            initialized: true, // Un tableau est "initialisé" par sa déclaration (allocation)
+            initialized: true, // "initialisé" dans le sens où l'identifiant existe
             isArray: true,
+            isAllocated: !isDynamicPlaceholder,
+            isDynamicPlaceholder: isDynamicPlaceholder,
             dimensions: decl.sizes?.length ?? 1,
             baseType: decl.varType
-          });
+          };
         }
         
-        // Analyser les expressions de taille
+        // Analyser les expressions de taille (pour les statiques uniquement)
         if (decl.sizes) {
           for (const size of decl.sizes) {
-            this._analyzeExpr(size);
+            if (size !== null) {
+              this._analyzeExpr(size);
+            }
           }
         }
         continue;
@@ -164,7 +241,7 @@ class SemanticAnalyzer {
         // Ignorer les noms invalides (résidus d'erreurs de parsing)
         if (!isValidVariableName(name)) continue;
 
-        if (this.symbols.has(name)) {
+        if (this.symbolTable.variables[name] || this.symbolTable.constantes[name]) {
           this._addError({
             message: `La variable '${name}' est déjà déclarée`,
             line: decl.line,
@@ -173,11 +250,11 @@ class SemanticAnalyzer {
             hint: `Chaque variable ne peut être déclaré qu'une seule fois dans le bloc VARIABLES.`,
           });
         } else {
-          this.symbols.set(name, {
+          this.symbolTable.variables[name] = {
             type: decl.varType,
             line: decl.line,
             initialized: false, // sera mis à true lors de l'affectation ou LIRE
-          });
+          };
         }
       }
     }
@@ -209,63 +286,96 @@ class SemanticAnalyzer {
       case NodeType.INPUT:        return this._analyzeInput(node);
       case NodeType.VAR_DECL:     return this._processDeclarations([node]);
       case NodeType.ARRAY_DECL:   return this._processDeclarations([node]);
+      case NodeType.ARRAY_ALLOCATION: return this._analyzeArrayAllocation(node);
       case NodeType.SWITCH:       return this._analyzeSwitch(node);
-      default: break;
+      default:
+        return null;
     }
   }
 
-  // ── Affectation ───────────────────────────────────────────────────────────────
+  _getTargetType(node) {
+    if (!node) return null;
+    if (node.type === NodeType.IDENTIFIER) {
+      const entry = this.symbolTable.variables[node.name] || this.symbolTable.constantes[node.name];
+      return entry ? entry.type : null;
+    }
+    if (node.type === NodeType.ARRAY_ACCESS) {
+      const entry = this.symbolTable.variables[node.name] || this.symbolTable.constantes[node.name];
+      return entry ? entry.baseType : null;
+    }
+    if (node.type === NodeType.MEMBER_ACCESS) {
+       const baseType = this._getTargetType(node.object);
+       if (!baseType) return null;
+       const cType = this.symbolTable.customTypes[baseType];
+       return cType && cType.fields ? cType.fields[node.property] : null;
+    }
+    return null;
+  }
+
+  // ── Ajout d'erreurs ───────────────────────────────────────────────────────────────
 
   _analyzeAssign(node) {
-    const name = node.name;
-
-    // Ignorer les nœuds parasites (résidus d'erreurs de parsing)
-    if (!isValidVariableName(name)) {
-      if (node.value) this._analyzeExpr(node.value);
-      return;
+    const target = node.target; // IdentifierNode, ArrayAccessNode, or MemberAccessNode
+    
+    // Si c'est un noeud basique (AssignNode sans target mais avec name pour compat)
+    if (!target) {
+       // fallback ancien code
+       const name = node.name;
+       if (!isValidVariableName(name)) {
+         if (node.value) this._analyzeExpr(node.value);
+         return;
+       }
+       const entry = this.symbolTable.variables[name] || this.symbolTable.constantes[name];
+       if (!entry) {
+         this._addError({
+           message: `Identifiant '${name}' non déclaré`,
+           line: node.line,
+           column: node.column,
+           value: name,
+           hint: `Déclarez '${name}' dans le bloc VARIABLE(S) avant DEBUT : ${name} : ENTIER;`,
+         });
+       } else if (entry.immutable) {
+         this._addError({
+           message: `Impossible de modifier la constante '${name}'`,
+           line: node.line,
+           column: node.column,
+           value: name,
+         });
+       } else if (entry.isArray) {
+         this._addError({
+           message: `Affectation invalide : le tableau '${name}' ne peut pas être utilisé sans indice`,
+           line: node.line,
+           column: node.column,
+           value: name,
+         });
+       } else {
+         entry.initialized = true;
+         if (node.value) {
+            this._analyzeExpr(node.value);
+            const inferredType = this._inferExprType(node.value);
+            if (inferredType && !this._isTypeCompatible(entry.type, inferredType)) {
+               this._addError({
+                 message: `Type incompatible : impossible d'affecter une valeur de type ${inferredType.toUpperCase()} à '${name}' déclaré comme ${entry.type.toUpperCase()}`,
+                 line: node.line,
+                 column: node.column,
+                 value: name,
+               });
+            }
+         }
+       }
+       return;
     }
 
-    const entry = this.symbols.get(name);
-
-    if (!entry) {
-      this._addError({
-        message: `La variable '${name}' n'est pas déclarée`,
-        line: node.line,
-        column: node.column,
-        value: name,
-        hint: `Déclarez '${name}' dans le bloc VARIABLES avant DEBUT : ${name} : ENTIER;`,
-      });
-    } else if (entry.isArray) {
-      // ── NOUVEAU : Tableau utilisé sans indice à gauche d'une affectation ──
-      // Ex: T <- 3;   → interdit
-      // Ex: T[0] <- 3; → valide (traité par _analyzeArrayAssign)
-      this._addError({
-        message: `Affectation invalide : le tableau '${name}' ne peut pas être utilisé sans indice`,
-        line: node.line,
-        column: node.column,
-        value: name,
-        hint: `Utilisez un indice pour accéder à un élément : ${name}[i] <- valeur;`,
-      });
-      // Analyser quand même l'expression de droite pour détecter d'autres erreurs
-      if (node.value) this._analyzeExpr(node.value);
-    } else {
-      // Variable simple : affectation normale
-      // Marquer comme initialisée
-      entry.initialized = true;
-
-      // Vérification de compatibilité de type (si on peut inférer)
-      if (node.value) {
-        this._analyzeExpr(node.value);
-        const inferredType = this._inferExprType(node.value);
-        if (inferredType && !this._isTypeCompatible(entry.type, inferredType)) {
-          this._addError({
-            message: `Type incompatible : impossible d'affecter une valeur de type ${inferredType.toUpperCase()} à la variable '${name}' déclarée comme ${entry.type.toUpperCase()}`,
-            line: node.line,
-            column: node.column,
-            value: name,
-            hint: `La variable '${name}' est de type ${entry.type.toUpperCase()}. Vérifiez que l'expression est du bon type.`,
-          });
-        }
+    const type = this._analyzeTarget(target, true, false);
+    if (node.value) {
+      this._analyzeExpr(node.value);
+      const inferredType = this._inferExprType(node.value);
+      if (type && inferredType && !this._isTypeCompatible(type, inferredType)) {
+        this._addError({
+          message: `Type incompatible : impossible d'affecter une valeur de type ${inferredType.toUpperCase()} à la cible de type ${type.toUpperCase()}`,
+          line: node.line,
+          column: node.column,
+        });
       }
     }
   }
@@ -278,11 +388,11 @@ class SemanticAnalyzer {
       return;
     }
 
-    const entry = this.symbols.get(name);
+    const entry = this.symbolTable.variables[name] || this.symbolTable.constantes[name];
 
     if (!entry) {
       this._addError({
-        message: `Le tableau '${name}' n'est pas déclaré`,
+        message: `Identifiant '${name}' non déclaré`,
         line: node.line,
         column: node.column,
         value: name,
@@ -295,6 +405,14 @@ class SemanticAnalyzer {
         column: node.column,
         value: name,
         hint: `'${name}' a été déclaré comme une variable simple, pas comme un tableau.`,
+      });
+    } else if (!entry.isAllocated) {
+      this._addError({
+        message: `tableau '${name}' non alloué`,
+        line: node.line,
+        column: node.column,
+        value: name,
+        hint: `Ce tableau a été déclaré vide. Vous devez lui définir une taille avec 'Tableau ${name}[...];' avant de l'utiliser.`,
       });
     }
 
@@ -334,6 +452,76 @@ class SemanticAnalyzer {
             line: node.value.line,
             column: node.value.column,
             hint: `Le tableau '${name}' contient des éléments de type ${entry.baseType.toUpperCase()}.`,
+          });
+        }
+      }
+    }
+  }
+
+  // ── Allocation de taille Tableau (après DEBUT) ────────────────────────────────
+
+  _analyzeArrayAllocation(node) {
+    const name = node.name;
+    if (!isValidVariableName(name)) {
+      if (node.sizes) node.sizes.forEach(sz => this._analyzeExpr(sz));
+      return;
+    }
+
+    const entry = this.symbolTable.variables[name] || this.symbolTable.constantes[name];
+
+    if (!entry) {
+      this._addError({
+        message: `tableau non déclaré`,
+        line: node.line,
+        column: node.column,
+        value: name,
+        hint: `Le tableau '${name}' doit d'abord être déclaré dans le bloc VARIABLES.`,
+      });
+    } else if (!entry.isArray) {
+      this._addError({
+        message: `'${name}' n'est pas un tableau`,
+        line: node.line,
+        column: node.column,
+        value: name,
+        hint: `'${name}' a été déclaré comme une variable simple.`,
+      });
+    } else if (!entry.isDynamicPlaceholder) {
+      this._addError({
+        message: `tableau déjà dimensionné`,
+        line: node.line,
+        column: node.column,
+        value: name,
+        hint: `La taille du tableau '${name}' a déjà été définie lors de sa déclaration statique.`,
+      });
+    } else if (entry.isAllocated) {
+      this._addError({
+        message: `tableau déjà dimensionné`,
+        line: node.line,
+        column: node.column,
+        value: name,
+        hint: `Le tableau '${name}' a déjà été alloué précédemment. Il ne peut pas être réalloué.`,
+      });
+    } else {
+      if (entry.dimensions !== node.sizes.length) {
+        this._addError({
+          message: `Le tableau '${name}' a été déclaré avec ${entry.dimensions} dimension(s), mais vous allouez ${node.sizes.length} dimension(s)`,
+          line: node.line,
+          column: node.column,
+          hint: `Respectez la dimensionnalité (ex 1D: [], ex 2D: [,]).`,
+        });
+      }
+      entry.isAllocated = true; // Mark as allocated for subsequent usage
+    }
+
+    if (node.sizes) {
+      for (const sz of node.sizes) {
+        this._analyzeExpr(sz);
+        const indexType = this._inferExprType(sz);
+        if (indexType && indexType !== 'entier') {
+          this._addError({
+            message: `Une taille de tableau doit être un entier (trouvé: ${indexType.toUpperCase()})`,
+            line: sz.line,
+            column: sz.column,
           });
         }
       }
@@ -398,17 +586,25 @@ class SemanticAnalyzer {
     }
 
     // La variable de boucle doit être déclarée (ou sera créée implicitement)
-    if (!this.symbols.has(varName)) {
+    const entry = this.symbolTable.variables[varName] || this.symbolTable.constantes[varName];
+    if (!entry) {
       this._addError({
-        message: `La variable de boucle '${varName}' n'est pas déclarée`,
+        message: `Identifiant '${varName}' non déclaré`,
         line: node.line,
         column: node.column,
         value: varName,
         hint: `Déclarez '${varName}' dans le bloc VARIABLES : ${varName} : ENTIER;`,
       });
+    } else if (entry.immutable) {
+      this._addError({
+        message: `Impossible de modifier la constante '${varName}'`,
+        line: node.line,
+        column: node.column,
+        value: varName,
+      });
     } else {
       // Marquer comme initialisée (la boucle POUR l'initialise)
-      this.symbols.get(varName).initialized = true;
+      entry.initialized = true;
     }
 
     this._analyzeExpr(node.from);
@@ -455,37 +651,40 @@ class SemanticAnalyzer {
    * On l'ignore silencieusement pour éviter les fausses erreurs en cascade.
    */
   _analyzeInput(node) {
-    // Cas : LIRE(T[i]) - node.variable peut être un nom (string) ou un ArrayAccessNode (objet avec .name)
-    // Selon la structure de InputNode du parser : LIRE(...) prend souvent un identifiant
-    // Si on veut supporter LIRE(T[i]), le parser doit produire un InputNode avec soit .variable (string) soit .arrayAccess (node)
-    
-    // Pour l'instant, regardons si c'est un identifiant simple ou un accès tableau
     const target = node.variable; 
     
-    // Si target est un objet (ArrayAccessNode)
-    if (target && typeof target === 'object' && target.type === NodeType.ARRAY_ACCESS) {
-      this._analyzeExpr(target);
-      return;
+    // Si target est un noeud complexe géré par _analyzeTarget
+    if (target && typeof target === 'object') {
+       if (target.type === NodeType.ARRAY_ACCESS || target.type === NodeType.IDENTIFIER || target.type === NodeType.MEMBER_ACCESS) {
+          this._analyzeTarget(target, true, false);
+          return;
+       }
     }
 
     const name = typeof target === 'string' ? target : target?.name;
 
-    // Ignorer les résidus d'erreurs de parsing ('?' = variable non reconnue par le parser)
     if (!name || !isValidVariableName(name)) {
-      return; // Pas d'erreur cascadée
+      return; 
     }
 
-    if (!this.symbols.has(name)) {
+    const entry = this.symbolTable.variables[name] || this.symbolTable.constantes[name];
+    if (!entry) {
       this._addError({
-        message: `La variable '${name}' n'est pas déclarée`,
+        message: `Identifiant '${name}' non déclaré`,
         line: node.line,
         column: node.column,
         value: name,
         hint: `Déclarez '${name}' dans le bloc VARIABLES avant DEBUT.`,
       });
+    } else if (entry.immutable) {
+      this._addError({
+        message: `Impossible de modifier la constante '${name}' avec LIRE`,
+        line: node.line,
+        column: node.column,
+        value: name,
+      });
     } else {
-      // LIRE initialise la variable (ou tableau)
-      this.symbols.get(name).initialized = true;
+      entry.initialized = true;
     }
   }
 
@@ -501,81 +700,12 @@ class SemanticAnalyzer {
     if (!node) return;
 
     switch (node.type) {
-      case NodeType.IDENTIFIER: {
-        const name = node.name;
-        // Ignorer les identifiants parasites (résidus d'erreurs de parsing)
-        if (!isValidVariableName(name)) break;
-
-        if (!this.symbols.has(name)) {
-          this._addError({
-            message: `La variable '${name}' n'est pas déclarée`,
-            line: node.line,
-            column: node.column,
-            value: name,
-            hint: `Déclarez '${name}' dans le bloc VARIABLES avant DEBUT : ${name} : ENTIER;`,
-          });
-        } else if (!this.symbols.get(name).initialized && !inPrintContext) {
-          this._addError({
-            message: `La variable '${name}' est utilisée avant d'avoir reçu une valeur`,
-            line: node.line,
-            column: node.column,
-            value: name,
-            hint: `Initialisez '${name}' avec une affectation ou LIRE avant de l'utiliser.`,
-          });
-        }
+      case NodeType.IDENTIFIER:
+      case NodeType.ARRAY_ACCESS:
+      case NodeType.MEMBER_ACCESS: {
+        this._analyzeTarget(node, false, inPrintContext);
         break;
       }
-
-      case NodeType.ARRAY_ACCESS: {
-        const name = node.name;
-        if (!isValidVariableName(name)) break;
-
-        const entry = this.symbols.get(name);
-        if (!entry) {
-          this._addError({
-            message: `Le tableau '${name}' n'est pas déclaré`,
-            line: node.line,
-            column: node.column,
-            value: name,
-            hint: `Déclarez '${name}' comme tableau avant de l'utiliser : Tableau ${name}[10] : ENTIER;`,
-          });
-        } else if (!entry.isArray) {
-          this._addError({
-            message: `'${name}' n'est pas un tableau`,
-            line: node.line,
-            column: node.column,
-            value: name,
-            hint: `'${name}' a été déclaré comme une variable simple, utilisez '${name}' sans crochets.`,
-          });
-        }
-
-        // Analyser les indices
-        if (node.indices) {
-          if (entry && entry.isArray && entry.dimensions !== node.indices.length) {
-            this._addError({
-              message: `Le tableau '${name}' nécessite ${entry.dimensions} indice(s) (utilisé: ${node.indices.length})`,
-              line: node.line,
-              column: node.column,
-              hint: `Le tableau a été déclaré avec ${entry.dimensions} dimension(s).`,
-            });
-          }
-
-          for (const idx of node.indices) {
-            this._analyzeExpr(idx);
-            const idxType = this._inferExprType(idx);
-            if (idxType && idxType !== 'entier') {
-              this._addError({
-                message: `L'indice du tableau doit être un entier (trouvé: ${idxType.toUpperCase()})`,
-                line: idx.line,
-                column: idx.column,
-                hint: `Utilisez un nombre entier ou une variable de type ENTIER comme indice.`,
-              });
-            }
-          }
-        }
-        break;
-      }
-
       case NodeType.BINARY_OP:
         this._analyzeExpr(node.left, inPrintContext);
         this._analyzeExpr(node.right, inPrintContext);
@@ -595,6 +725,93 @@ class SemanticAnalyzer {
       default:
         break;
     }
+  }
+
+  _analyzeTarget(node, isAssignment = false, inPrintContext = false) {
+    if (!node) return null;
+
+    if (node.type === NodeType.IDENTIFIER) {
+      const name = node.name;
+      if (!isValidVariableName(name)) return null;
+
+      const entry = this.symbolTable.variables[name] || this.symbolTable.constantes[name];
+      if (!entry) {
+        this._addError({
+          message: `Identifiant '${name}' non déclaré`,
+          line: node.line,
+          column: node.column,
+          value: name,
+        });
+        return null;
+      }
+      if (isAssignment) {
+        if (entry.immutable) {
+          this._addError({ message: `Impossible de modifier la constante '${name}'`, line: node.line, column: node.column });
+          return null;
+        }
+        if (entry.isArray) {
+          this._addError({ message: `Affectation invalide : le tableau '${name}' ne peut pas être modifié sans indice`, line: node.line, column: node.column });
+          return null;
+        }
+        entry.initialized = true;
+      } else {
+        if (!entry.immutable && !entry.initialized && !inPrintContext) {
+           this._addError({ message: `La variable '${name}' est utilisée avant d'avoir reçu une valeur`, line: node.line, column: node.column });
+        }
+      }
+      return entry.type;
+    }
+
+    if (node.type === NodeType.ARRAY_ACCESS) {
+      const name = node.name;
+      if (!isValidVariableName(name)) return null;
+      const entry = this.symbolTable.variables[name] || this.symbolTable.constantes[name];
+      if (!entry) {
+         this._addError({ message: `Identifiant '${name}' non déclaré`, line: node.line, column: node.column });
+         return null;
+      }
+      if (!entry.isArray) {
+         this._addError({ message: `'${name}' n'est pas un tableau`, line: node.line, column: node.column });
+         return null;
+      }
+      if (!entry.isAllocated) {
+         this._addError({ message: `Le tableau '${name}' est non alloué`, line: node.line, column: node.column });
+         return null;
+      }
+      if (node.indices) {
+         if (entry.dimensions !== node.indices.length) {
+            this._addError({ message: `Le tableau nécessite ${entry.dimensions} indices (utilisé: ${node.indices.length})`, line: node.line, column: node.column });
+         }
+         for(const idx of node.indices) {
+            this._analyzeExpr(idx);
+            const t = this._inferExprType(idx);
+            if (t && t !== 'entier') this._addError({ message: `L'indice doit être entier`, line: idx.line, column: idx.column });
+         }
+      }
+      if (isAssignment) {
+         if (entry.immutable) { this._addError({ message: `Impossible de modifier la constante '${name}'`, line: node.line, column: node.column }); return null;}
+         entry.initialized = true;
+      }
+      return entry.baseType;
+    }
+
+    if (node.type === NodeType.MEMBER_ACCESS) {
+       const baseType = this._analyzeTarget(node.object, isAssignment, inPrintContext);
+       if (!baseType) return null;
+       const customType = this.symbolTable.customTypes[baseType];
+       if (!customType) {
+          this._addError({ message: `Le type '${baseType.toUpperCase()}' n'est pas un enregistrement, accès à '${node.property}' impossible`, line: node.line, column: node.column });
+          return null;
+       }
+       const fieldType = customType.fields[node.property];
+       if (!fieldType) {
+          this._addError({ message: `Le champ '${node.property}' n'existe pas dans le type '${baseType}'`, line: node.line, column: node.column });
+          return null;
+       }
+       return fieldType;
+    }
+
+    return null;
   }
 
   // ── Inférence de type d'une expression ───────────────────────────────────────
@@ -617,14 +834,10 @@ class SemanticAnalyzer {
         return 'caractere';
       case NodeType.BOOLEAN:
         return 'booleen';
-      case NodeType.IDENTIFIER: {
-        const entry = this.symbols.get(node.name);
-        return entry ? entry.type : null;
-      }
-      case NodeType.ARRAY_ACCESS: {
-        const entry = this.symbols.get(node.name);
-        return (entry && entry.isArray) ? entry.baseType : null;
-      }
+      case NodeType.IDENTIFIER:
+      case NodeType.ARRAY_ACCESS:
+      case NodeType.MEMBER_ACCESS:
+        return this._getTargetType(node);
       case NodeType.UNARY_OP:
         if (node.operator === 'NON') return 'booleen';
         if (node.operator === '-') return this._inferExprType(node.operand);

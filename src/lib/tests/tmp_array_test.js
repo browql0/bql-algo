@@ -1,6 +1,6 @@
-import Lexer            from './src/lib/lexer/Lexer.js';
-import Parser           from './src/lib/parser/Parser.js';
-import SemanticAnalyzer from './src/lib/semantic/SemanticAnalyzer.js';
+import Lexer            from '../lexer/Lexer.js';
+import Parser           from '../parser/Parser.js';
+import SemanticAnalyzer from '../semantic/SemanticAnalyzer.js';
 
 function check(label, code, expectErrors = true) {
   const { tokens } = new Lexer(code).tokenize();

@@ -18,6 +18,10 @@ export const NodeType = Object.freeze({
   BLOCK:       'BLOCK',
   VAR_DECL:    'VAR_DECL',
   ARRAY_DECL:  'ARRAY_DECL',
+  ARRAY_ALLOCATION: 'ARRAY_ALLOCATION',
+  CONST_DECL:  'CONST_DECL',
+  TYPE_DECL:   'TYPE_DECL',
+  RECORD_FIELD:'RECORD_FIELD',
 
   // Littéraux
   NUMBER:      'NUMBER',
@@ -28,6 +32,7 @@ export const NodeType = Object.freeze({
   // Références
   IDENTIFIER:  'IDENTIFIER',
   ARRAY_ACCESS:'ARRAY_ACCESS',
+  MEMBER_ACCESS:'MEMBER_ACCESS',
 
   // Opérations
   BINARY_OP:   'BINARY_OP',
@@ -59,18 +64,22 @@ function pos(token) {
 
 /**
  * Racine du programme.
- * ALGORITHME nom ; VARIABLE(S): ... DEBUT ... FIN
+ * ALGORITHME nom ; CONSTANTE(S)... VARIABLE(S): ... DEBUT ... FIN
  */
 export class ProgramNode {
   /**
-   * @param {string}      name         - Nom de l'algorithme
+   * @param {string}        name         - Nom de l'algorithme
+   * @param {ConstDeclNode[]} constants  - Déclarations de constantes
+   * @param {TypeDeclarationNode[]} customTypes - Déclarations de types
    * @param {VarDeclNode[]} declarations - Déclarations de variables
-   * @param {BlockNode}   body         - Corps DEBUT…FIN
-   * @param {object}      token        - Token ALGORITHME (pour position)
+   * @param {BlockNode}     body         - Corps DEBUT…FIN
+   * @param {object}        token        - Token ALGORITHME (pour position)
    */
-  constructor(name, declarations, body, token) {
+  constructor(name, constants, customTypes, declarations, body, token) {
     this.type         = NodeType.PROGRAM;
     this.name         = name;
+    this.constants    = constants;
+    this.customTypes  = customTypes;
     this.declarations = declarations;
     this.body         = body;
     this.line         = token?.line   ?? 0;
@@ -112,8 +121,62 @@ export class ArrayDeclNode {
   constructor(name, sizes, varType, token) {
     this.type    = NodeType.ARRAY_DECL;
     this.name    = name;
-    this.sizes   = sizes;    // ExpressionNode[] (tailles du tableau)
+    this.sizes   = sizes;    // ExpressionNode[] (tailles du tableau, array vide si non-spécifié)
     this.varType = varType;  // string type
+    Object.assign(this, pos(token));
+  }
+}
+
+export class ArrayAllocationNode {
+  constructor(name, sizes, token) {
+    this.type  = NodeType.ARRAY_ALLOCATION;
+    this.name  = name;       // string (nom du tableau)
+    this.sizes = sizes;      // ExpressionNode[] (tailles)
+    Object.assign(this, pos(token));
+  }
+}
+
+/**
+ * Déclaration d'une constante typée.
+ * CONSTANTE(S)
+ *   NomConstante = Valeur : TYPE;
+ */
+export class ConstDeclNode {
+  /**
+   * @param {string}  name      - Nom de la constante
+   * @param {*}       value     - Valeur AST (nœud expression évalué statiquement)
+   * @param {string}  constType - Type : 'entier' | 'reel' | 'chaine' | 'booleen'
+   * @param {object}  token     - Token de référence (position)
+   */
+  constructor(name, value, constType, token) {
+    this.type      = NodeType.CONST_DECL;
+    this.name      = name;
+    this.value     = value;
+    this.constType = constType;
+    Object.assign(this, pos(token));
+  }
+}
+
+/**
+ * Déclaration d'un type structuré (Enregistrement).
+ * Type NomType = Enregistrement
+ *    champ1 : type1;
+ * Fin NomType
+ */
+export class TypeDeclarationNode {
+  constructor(name, fields, token) {
+    this.type   = NodeType.TYPE_DECL;
+    this.name   = name;
+    this.fields = fields; // RecordFieldNode[]
+    Object.assign(this, pos(token));
+  }
+}
+
+export class RecordFieldNode {
+  constructor(name, varType, token) {
+    this.type    = NodeType.RECORD_FIELD;
+    this.name    = name;
+    this.varType = varType;
     Object.assign(this, pos(token));
   }
 }
@@ -181,6 +244,16 @@ export class ArrayAccessNode {
   }
 }
 
+/** Accès à un membre (champ) d'un enregistrement. ex: e.nom, groupe[i].moyenne */
+export class MemberAccessNode {
+  constructor(object, property, token) {
+    this.type     = NodeType.MEMBER_ACCESS;
+    this.object   = object;   // ExpressionNode (e.g. IdentifierNode, ArrayAccessNode, MemberAccessNode)
+    this.property = property; // string (le nom du champ accédé)
+    Object.assign(this, pos(token));
+  }
+}
+
 /**
  * Opération binaire.
  * left OP right — ex: a + b, x >= 10, a ET b
@@ -218,12 +291,13 @@ export class UnaryOpNode {
 // Nœuds d'instruction
 // ═══════════════════════════════════════════════════════════════════════════════
 
-/** Affectation : name <- value */
+/** Affectation : name <- value ou e1.nom <- value */
 export class AssignNode {
-  constructor(name, value, token) {
-    this.type  = NodeType.ASSIGN;
-    this.name  = name;  // string (nom de variable)
-    this.value = value; // nœud expression
+  constructor(target, value, token) {
+    this.type   = NodeType.ASSIGN;
+    this.target = target; // IdentifierNode ou MemberAccessNode
+    this.name   = target?.name || null; // Rétrocompatibilité pour les cas simples
+    this.value  = value; // nœud expression
     Object.assign(this, pos(token));
   }
 }

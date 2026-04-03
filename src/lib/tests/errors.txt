@@ -1,0 +1,21 @@
+[L16:21] Instruction invalide
+[L18:5] Instruction ou mot-clé inattendu : "SINON"
+[L20:5] Instruction ou mot-clé inattendu : "FINSI"
+[L22:34] Instruction invalide
+[L24:5] Instruction ou mot-clé inattendu : "FINPOUR"
+[L26:37] Instruction invalide
+[L27:43] Instruction invalide
+[L29:9] Instruction ou mot-clé inattendu : "FINPOUR"
+[L30:5] Instruction ou mot-clé inattendu : "FINPOUR"
+[L37:34] Instruction invalide
+[L40:25] Instruction invalide
+[L42:9] Instruction ou mot-clé inattendu : "SINON SI"
+[L44:9] Instruction ou mot-clé inattendu : "SINON"
+[L46:9] Instruction ou mot-clé inattendu : "FINSI"
+[L51:13] Instruction ou mot-clé inattendu : "CAS"
+[L53:13] Instruction ou mot-clé inattendu : "AUTRE"
+[L55:9] Instruction ou mot-clé inattendu : "FINSELON"
+[L56:5] Instruction ou mot-clé inattendu : "FINPOUR"
+[L58:37] Instruction invalide
+[L59:43] Instruction invalide
+[L60:13] Limite de 20 erreurs atteinte — analyse stoppée

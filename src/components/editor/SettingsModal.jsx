@@ -454,6 +454,14 @@ const SettingsModal = ({ isOpen, onClose, settings, onSave, defaultSettings }) =
 
             <div className="setting-row">
               <div className="setting-info">
+                <label>Afficher le nom de la variable (LIRE)</label>
+                <span className="setting-desc">Affiche "variable : valeur" au lieu de seulement "valeur" (Mode pédagogique).</span>
+              </div>
+              <ToggleSwitch checked={localSettings.showFieldNames} onChange={(v) => update('showFieldNames', v)} />
+            </div>
+
+            <div className="setting-row">
+              <div className="setting-info">
                 <label>Vider le terminal au lancement</label>
                 <span className="setting-desc">Prévient la saturation en nettoyant l'écran à chaque execution.</span>
               </div>

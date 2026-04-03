@@ -6,7 +6,7 @@
  */
 
 export const KEYWORDS = [
-  'ALGORITHME', 'VARIABLES:', 'DEBUT', 'FIN', 
+  'ALGORITHME', 'VARIABLES', 'VARIABLE', 'CONSTANTES', 'CONSTANTE', 'DEBUT', 'FIN', 
   'ECRIRE', 'LIRE', 
   'SI', 'ALORS', 'SINON', 'FINSI',
   'POUR', 'ALLANT', 'DE', 'A', 'PAS', 'FINPOUR',
@@ -70,10 +70,24 @@ export const SNIPPETS = [
     cursorOffset: -1,
   },
   {
+    label: 'CONSTANTE (section)',
+    detail: 'Déclarer une seule constante',
+    type: 'snippet',
+    insertText: 'CONSTANTE\n    = : ;',
+    cursorOffset: -8,
+  },
+  {
+    label: 'CONSTANTES (section)',
+    detail: 'Déclarer plusieurs constantes',
+    type: 'snippet',
+    insertText: 'CONSTANTES\n     = 3.14 : REEL;\n     = 100 : ENTIER;',
+    cursorOffset: -40,
+  },
+  {
     label: 'ALGORITHME (Structure)',
     detail: 'Structure de base d\'un algorithme',
     type: 'snippet',
-    insertText: 'ALGORITHME_BQL;\nVARIABLES:\n  \nDEBUT\n  \nFIN',
+    insertText: 'ALGORITHME_BQL;\nCONSTANTES\n    \nVARIABLES\n    \nDEBUT\n    \nFIN',
     cursorOffset: -13,
   },
   {

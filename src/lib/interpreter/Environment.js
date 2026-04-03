@@ -32,9 +32,56 @@ class Environment {
     this.parent    = parent;
     /** @type {Map<string, {type: string, value: *}>} */
     this.variables = new Map();
+    this.constantes = new Map();
+    this.customTypes = new Map();
+  }
+
+  // ── Types structurés ──────────────────────────────────────────────────────────
+
+  /**
+   * Déclare un type structuré (enregistrement)
+   * @param {string} name
+   * @param {Object} fields - { champ1: 'entier', champ2: 'chaine' }
+   */
+  declareCustomType(name, fields) {
+    this.customTypes.set(name, fields);
+  }
+
+  /**
+   * Récupère la valeur par défaut pour un type
+   */
+  getDefaultValue(type, line) {
+    if (type.endsWith('[]')) return [];
+    if (DEFAULT_VALUES.hasOwnProperty(type)) return DEFAULT_VALUES[type];
+    
+    // Si c'est un type structuré, on instancie un objet contenant chaque champ
+    const customTypeStr = this.customTypes.get(type);
+    if (!customTypeStr && this.parent) {
+       return this.parent.getDefaultValue(type, line);
+    }
+    if (customTypeStr) {
+      const obj = {};
+      for (const [fName, fType] of Object.entries(customTypeStr)) {
+        obj[fName] = this.getDefaultValue(fType, line);
+      }
+      return obj;
+    }
+    
+    throw new AlgoRuntimeError({ message: `Type inconnu : '${type}'`, line });
   }
 
   // ── Déclaration ─────────────────────────────────────────────────────────────
+
+  /**
+   * Déclare une nouvelle constante dans cette portée.
+   * @param {string} name
+   * @param {string} type
+   * @param {*} value
+   * @param {number} [line]
+   */
+  declareConst(name, type, value, line) {
+    this.constantes.set(name, { type, value, immutable: true });
+  }
 
   /**
    * Déclare une nouvelle variable dans cette portée.
@@ -47,13 +94,12 @@ class Environment {
     const isArray = type.endsWith('[]');
     const baseType = isArray ? type.slice(0, -2) : type;
 
-    if (!DEFAULT_VALUES.hasOwnProperty(baseType)) {
-      throw new AlgoRuntimeError({ message: `Type inconnu : '${type}'`, line });
-    }
+    // S'assurer que le type existe (natif ou custom)
+    const defaultValue = isArray ? [] : this.getDefaultValue(type, line);
     
     this.variables.set(name, { 
       type, 
-      value: isArray ? [] : DEFAULT_VALUES[type] 
+      value: defaultValue 
     });
   }
 
@@ -69,12 +115,13 @@ class Environment {
     const env = this._resolve(name);
     if (!env) {
       throw new AlgoRuntimeError({
-        message: `La variable '${name}' n'a pas été définie avant utilisation`,
+        message: `Identifiant '${name}' non déclaré`,
         value: name,
-        hint: `Déclarez la variable avant DEBUT : VARIABLE: ${name} : entier`,
+        hint: `Déclarez '${name}' avant de l'utiliser.`,
         line
       });
     }
+    if (env.constantes.has(name)) return env.constantes.get(name).value;
     return env.variables.get(name).value;
   }
 
@@ -87,12 +134,13 @@ class Environment {
     const env = this._resolve(name);
     if (!env) {
       throw new AlgoRuntimeError({
-        message: `La variable '${name}' n'a pas été définie avant utilisation`,
+        message: `Identifiant '${name}' non déclaré`,
         value: name,
-        hint: `Déclarez la variable avant DEBUT : VARIABLE: ${name} : entier`,
+        hint: `Déclarez '${name}' avant de l'utiliser.`,
         line
       });
     }
+    if (env.constantes.has(name)) return env.constantes.get(name);
     return env.variables.get(name);
   }
 
@@ -109,9 +157,16 @@ class Environment {
     const env = this._resolve(name);
     if (!env) {
       throw new AlgoRuntimeError({
-        message: `La variable '${name}' n'a pas été définie avant utilisation`,
+        message: `Identifiant '${name}' non déclaré`,
         value: name,
-        hint: `Déclarez la variable avant DEBUT : VARIABLE: ${name} : entier`,
+        hint: `Déclarez '${name}' avant de l'utiliser.`,
+        line
+      });
+    }
+    if (env.constantes.has(name)) {
+      throw new AlgoRuntimeError({
+        message: `Impossible de modifier la constante '${name}'`,
+        value: name,
         line
       });
     }
@@ -141,7 +196,7 @@ class Environment {
 
   /** Cherche l'environment qui contient `name`. */
   _resolve(name) {
-    if (this.variables.has(name)) return this;
+    if (this.variables.has(name) || this.constantes.has(name)) return this;
     if (this.parent) return this.parent._resolve(name);
     return null;
   }
@@ -153,6 +208,9 @@ class Environment {
   getAllVariables() {
     const all = this.parent ? this.parent.getAllVariables() : {};
     for (const [name, entry] of this.variables) {
+      all[name] = { ...entry }; // Copie superficielle
+    }
+    for (const [name, entry] of this.constantes) {
       all[name] = { ...entry }; // Copie superficielle
     }
     return all;

@@ -12,16 +12,17 @@
  *
  * Structure stricte imposée :
  *   ALGORITHME nom ;
- *   VARIABLES:
+ *   VARIABLES
  *     nom : type ;
  *     ...
  *   DEBUT
+ * 
  *     instructions (chacune terminée par ;)
  *   FIN
  *
  * Règles de validation :
  *  - Présence ALGORITHME + nom + ;
- *  - Bloc VARIABLES: optionnel mais strictement validé si présent
+ *  - Bloc VARIABLES optionnel mais strictement validé si présent (le ':' après VARIABLES est INTERDIT)
  *  - DEBUT obligatoire avant le corps
  *  - FIN obligatoire en fin de programme
  *  - ; obligatoire après chaque instruction
@@ -32,12 +33,12 @@
 
 import TokenType from '../lexer/tokenTypes.js';
 import {
-  ProgramNode, BlockNode, VarDeclNode, ArrayDeclNode,
+  ProgramNode, BlockNode, VarDeclNode, ArrayDeclNode, ConstDeclNode,
   NumberNode, StringNode, CharNode, BooleanNode, IdentifierNode,
-  ArrayAccessNode,
-  BinaryOpNode, UnaryOpNode,
+  ArrayAccessNode, MemberAccessNode, BinaryOpNode, UnaryOpNode,
+  TypeDeclarationNode, RecordFieldNode,
   AssignNode, ArrayAssignNode, IfNode, WhileNode, ForNode, DoWhileNode,
-  PrintNode, InputNode, SwitchNode, CaseNode,
+  PrintNode, InputNode, SwitchNode, CaseNode, ArrayAllocationNode
 } from './AST/nodes.js';
 import AlgoSyntaxError from '../errors/SyntaxError.js';
 
@@ -335,7 +336,7 @@ class Parser {
    *            ALGORITHME;              ← nom manquant
    */
   _parseProgram() {
-    // ── Vérification fatale : ALGORITHME doit être le 1er token ──────────
+    // ── Vérification fatale : ALGORITHME doit être le 1er token ──────────────────
     if (!this._check(TokenType.ALGORITHME)) {
       throw this._makeError(
         'Le programme doit commencer par le mot-clé ALGORITHME',
@@ -344,17 +345,51 @@ class Parser {
       );
     }
 
-    // ── En-tête strict : ALGORITHMENom; ────────────────────────────────
-    const algoToken = this._current(); // sauvegarde avant avancement
+    // ── En-tête strict : ALGORITHMENom; ──────────────────────────────────
+    const algoToken = this._current();
     const name = this._validateAlgorithmHeader();
 
-    // ── Bloc VARIABLES (optionnel mais strict) ──────────────────────────────
+    // ── Bloc CONSTANTE(S) (optionnel, doit précéder VARIABLE(S)) ─────────────
+    const constants = [];
+    while (
+      this._check(TokenType.CONSTANTE) ||
+      this._check(TokenType.CONSTANTES)
+    ) {
+      constants.push(...this._parseConstantsSection());
+    }
+
+    // ── Bloc TYPES (optionnel) ───────────────────────────────────────────────
+    const customTypes = [];
+    while (this._check(TokenType.TYPE)) {
+      customTypes.push(this._parseTypeDeclaration());
+    }
+
+    // ── Bloc VARIABLE(S) (optionnel mais strict) ──────────────────────
     const declarations = [];
+
+    // Détection d'ordre invalide : VARIABLE(S) trouvé APRES une section qui
+    // ne serait pas encore arrivée — ici on lui permet de tomber naturellement.
     while (
       this._check(TokenType.VARIABLE) ||
       this._check(TokenType.VARIABLES)
     ) {
       declarations.push(...this._parseVariablesSection());
+
+      // Après un bloc VARIABLE(S), si on tombe sur CONSTANTE(S) → erreur d'ordre
+      if (this._check(TokenType.CONSTANTE) || this._check(TokenType.CONSTANTES)) {
+        this._addError(this._makeError(
+          'Les constantes doivent être déclarées avant les variables',
+          this._current(),
+          {
+            hint: 'Déplacez la section CONSTANTE(S) avant VARIABLE(S).',
+            expected: 'VARIABLE ou DEBUT'
+          }
+        ));
+        // Récupération : parser quand même les constantes mal placées
+        while (this._check(TokenType.CONSTANTE) || this._check(TokenType.CONSTANTES)) {
+          constants.push(...this._parseConstantsSection());
+        }
+      }
     }
 
     // ── DEBUT ───────────────────────────────────────────────────────────────
@@ -389,7 +424,7 @@ class Parser {
     }
     this._skipSemicolons();
 
-    return new ProgramNode(name, declarations, body, algoToken);
+    return new ProgramNode(name, constants, customTypes, declarations, body, algoToken);
   }
 
   /** Consomme les tokens résiduels après FIN et signale les erreurs. */
@@ -502,11 +537,320 @@ class Parser {
     return name;
   }
 
-  // ── Déclarations de variables ─────────────────────────────────────────────────
+  // ── Section TYPES ──────────────────────────────────────────────────────
 
   /**
-   * Parse le bloc VARIABLES: decl*
+   * Parse la déclaration d'un enregistrement :
+   * TYPE Nom = ENREGISTREMENT
+   *    champ : TYPE;
+   * FIN Nom
+   */
+  _parseTypeDeclaration() {
+    const typeTok = this._advance(); // consomme TYPE
+    
+    if (!this._check(TokenType.IDENTIFIER)) {
+      this._addError(this._makeError(
+        'Nom du type attendu après le mot-clé TYPE',
+        this._current(),
+        { hint: 'Exemple: TYPE Etudiant = ENREGISTREMENT' }
+      ));
+      this._synchronize(TokenType.FIN);
+      return null;
+    }
+    const nameTok = this._advance(); // consomme le nom
+    const typeName = nameTok.value;
+    
+    if (!this._match(TokenType.EQ)) {
+      this._addError(this._makeError(
+        'Un "=" est attendu après le nom du type',
+        this._current(),
+        { hint: `Exemple: TYPE ${typeName} = ENREGISTREMENT` }
+      ));
+    }
+    
+    if (!this._match(TokenType.ENREGISTREMENT)) {
+      this._addError(this._makeError(
+        'Le mot-clé ENREGISTREMENT est attendu après "="',
+        this._current(),
+        { hint: `Exemple: TYPE ${typeName} = ENREGISTREMENT` }
+      ));
+    }
+    
+    this._skipSemicolons(); // Tolérer un ';' après ENREGISTREMENT bien que non standard
+    
+    const fields = [];
+    
+    while (!this._isAtEnd() && !this._check(TokenType.FIN)) {
+      this._skipSemicolons();
+      if (this._check(TokenType.FIN)) break;
+      
+      if (!this._check(TokenType.IDENTIFIER)) {
+        this._addError(this._makeError(
+          'Nom du champ attendu',
+          this._current(),
+          { hint: 'Exemple: nom : CHAINE;' }
+        ));
+        this._synchronize(TokenType.SEMICOLON, TokenType.FIN);
+        continue;
+      }
+      
+      const fieldTok = this._advance();
+      if (!this._match(TokenType.COLON)) {
+        this._addError(this._makeError(
+          'Un ":" est attendu après le nom du champ',
+          this._current(),
+          { hint: `Exemple: ${fieldTok.value} : ENTIER;` }
+        ));
+      }
+      
+      const varType = this._parseTypeName();
+      fields.push(new RecordFieldNode(fieldTok.value, varType, fieldTok));
+      
+      this._expectSemicolon(`le champ '${fieldTok.value}'`);
+    }
+    
+    if (!this._match(TokenType.FIN)) {
+      this._addError(this._makeError(
+        `Le mot-clé FIN est attendu à la fin de l'enregistrement ${typeName}`,
+        this._current(),
+        { hint: `Exemple: FIN ${typeName}` }
+      ));
+    } else {
+      // Opt: le nom est répété après le FIN (ex: FIN Etudiant)
+      if (this._check(TokenType.IDENTIFIER) && this._current().value === typeName) {
+        this._advance();
+      }
+    }
+    
+    this._skipSemicolons(); // Le point virgule final optionnel
+    return new TypeDeclarationNode(typeName, fields, typeTok);
+  }
+
+  // ── Section CONSTANTE(S) ───────────────────────────────────────────────
+
+  /**
+   * Parse le bloc CONSTANTE decl / CONSTANTES decl+
+   * decl → IDENTIFIER = Valeur : TYPE ;
+   *
+   * Règles strictes :
+   *  - ":" interdit après CONSTANTE(S) (comme pour VARIABLE(S)).
+   *  - Au moins une déclaration obligatoire.
+   *  - CONSTANTE  (singulier) → exactement 1 constante.
+   *  - CONSTANTES (pluriel)  → 2+ constantes.
+   *  - Valeur oblig : NomConst = Valeur : TYPE;
+   *  - « = » est l'opérateur d'affectation des constantes (pas « <- »).
+   *  - Vérification type–valeur (entier compat. avec ENTIER, etc.).
+   *  - Seuls les littéraux (nombre, chaîne, booléen) sont autorisés.
+   *
+   * @returns {ConstDeclNode[]}
+   */
+  _parseConstantsSection() {
+    const keyword      = this._advance(); // CONSTANTE or CONSTANTES
+    const keywordValue = keyword.value;   // "CONSTANTES" | "CONSTANTE"
+    const isPlural     = keyword.type === TokenType.CONSTANTES;
+
+    // ':' STRICTEMENT INTERDIT après CONSTANTE(S)
+    if (this._check(TokenType.COLON)) {
+      this._addError(this._makeError(
+        `Le caractère ':' est interdit après ${keywordValue}`,
+        this._current(),
+        {
+          hint: `Supprimez le ':' : écrivez simplement "${keywordValue}" suivi des constantes sur les lignes suivantes.`,
+          expected: 'déclaration de constante'
+        }
+      ));
+      this._advance(); // consommer et récupérer
+    }
+    this._skipSemicolons();
+
+    const consts = [];
+
+    // Parser toutes les déclarations jusqu'à DEBUT / FIN / VARIABLE(S) / CONSTANTE(S) / EOF
+    while (!this._isAtEnd()) {
+      this._skipSemicolons();
+
+      if (
+        this._check(TokenType.DEBUT)     ||
+        this._check(TokenType.FIN)       ||
+        this._check(TokenType.VARIABLES) ||
+        this._check(TokenType.VARIABLE)  ||
+        this._check(TokenType.CONSTANTES)||
+        this._check(TokenType.CONSTANTE)
+      ) break;
+
+      if (this._isAtEnd()) break;
+
+      // Doit commencer par un IDENTIFIER
+      if (!this._check(TokenType.IDENTIFIER)) {
+        this._addError(this._makeError(
+          `Nom de constante invalide : "${this._current().value ?? this._current().type}"`,
+          this._current(),
+          { hint: 'Une déclaration de constante commence par un identifiant. Ex : Pi = 3.14 : REEL;' }
+        ));
+        this._advance();
+        continue;
+      }
+
+      const nameTok = this._advance(); // consommer IDENTIFIER
+      const constName = nameTok.value;
+
+      // '=' obligatoire
+      if (!this._check(TokenType.EQ)) {
+        this._addError(this._makeError(
+          `Opérateur '=' manquant après le nom '${constName}'`,
+          this._current(),
+          { hint: `Syntaxe : ${constName} = Valeur : TYPE;` }
+        ));
+        this._synchronize(TokenType.SEMICOLON);
+        continue;
+      }
+      this._advance(); // consommer '='
+
+      // Valeur : seuls les littéraux sont autorisés (pas d'expressions complexes)
+      const valueTok = this._current();
+      let valueNode = null;
+      let inferredType = null;
+
+      if (this._check(TokenType.NUMBER)) {
+        const raw = this._advance().value;
+        const isInt = Number.isInteger(raw);
+        valueNode    = isInt ? { type: 'NUMBER', value: raw } : { type: 'NUMBER', value: raw };
+        inferredType = isInt ? 'entier' : 'reel';
+      } else if (this._check(TokenType.STRING)) {
+        valueNode    = { type: 'STRING', value: this._advance().value };
+        inferredType = 'chaine';
+      } else if (this._check(TokenType.CHAR)) {
+        valueNode    = { type: 'CHAR',   value: this._advance().value };
+        inferredType = 'chaine'; // CHAR compatible chaine
+      } else if (this._check(TokenType.BOOLEAN)) {
+        valueNode    = { type: 'BOOLEAN', value: this._advance().value };
+        inferredType = 'booleen';
+      } else if (this._check(TokenType.MINUS)) {
+        // Nombre négatif : -3.14, -100
+        this._advance(); // consommer '-'
+        if (!this._check(TokenType.NUMBER)) {
+          this._addError(this._makeError(
+            `Valeur invalide après '-' pour la constante '${constName}'`,
+            this._current(),
+            { hint: 'Seules les valeurs littérales sont autorisées (nombres, chaînes, booléens).' }
+          ));
+          this._synchronize(TokenType.SEMICOLON);
+          continue;
+        }
+        const raw = this._advance().value;
+        const negVal = -raw;
+        valueNode    = { type: 'NUMBER', value: negVal };
+        inferredType = Number.isInteger(negVal) ? 'entier' : 'reel';
+      } else {
+        this._addError(this._makeError(
+          `Valeur invalide pour la constante '${constName}'`,
+          this._current(),
+          {
+            hint: 'Seules les valeurs littérales sont autorisées. Ex : Pi = 3.14 : REEL;',
+            expected: 'nombre, chaîne ou booléen'
+          }
+        ));
+        this._synchronize(TokenType.SEMICOLON);
+        continue;
+      }
+
+      // ':' obligatoire avant le type
+      if (!this._check(TokenType.COLON)) {
+        this._addError(this._makeError(
+          `':' manquant après la valeur de la constante '${constName}'`,
+          this._current(),
+          { hint: `Syntaxe : ${constName} = Valeur : TYPE;` }
+        ));
+        this._synchronize(TokenType.SEMICOLON);
+        continue;
+      }
+      this._advance(); // consommer ':'
+
+      // TYPE obligatoire
+      const constType = this._parseTypeName();
+      if (!constType) {
+        this._synchronize(TokenType.SEMICOLON);
+        continue;
+      }
+
+      // Vérification sémantique type–valeur
+      // (REEL est compatible avec des valeurs entières ex: 3 : REEL est OK)
+      const typeCompatible = (
+        (constType === 'entier'  && inferredType === 'entier') ||
+        (constType === 'reel'    && (inferredType === 'reel' || inferredType === 'entier')) ||
+        (constType === 'chaine'  && inferredType === 'chaine') ||
+        (constType === 'booleen' && inferredType === 'booleen')
+      );
+      if (!typeCompatible) {
+        const typeLabels = { entier: 'ENTIER', reel: 'REEL', chaine: 'CHAINE', booleen: 'BOOLEEN' };
+        this._addError(this._makeError(
+          `Type incompatible avec la valeur pour la constante '${constName}'`,
+          valueTok,
+          {
+            hint: `La valeur est de type ${typeLabels[inferredType] ?? inferredType}, mais le type déclaré est ${typeLabels[constType] ?? constType}.`,
+            expected: typeLabels[inferredType] ?? inferredType
+          }
+        ));
+        // Récupération douce : on stocke quand même la constante avec la valeur
+      }
+
+      this._expectSemicolon(`la constante '${constName}'`);
+      consts.push(new ConstDeclNode(constName, valueNode, constType, nameTok));
+    }
+
+    // ── Validation 1 : au moins une déclaration ─────────────────────────────
+    if (consts.length === 0) {
+      this._addError(this._makeError(
+        `Aucune déclaration après ${keywordValue}`,
+        this._current(),
+        {
+          hint: `Ajoutez au moins une constante. Ex : Pi = 3.14 : REEL;`,
+          expected: 'déclaration de constante'
+        }
+      ));
+    } else {
+      // ── Validation 2 : CONSTANTE (sing.) vs CONSTANTES (plur.) ────────────
+      if (isPlural && consts.length === 1) {
+        this._addError(this._makeError(
+          `Utiliser CONSTANTE pour une seule constante`,
+          keyword,
+          {
+            hint: `Remplacez CONSTANTES par CONSTANTE : une seule constante a été déclarée.`,
+            expected: 'CONSTANTE'
+          }
+        ));
+      } else if (!isPlural && consts.length > 1) {
+        this._addError(this._makeError(
+          `Utiliser CONSTANTES pour plusieurs constantes`,
+          keyword,
+          {
+            hint: `Remplacez CONSTANTE par CONSTANTES : ${consts.length} constantes ont été déclarées.`,
+            expected: 'CONSTANTES'
+          }
+        ));
+      }
+    }
+
+    return consts;
+  }
+
+  // ── Déclarations de variables ───────────────────────────────────────────────────
+
+  /**
+   * Parse le bloc VARIABLE decl / VARIABLES decl+
    * decl → IDENTIFIER : TYPE ;
+   *
+   * Règles strictes :
+   *  - Le caractère ":" est STRICTEMENT INTERDIT après VARIABLE(S).
+   *    → "VARIABLES :" génère une erreur explicite.
+   *  - Au moins une déclaration doit suivre VARIABLE(S).
+   *    → sans déclaration → erreur.
+   *  - VARIABLE  (singulier) → exactement 1 symbole déclaré.
+   *    → 2+ symboles → "Utiliser VARIABLES pour plusieurs variables".
+   *  - VARIABLES (pluriel)  → 2 symboles ou plus.
+   *    → 1 symbole → "Utiliser VARIABLE pour une seule variable".
+   *  - Les tableaux comptent pour 1 symbole chacun.
+   *  - Les listes virgulées (a, b : ENTIER) comptent chaque nom.
    *
    * S'arrête proprement quand on rencontre DEBUT, FIN, ou EOF.
    * Ne génère PAS d'erreurs parasites sur les tokens de structure.
@@ -514,23 +858,21 @@ class Parser {
    * @returns {VarDeclNode[]}
    */
   _parseVariablesSection() {
-    const keyword = this._advance(); // VARIABLES or VARIABLE
-    const keywordValue = keyword.value;
+    const keyword      = this._advance(); // VARIABLES or VARIABLE
+    const keywordValue = keyword.value;   // "VARIABLES" | "VARIABLE"
+    const isPlural     = keyword.type === TokenType.VARIABLES; // true = VARIABLES
 
-    // ':' obligatoire après VARIABLES
-    if (!this._check(TokenType.COLON)) {
+    // ':' est STRICTEMENT INTERDIT après VARIABLES / VARIABLE
+    if (this._check(TokenType.COLON)) {
       this._addError(this._makeError(
-        `Deux-points manquant après ${keywordValue}`,
+        `Le caractère ':' est interdit après ${keywordValue}`,
         this._current(),
-        { hint: `Écrivez "${keywordValue}:" suivi des déclarations.` }
+        {
+          hint: `Supprimez le ':' : écrivez simplement "${keywordValue}" suivi des déclarations sur les lignes suivantes.`,
+          expected: 'déclaration de variable'
+        }
       ));
-      // Try to find the colon or just continue parsing declarations
-      // Don't advance on DEBUT since we need it later
-      if (!this._check(TokenType.DEBUT) && !this._check(TokenType.FIN) && !this._isAtEnd()) {
-        this._advance();
-      }
-    } else {
-      this._advance(); // consume ':'
+      this._advance(); // consommer le ':' et continuer (récupération douce)
     }
     this._skipSemicolons();
 
@@ -543,10 +885,12 @@ class Parser {
 
       // Stop conditions: structural keywords that end the VARIABLES block
       if (
-        this._check(TokenType.DEBUT)    ||
-        this._check(TokenType.FIN)      ||
-        this._check(TokenType.VARIABLES)||
-        this._check(TokenType.VARIABLE)
+        this._check(TokenType.DEBUT)     ||
+        this._check(TokenType.FIN)       ||
+        this._check(TokenType.VARIABLES) ||
+        this._check(TokenType.VARIABLE)  ||
+        this._check(TokenType.CONSTANTES)||
+        this._check(TokenType.CONSTANTE)
       ) {
         break;
       }
@@ -625,6 +969,53 @@ class Parser {
       }
     }
 
+    // ── Validation 1 : au moins une déclaration est obligatoire ──────────────
+    if (decls.length === 0) {
+      this._addError(this._makeError(
+        `Aucune déclaration après ${keywordValue}`,
+        this._current(),
+        {
+          hint: `Ajoutez au moins une déclaration de variable. Ex : x : ENTIER;`,
+          expected: 'déclaration de variable'
+        }
+      ));
+    } else {
+      // ── Validation 2 : VARIABLE (sing.) vs VARIABLES (plur.) ───────────────
+      // Compter le nombre total de symboles déclarés :
+      //   - VarDeclNode  → node.names.length  (ex : "x, y" → 2)
+      //   - ArrayDeclNode → 1               (ex : "Tableau T[5]" → 1)
+      let totalSymbols = 0;
+      for (const node of decls) {
+        if (Array.isArray(node.names)) {
+          totalSymbols += node.names.length;  // VarDeclNode
+        } else {
+          totalSymbols += 1;                  // ArrayDeclNode (name = string)
+        }
+      }
+
+      if (isPlural && totalSymbols === 1) {
+        // VARIABLES utilisé pour une seule variable → erreur
+        this._addError(this._makeError(
+          `Utiliser VARIABLE pour une seule variable`,
+          keyword,
+          {
+            hint: `Remplacez VARIABLES par VARIABLE : une seule variable a été déclarée.`,
+            expected: 'VARIABLE'
+          }
+        ));
+      } else if (!isPlural && totalSymbols > 1) {
+        // VARIABLE utilisé pour plusieurs variables → erreur
+        this._addError(this._makeError(
+          `Utiliser VARIABLES pour plusieurs variables`,
+          keyword,
+          {
+            hint: `Remplacez VARIABLE par VARIABLES : ${totalSymbols} variables ont été déclarées.`,
+            expected: 'VARIABLES'
+          }
+        ));
+      }
+    }
+
     return decls;
   }
 
@@ -637,7 +1028,7 @@ class Parser {
 
   /**
    * Consomme un nom de type et retourne la chaîne normalisée.
-   * En cas d'erreur, enregistre et retourne null.
+   * Accepte les types natifs et les identifiants (pour les types structurés).
    */
   _parseTypeName() {
     const tok = this._current();
@@ -647,11 +1038,12 @@ class Parser {
       case TokenType.TYPE_CHAINE:    this._advance(); return 'chaine';
       case TokenType.TYPE_CARACTERE: this._advance(); return 'caractere';
       case TokenType.TYPE_BOOLEEN:   this._advance(); return 'booleen';
+      case TokenType.IDENTIFIER:     this._advance(); return tok.value; // Type structuré (Enregistrement)
       default:
         this._addError(this._makeError(
           `Type de variable invalide ou manquant : "${tok.value ?? tok.type}"`,
           tok,
-          { hint: 'Types valides : ENTIER, REEL, CHAINE DE CARACTERE, CARACTERE, BOOLEEN' }
+          { hint: 'Types valides : ENTIER, REEL, CHAINE, CARACTERE, BOOLEEN, ou un type structuré.' }
         ));
         return null;
     }
@@ -694,11 +1086,8 @@ class Parser {
         if (err instanceof AlgoSyntaxError) {
           this._addError(err);
         } else {
-          this._addError(this._makeError(
-            'Instruction invalide',
-            this._current(),
-            { hint: err?.message }
-          ));
+          // Erreur d'implémentation JS interne (ReferenceError, TypeError, etc.)
+          throw err;
         }
         // Synchronisation : avancer jusqu'au prochain point stable
         this._synchronize(...stopTypes);
@@ -715,7 +1104,7 @@ class Parser {
 
     switch (tok.type) {
       case TokenType.IDENTIFIER: return this._parseAssignment();
-      case TokenType.TABLEAU:    return this._parseArrayDecl();
+      case TokenType.TABLEAU:    return this._parseArrayStatement();
       case TokenType.SI:         return this._parseIf();
       case TokenType.TANTQUE:    return this._parseWhile();
       case TokenType.POUR:       return this._parseFor();
@@ -768,7 +1157,7 @@ class Parser {
 
   // ── Affectation ──────────────────────────────────────────────────────────────
   
-  /** Tableau Nom[taille] : TYPE; */
+  /** Tableau Nom[taille] : TYPE;  OU Tableau Nom[] : TYPE; */
   _parseArrayDecl() {
     const declTok = this._advance(); // consomme TABLEAU
     
@@ -776,7 +1165,7 @@ class Parser {
       this._addError(this._makeError(
         `Nom du tableau manquant après TABLEAU`,
         this._current(),
-        { hint: `Écrivez : Tableau nom[taille] : TYPE;` }
+        { hint: `Écrivez : Tableau nom[taille] : TYPE; (ou Tableau nom[] : TYPE;)` }
       ));
       this._synchronize(TokenType.SEMICOLON);
       return null;
@@ -787,26 +1176,38 @@ class Parser {
       this._addError(this._makeError(
         `Crochet ouvrant "[" manquant après le nom du tableau "${nameTok.value}"`,
         this._current(),
-        { hint: `Définissez la taille entre crochets : Tableau ${nameTok.value}[taille] : TYPE;` }
+        { hint: `Définissez la forme entre crochets : Tableau ${nameTok.value}[...] : TYPE;` }
       ));
     } else {
       this._advance(); // '['
     }
     
     let sizes = [];
-    if (this._check(TokenType.RBRACKET) || this._check(TokenType.COLON)) {
+
+    // Tableaux dynamiques vides : Tableau T[] ou Tableau M[,]
+    if (this._check(TokenType.RBRACKET)) {
+      sizes.push(null); // 1D dynamique struct
+    } else if (this._check(TokenType.COMMA)) {
+      this._advance(); // ','
+      sizes.push(null);
+      sizes.push(null); // 2D dynamique struct
+      if (!this._check(TokenType.RBRACKET)) {
+        this._addError(this._makeError(`Format invalide pour tableau vide 2D`, this._current(), { hint: `Écrivez : Tableau ${nameTok.value}[,] : TYPE;` }));
+      }
+    } else if (this._check(TokenType.COLON)) {
       this._addError(this._makeError(
-        `Taille du tableau manquante`,
+        `Taille du tableau ou crochets vides manquants`,
         this._current(),
-        { hint: `Indiquez la taille. Ex: Tableau ${nameTok.value}[10] ou Tableau ${nameTok.value}[3,4]` }
+        { hint: `Indiquez la taille (ex: [10]) ou des crochets vides (ex: []).` }
       ));
-      sizes.push(new NumberNode(0, this._current()));
+      sizes.push(null);
     } else {
+      // Tableaux statiques renseignés : Tableau T[n] ou T[n,m]
       sizes.push(this._parseExpression());
       while (this._match(TokenType.COMMA)) {
         if (this._check(TokenType.RBRACKET) || this._check(TokenType.COLON)) {
           this._addError(this._makeError(`Dimension manquante après la virgule`, this._current(), { hint: `Exemple : Tableau ${nameTok.value}[3,4] : TYPE;` }));
-          sizes.push(new NumberNode(0, this._current()));
+          sizes.push(null);
           break;
         }
         sizes.push(this._parseExpression());
@@ -848,52 +1249,154 @@ class Parser {
     return new ArrayDeclNode(nameTok.value, sizes, varType, declTok);
   }
 
-  // ── Affectation ──────────────────────────────────────────────────────────────
-
-  /** ident <- expr ; OR ident [ expr ] <- expr ; */
-  _parseAssignment() {
-    const nameTok = this._advance(); // IDENTIFIER
-
-    // Cas du tableau : ident [ idx1, idx2 ] <- valeur
-    if (this._match(TokenType.LBRACKET)) {
-      const indices = [];
-      indices.push(this._parseExpression());
-
+  /**
+   * Allocation de taille : Tableau Nom[taille];
+   * Affectation matricielle : Tableau Nom[i] <- valeur;
+   */
+  _parseArrayStatement() {
+    const declTok = this._advance(); // consomme TABLEAU
+    
+    if (!this._check(TokenType.IDENTIFIER)) {
+      this._addError(this._makeError(
+        `Nom du tableau manquant après TABLEAU`,
+        this._current(),
+        { hint: `Écrivez : Tableau nom[taille] <- valeur; ou Tableau nom[taille];` }
+      ));
+      this._synchronize(TokenType.SEMICOLON);
+      return null;
+    }
+    const nameTok = this._advance();
+    
+    if (!this._check(TokenType.LBRACKET)) {
+      this._addError(this._makeError(
+        `Crochet ouvrant "[" manquant après le nom du tableau "${nameTok.value}"`,
+        this._current(),
+        { hint: `Définissez les indices entre crochets : Tableau ${nameTok.value}[...];` }
+      ));
+    } else {
+      this._advance(); // '['
+    }
+    
+    let sizes = [];
+    if (this._check(TokenType.RBRACKET) || this._check(TokenType.COLON) || this._check(TokenType.COMMA)) {
+      this._addError(this._makeError(
+        `Indices du tableau manquants pour '${nameTok.value}'`,
+        this._current(),
+        { hint: `Vous devez définir les indices. Ex: Tableau ${nameTok.value}[10];` }
+      ));
+      sizes.push(new NumberNode(0, this._current()));
+      if (this._check(TokenType.COMMA)) {
+         this._advance(); // consume comma
+         sizes.push(new NumberNode(0, this._current()));
+      }
+    } else {
+      sizes.push(this._parseExpression());
       while (this._match(TokenType.COMMA)) {
-        indices.push(this._parseExpression());
+        if (this._check(TokenType.RBRACKET) || this._check(TokenType.COLON)) {
+          this._addError(this._makeError(`Dimension manquante après la virgule`, this._current(), { hint: `Exemple : Tableau ${nameTok.value}[3,4];` }));
+          sizes.push(new NumberNode(0, this._current()));
+          break;
+        }
+        sizes.push(this._parseExpression());
       }
-      
-      if (!this._match(TokenType.RBRACKET)) {
-        this._addError(this._makeError(
-          `Crochet fermant "]" manquant après l'indice du tableau '${nameTok.value}'`,
-          this._current(),
-          { hint: `Ajoutez "]" après l'index. Ex: ${nameTok.value}[i, j] <- valeur;` }
-        ));
-      }
-
-      if (!this._check(TokenType.ASSIGN)) {
-        this._addError(this._makeError(
-          `Opérateur d'affectation "<-" manquant pour le tableau '${nameTok.value}'`,
-          this._current(),
-          { hint: `Utilisez "<-" pour affecter : ${nameTok.value}[...] <- valeur;` }
-        ));
-        this._synchronize();
-        return null;
-      }
-      this._advance(); // <-
-
-      const value = this._parseExpression();
-      this._expectSemicolon(`l'affectation de '${nameTok.value}[...]'`);
-
-      return new ArrayAssignNode(nameTok.value, indices, value, nameTok);
+    }
+    
+    if (sizes.length > 2) {
+      this._addError(this._makeError(`Trop de dimensions pour le tableau '${nameTok.value}'`, this._current(), { hint: `Le langage supporte uniquement 1 ou 2 dimensions.` }));
     }
 
-    // Cas de l'affectation simple : ident <- valeur
+    if (!this._check(TokenType.RBRACKET)) {
+      this._addError(this._makeError(
+        `Crochet fermant "]" manquant après les indices`,
+        this._current(),
+        { hint: `Fermez les crochets : Tableau ${nameTok.value}[...];` }
+      ));
+    } else {
+      this._advance(); // ']'
+    }
+    
+    // Le point de bifurcation : Allocation vs Affectation
+    if (this._check(TokenType.ASSIGN)) {
+      // Affectation : Tableau T[i] <- valeur;
+      this._advance(); // consomme <-
+      const value = this._parseExpression();
+      this._expectSemicolon(`l'affectation de 'Tableau ${nameTok.value}[...]'`);
+      return new ArrayAssignNode(nameTok.value, sizes, value, declTok);
+    } else {
+      // Allocation : Tableau T[n];
+      if (this._check(TokenType.COLON)) {
+        this._addError(this._makeError(
+          `déclaration complète interdite après DEBUT`,
+          this._current(),
+          { hint: `Retirez ': TYPE'. Après DEBUT, seule l'allocation 'Tableau ${nameTok.value}[...];' est autorisée.` }
+        ));
+        this._advance(); // `:`
+        this._parseTypeName();
+      }
+      this._expectSemicolon(`l'allocation du tableau '${nameTok.value}'`);
+      return new ArrayAllocationNode(nameTok.value, sizes, declTok);
+    }
+  }
+
+  // ── Affectation ──────────────────────────────────────────────────────────────
+
+  /** ident <- expr ; ou e1.nom <- expr ; ou groupe[i].nom <- expr ; */
+  _parseAssignment() {
+    const nameTok = this._advance(); // IDENTIFIER
+    let target = new IdentifierNode(nameTok.value, nameTok);
+    
+    let hasArrayAccess = false;
+
+    // 1. Accès au tableau optionnel (sans mot-clé Tableau, car on accède potentiellement à un champ d'une case d'un tableau d'enregistrements)
+    if (this._match(TokenType.LBRACKET)) {
+      hasArrayAccess = true;
+      let sizes = [];
+      if (this._check(TokenType.RBRACKET)) {
+         sizes.push(new NumberNode(0, this._current()));
+      } else {
+         sizes.push(this._parseExpression());
+         while (this._match(TokenType.COMMA)) {
+           sizes.push(this._parseExpression());
+         }
+      }
+      if (!this._check(TokenType.RBRACKET)) {
+        this._addError(this._makeError(`Crochet fermant manquant`, this._current()));
+      } else {
+        this._advance();
+      }
+      target = new ArrayAccessNode(nameTok.value, sizes, nameTok);
+    }
+
+    // 2. Accès membre (ex: .nom)
+    let hasMemberAccess = false;
+    while (this._match(TokenType.DOT)) {
+      hasMemberAccess = true;
+      if (!this._check(TokenType.IDENTIFIER)) {
+        this._addError(this._makeError('Nom du champ attendu après le point', this._current(), { hint: 'Ex: variable.champ' }));
+        this._synchronize(TokenType.ASSIGN, TokenType.SEMICOLON);
+        return null;
+      }
+      const propTok = this._advance();
+      target = new MemberAccessNode(target, propTok.value, propTok);
+    }
+
+    // 3. Validation de la règle stricte : groupe[0] <- 5 est interdit sans "Tableau"
+    if (hasArrayAccess && !hasMemberAccess) {
+      this._addError(this._makeError(
+        `Le mot-clé 'Tableau' est obligatoire pour modifier un tableau`,
+        this._current(),
+        { hint: `Écrivez : Tableau ${nameTok.value}[...] <- valeur;` }
+      ));
+      this._synchronize();
+      return null;
+    }
+
+    // 4. Affectation
     if (!this._check(TokenType.ASSIGN)) {
       this._addError(this._makeError(
-        `Opérateur d'affectation manquant après '${nameTok.value}'`,
+        `Opérateur d'affectation manquant`,
         this._current(),
-        { hint: `Utilisez "<-" pour affecter une valeur : ${nameTok.value} <- valeur;` }
+        { hint: `Utilisez "<-" pour affecter une valeur.` }
       ));
       this._synchronize();
       return null;
@@ -901,9 +1404,9 @@ class Parser {
     this._advance(); // consommer <-
 
     const value = this._parseExpression();
-    this._expectSemicolon(`l'affectation de '${nameTok.value}'`);
+    this._expectSemicolon(`l'affectation`);
 
-    return new AssignNode(nameTok.value, value, nameTok);
+    return new AssignNode(target, value, nameTok);
   }
 
   // ── Condition SI ─────────────────────────────────────────────────────────────
@@ -1616,27 +2119,53 @@ class Parser {
     }
     this._advance(); // consommer '('
 
-    // La cible doit commencer par un IDENTIFIER
-    if (!this._check(TokenType.IDENTIFIER)) {
-      this._addError(this._makeError(
-        'Nom de variable manquant dans LIRE',
-        this._current(),
-        { hint: 'LIRE attend le nom d\'une variable : LIRE(maVariable); ou LIRE(T[i]);' }
-      ));
-      // Récupération : avancer jusqu'à ')' ou ';'
-      while (!this._isAtEnd() && !this._check(TokenType.RPAREN) && !this._check(TokenType.SEMICOLON)) {
-        this._advance();
+    // La cible peut commencer par TABLEAU (strict) ou directement IDENTIFIER
+    let hasTableau = false;
+    let varTok = null;
+
+    if (this._match(TokenType.TABLEAU)) {
+      hasTableau = true;
+      if (!this._check(TokenType.IDENTIFIER)) {
+        this._addError(this._makeError(
+          'Nom du tableau manquant après TABLEAU',
+          this._current(),
+          { hint: 'LIRE attend le nom d\'un tableau : LIRE(Tableau T[i]);' }
+        ));
+        this._synchronize();
+        return new InputNode('?', tok);
       }
-      if (this._check(TokenType.RPAREN)) this._advance();
-      this._skipSemicolons();
-      return new InputNode('?', tok);
+      varTok = this._advance();
+    } else {
+      if (!this._check(TokenType.IDENTIFIER)) {
+        this._addError(this._makeError(
+          'Nom de variable manquant dans LIRE',
+          this._current(),
+          { hint: 'LIRE attend le nom d\'une variable : LIRE(maVariable); ou LIRE(Tableau T[i]);' }
+        ));
+        // Récupération : avancer jusqu'à ')' ou ';'
+        while (!this._isAtEnd() && !this._check(TokenType.RPAREN) && !this._check(TokenType.SEMICOLON)) {
+          this._advance();
+        }
+        if (this._check(TokenType.RPAREN)) this._advance();
+        this._skipSemicolons();
+        return new InputNode('?', tok);
+      }
+      varTok = this._advance();
     }
 
-    const varTok = this._advance(); // consomme IDENTIFIER
-
-    // ── Accès Tableau : LIRE(T[i, j]) ───────────────────────────────────────────
+    // ── Accès Tableau : LIRE(Tableau T[i, j]) ───────────────────────────────────────────
     let targetNode;
     if (this._match(TokenType.LBRACKET)) {
+      if (!hasTableau) {
+        this._addError(this._makeError(
+          `Le mot-clé 'Tableau' est obligatoire pour modifier un tableau`,
+          this._current(),
+          { hint: `Écrivez : LIRE(Tableau ${varTok.value}[i]); au lieu de LIRE(${varTok.value}[i]);` }
+        ));
+        while (!this._check(TokenType.RBRACKET) && !this._isAtEnd()) this._advance();
+        if (this._check(TokenType.RBRACKET)) this._advance();
+      }
+      
       // Parse des indices
       const indices = [];
       indices.push(this._parseExpression());
@@ -1647,16 +2176,45 @@ class Parser {
 
       if (!this._match(TokenType.RBRACKET)) {
         this._addError(this._makeError(
-          `Crochet fermant "]" manquant après les indices dans LIRE('${varTok.value}[...]')`,
+          `Crochet fermant "]" manquant après les indices dans LIRE('Tableau ${varTok.value}[...]')`,
           this._current(),
-          { hint: `Ajoutez "]" après les indices. Ex: LIRE(${varTok.value}[i, j]);` }
+          { hint: `Ajoutez "]" après les indices. Ex: LIRE(Tableau ${varTok.value}[i, j]);` }
         ));
       }
 
       targetNode = new ArrayAccessNode(varTok.value, indices, varTok);
     } else {
+      if (hasTableau) {
+        this._addError(this._makeError(
+          `Crochets manquants après 'Tableau ${varTok.value}'`,
+          this._current(),
+          { hint: `Spécifiez des indices : LIRE(Tableau ${varTok.value}[i]);` }
+        ));
+      }
       // Variable simple
       targetNode = new IdentifierNode(varTok.value, varTok);
+    }
+    
+    // NOUVEAU : Lecture d'un champ d'enregistrement (ex: LIRE(e.nom) ou LIRE(Tableau T[i].nom))
+    let hasMemberAccess = false;
+    while (this._match(TokenType.DOT)) {
+      hasMemberAccess = true;
+      if (!this._check(TokenType.IDENTIFIER)) {
+        this._addError(this._makeError(
+          'Nom du champ attendu',
+          this._current(),
+          { hint: 'Ex: LIRE(variable.champ);' }
+        ));
+        break;
+      }
+      const propTok = this._advance();
+      targetNode = new MemberAccessNode(targetNode, propTok.value, propTok);
+    }
+    
+    if (hasTableau && !hasMemberAccess && targetNode.type === NodeType.IDENTIFIER) {
+      // already errored above for missing brackets
+    } else if (!hasTableau && !hasMemberAccess && targetNode.type === NodeType.ARRAY_ACCESS) {
+       // Already errored inside the bracket match block
     }
 
     if (!this._check(TokenType.RPAREN)) {
@@ -1785,10 +2343,44 @@ class Parser {
       this._advance();
       return new BooleanNode(tok.value, tok);
     }
-    if (this._check(TokenType.IDENTIFIER)) {
+    if (this._check(TokenType.TABLEAU)) {
+      const tableauTok = this._advance(); // consomme TABLEAU
+      
+      if (!this._check(TokenType.IDENTIFIER)) {
+         this._addError(this._makeError(`Nom du tableau manquant après TABLEAU`, this._current(), {hint: `Ne pas utiliser 'Tableau' pour lire un tableau`}));
+         const errTok = this._advance();
+         return new IdentifierNode('?', errTok);
+      }
       const idTok = this._advance();
       
-      // Si on trouve '[', c'est un accès tableau
+      if (this._match(TokenType.LBRACKET)) {
+         this._addError(this._makeError(`Ne pas utiliser le mot-clé 'Tableau' pour lire un tableau`, this._current(), {hint: `Écrivez : ${idTok.value}[...] au lieu de Tableau ${idTok.value}[...]`}));
+         
+         const indices = [];
+         indices.push(this._parseExpression());
+         while (this._match(TokenType.COMMA)) {
+           indices.push(this._parseExpression());
+         }
+         
+         if (!this._match(TokenType.RBRACKET)) {
+           this._addError(this._makeError(
+             `Crochet fermant "]" manquant après les indices du tableau '${idTok.value}'`,
+             this._current()
+           ));
+         }
+
+         return new ArrayAccessNode(idTok.value, indices, idTok);
+      }
+      
+      this._addError(this._makeError(`Ne pas utiliser le mot-clé 'Tableau' pour lire un tableau`, this._current()));
+      return new IdentifierNode(idTok.value, idTok);
+    }
+
+    if (this._check(TokenType.IDENTIFIER)) {
+      const idTok = this._advance();
+      let node = new IdentifierNode(idTok.value, idTok);
+      
+      // Si on trouve '[', c'est un accès tableau (Stricte Règle: Autorisé sans mot clé pour la lecture)
       if (this._match(TokenType.LBRACKET)) {
         const indices = [];
         indices.push(this._parseExpression());
@@ -1805,10 +2397,24 @@ class Parser {
           ));
         }
 
-        return new ArrayAccessNode(idTok.value, indices, idTok);
+        node = new ArrayAccessNode(idTok.value, indices, idTok);
       }
       
-      return new IdentifierNode(idTok.value, idTok);
+      // Suite d'accès membres (ex: variable.champ.souschamp)
+      while (this._match(TokenType.DOT)) {
+        if (!this._check(TokenType.IDENTIFIER)) {
+          this._addError(this._makeError(
+            'Nom du champ attendu après le point',
+            this._current(),
+            { hint: 'Ex: variable.champ' }
+          ));
+          break;
+        }
+        const propTok = this._advance();
+        node = new MemberAccessNode(node, propTok.value, propTok);
+      }
+      
+      return node;
     }
     if (this._check(TokenType.LPAREN)) {
       this._advance();

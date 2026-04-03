@@ -19,7 +19,11 @@ const TokenType = Object.freeze({
   ALGORITHME:   'ALGORITHME',
   VARIABLES:    'VARIABLES',   // déclaration : plusieurs variables
   VARIABLE:     'VARIABLE',   // déclaration : une seule variable
+  CONSTANTES:   'CONSTANTES',  // section constantes : plusieurs
+  CONSTANTE:    'CONSTANTE',   // section constantes : une seule
   TABLEAU:      'TABLEAU',    // déclaration de tableau
+  TYPE:         'TYPE',        // déclaration d'enregistrement
+  ENREGISTREMENT: 'ENREGISTREMENT', // structure d'enregistrement
   DEBUT:        'DEBUT',
   FIN:          'FIN',
 
@@ -91,6 +95,7 @@ const TokenType = Object.freeze({
   COMMA:        'COMMA',        // ,
   COLON:        'COLON',        // :
   SEMICOLON:    'SEMICOLON',    // ;
+  DOT:          'DOT',          // .
 
   // ── Structure du flux ──────────────────────────────────────────────────────
   NEWLINE:      'NEWLINE',      // \n

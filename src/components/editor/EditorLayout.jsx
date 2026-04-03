@@ -55,7 +55,8 @@ const DEFAULT_SETTINGS = {
   enableVisualEffects: false,
   autoSave: false,
   restoreLastSession: true,
-  confirmBeforeReset: true
+  confirmBeforeReset: true,
+  showFieldNames: false
 };
 
 const EditorLayout = () => {
@@ -417,7 +418,9 @@ const EditorLayout = () => {
   // ── handleSubmitInput : appelé quand l'user tape et soumet dans le terminal ─
   const handleSubmitInput = useCallback((value) => {
     // Afficher la valeur saisie dans le terminal (comme un vrai terminal)
-    setOutputLines(prev => [...prev, `${inputPrompt?.varName ?? '?'}: ${value}`]);
+    const isPedagogic = settings?.showFieldNames === true;
+    const lineToPrint = isPedagogic ? `${inputPrompt?.varName ?? '?'}: ${value}` : String(value);
+    setOutputLines(prev => [...prev, lineToPrint]);
     // Masquer le prompt
     setInputPrompt(null);
     // Résoudre la Promise que l'interpréteur attend
@@ -425,7 +428,7 @@ const EditorLayout = () => {
       inputResolverRef.current(value);
       inputResolverRef.current = null;
     }
-  }, [inputPrompt]);
+  }, [inputPrompt, settings]);
 
   const handleFormatDoc = () => {
     try {

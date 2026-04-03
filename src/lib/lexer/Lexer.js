@@ -441,6 +441,7 @@ class Lexer {
       case ',': this.tokens.push(new Token(TokenType.COMMA,     ',', line, col)); break;
       case ':': this.tokens.push(new Token(TokenType.COLON,     ':', line, col)); break;
       case ';': this.tokens.push(new Token(TokenType.SEMICOLON, ';', line, col)); break;
+      case '.': this.tokens.push(new Token(TokenType.DOT,       '.', line, col)); break;
 
       // ── Caractère inconnu ─────────────────────────────────────────────────
       default:
