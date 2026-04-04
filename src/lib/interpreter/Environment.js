@@ -64,6 +64,13 @@ class Environment {
       for (const [fName, fType] of Object.entries(customTypeStr)) {
         obj[fName] = this.getDefaultValue(fType, line);
       }
+      // Attacher le nom du type (non énumérable pour ne pas polluer les calculs)
+      Object.defineProperty(obj, '__type', {
+         value: type,
+         enumerable: false,
+         writable: true,
+         configurable: true
+      });
       return obj;
     }
     

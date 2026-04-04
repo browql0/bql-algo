@@ -1318,10 +1318,15 @@ class Parser {
     // Le point de bifurcation : Allocation vs Affectation
     if (this._check(TokenType.ASSIGN)) {
       // Affectation : Tableau T[i] <- valeur;
+      this._addError(this._makeError(
+        `Le mot-clé 'Tableau' est interdit pour affecter une valeur à une case (ou un tableau entier)`,
+        this._current(),
+        { hint: `Utilisez la syntaxe '${nameTok.value}[...] <- valeur;' sans le mot-clé 'Tableau'.` }
+      ));
       this._advance(); // consomme <-
-      const value = this._parseExpression();
-      this._expectSemicolon(`l'affectation de 'Tableau ${nameTok.value}[...]'`);
-      return new ArrayAssignNode(nameTok.value, sizes, value, declTok);
+      this._parseExpression();
+      this._expectSemicolon(`l'affectation invalide de 'Tableau ${nameTok.value}[...]'`);
+      return null;
     } else {
       // Allocation : Tableau T[n];
       if (this._check(TokenType.COLON)) {
@@ -1380,16 +1385,7 @@ class Parser {
       target = new MemberAccessNode(target, propTok.value, propTok);
     }
 
-    // 3. Validation de la règle stricte : groupe[0] <- 5 est interdit sans "Tableau"
-    if (hasArrayAccess && !hasMemberAccess) {
-      this._addError(this._makeError(
-        `Le mot-clé 'Tableau' est obligatoire pour modifier un tableau`,
-        this._current(),
-        { hint: `Écrivez : Tableau ${nameTok.value}[...] <- valeur;` }
-      ));
-      this._synchronize();
-      return null;
-    }
+    // 3. Validation de la règle stricte supprimée : On accepte l'assignation normale
 
     // 4. Affectation
     if (!this._check(TokenType.ASSIGN)) {
@@ -2198,17 +2194,11 @@ class Parser {
     }
     
     // Validation des règles sur le mot-clé 'Tableau'
-    if (hasArrayAccess && !hasMemberAccess && !hasTableau) {
+    if (hasTableau) {
       this._addError(this._makeError(
-        `Le mot-clé 'Tableau' est obligatoire pour lire un tableau`,
+        `Le mot-clé 'Tableau' est interdit dans LIRE`,
         varTok,
-        { hint: `Écrivez : LIRE(Tableau ${varTok.value}[i]); au lieu de LIRE(${varTok.value}[i]);` }
-      ));
-    } else if (hasTableau && !hasArrayAccess) {
-      this._addError(this._makeError(
-        `Crochets manquants après 'Tableau ${varTok.value}'`,
-        this._current(),
-        { hint: `Spécifiez des indices : LIRE(Tableau ${varTok.value}[i]);` }
+        { hint: `Écrivez simplement : LIRE(${varTok.value}[i]);` }
       ));
     }
 

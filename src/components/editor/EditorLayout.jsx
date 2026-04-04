@@ -56,7 +56,9 @@ const DEFAULT_SETTINGS = {
   autoSave: false,
   restoreLastSession: true,
   confirmBeforeReset: true,
-  showFieldNames: false
+  showFieldNames: false,
+  advancedArrayView: true,
+  compactRecordView: true
 };
 
 const EditorLayout = () => {
@@ -112,7 +114,8 @@ const EditorLayout = () => {
   const [formatMessage, setFormatMessage] = useState('');
 
   // Array Visualizer state
-  const [arrayData, setArrayData] = useState(new Map());
+  const [arrayData, setArrayData]           = useState(new Map());
+  const [recordData, setRecordData]         = useState(new Map());
   const [lastArrayAction, setLastArrayAction] = useState(null);
 
   // Pedagogy state (Lot 3)
@@ -160,7 +163,7 @@ const EditorLayout = () => {
   // Sync mobile pane with right tabs for desktop users who resize or vice-versa
   useEffect(() => {
     if (isMobile) {
-      if (activeRightTab === 'terminal' || activeRightTab === 'errors' || activeRightTab === 'variables' || activeRightTab === 'cours') {
+      if (activeRightTab === 'terminal' || activeRightTab === 'errors' || activeRightTab === 'variables' || activeRightTab === 'visualisation') {
         if (activeMobilePane === 'editor') {
           // If we click a right tab toggle in desktop then resize, or if something triggers it
         }
@@ -283,6 +286,7 @@ const EditorLayout = () => {
 
     // Arrays reset
     setArrayData(new Map());
+    setRecordData(new Map());
     setLastArrayAction(null);
 
     // Basculer vers le terminal avant l'exécution
@@ -325,26 +329,39 @@ const EditorLayout = () => {
     };
 
     // ── Callback array visualizer ───────────────────────────────────────────
-    const onArrayUpdate = async (name, action, index, values) => {
+    const onArrayUpdate = async (name, action, index, values, field = null) => {
       if (settings.showArrayVisualizer === false) return;
 
-      setArrayData(prev => {
-        const next = new Map(prev);
-        const highlight = (action !== 'create' && index !== null)
-          ? { index, type: action }
-          : null;
-        next.set(name, { values, highlight });
-        return next;
-      });
+      const isRecord = index === null && !Array.isArray(values);
 
-      if (action !== 'create' && index !== null) {
+      if (isRecord) {
+        setRecordData(prev => {
+          const next = new Map(prev);
+          const highlight = { type: action, field };
+          next.set(name, { values, highlight });
+          return next;
+        });
+      } else {
+        setArrayData(prev => {
+          const next = new Map(prev);
+          const highlight = (action !== 'create')
+            ? { index, type: action, field }
+            : null;
+          next.set(name, { values, highlight });
+          return next;
+        });
+      }
+
+      if (action !== 'create') {
+        const fieldText = field ? ` (champ ${field})` : '';
+        const targetText = isRecord ? name : `${name}[${index}]`;
         const actionText = action === 'read' ? 'Lecture de' : 'Modification de';
-        setLastArrayAction({ text: `${actionText} ${name}[${index}]` });
+        setLastArrayAction({ text: `${actionText} ${targetText}${fieldText}` });
       } else if (action === 'create') {
         setLastArrayAction({ text: `Création du tableau ${name}` });
       }
 
-      // Petite pause pour laisser l'animation respirer (80ms)
+      // Pause pour l'animation
       await new Promise(r => setTimeout(r, 80));
     };
 
@@ -728,7 +745,6 @@ const EditorLayout = () => {
             />
           </div>
         </div>
-
         <div className="workspace-resizer mobile-resizer-hidden"></div>
 
         {/* Right Pane: Terminal & Cours */}
@@ -751,10 +767,10 @@ const EditorLayout = () => {
                 Erreurs {structuredErrors.length > 0 ? `(${structuredErrors.length})` : ''}
               </div>
               <div
-                className={`tab ${activeRightTab === 'cours' ? 'active' : ''}`}
-                onClick={() => setActiveRightTab('cours')}
+                className={`tab ${activeRightTab === 'visualisation' ? 'active' : ''}`}
+                onClick={() => setActiveRightTab('visualisation')}
               >
-                Cours
+                Visualisation
               </div>
               <div
                 className={`tab ${activeRightTab === 'variables' ? 'active' : ''}`}
@@ -804,19 +820,15 @@ const EditorLayout = () => {
                 settings={settings}
               />
             )}
-            {activeRightTab === 'cours' && (
-              <div className="cours-placeholder">
-                <BookOpen size={48} className="cours-icon" />
-                <h3>Espace Cours</h3>
-                <p>Sélectionnez un module de cours dans la navigation pour l'afficher ici.</p>
-              </div>
-            )}
 
             {/* Visualisation Pédagogique des Tableaux */}
             <ArrayVisualizer
               arrays={arrayData}
+              records={recordData}
               lastAction={lastArrayAction}
-              visible={settings.showArrayVisualizer !== false}
+              visible={settings.showArrayVisualizer !== false && activeRightTab === 'visualisation'}
+              settings={settings}
+              isMobile={isMobile}
             />
           </div>
         </div>
@@ -844,8 +856,8 @@ const EditorLayout = () => {
         </button>
 
         <button
-          className={`mobile-nav-btn${activeMobilePane === 'output' && activeRightTab !== 'cours' ? ' mobile-nav-btn--active' : ''}`}
-          onClick={() => { setActiveMobilePane('output'); if(activeRightTab === 'cours') setActiveRightTab('terminal'); }}
+          className={`mobile-nav-btn${activeMobilePane === 'output' && activeRightTab !== 'visualisation' ? ' mobile-nav-btn--active' : ''}`}
+          onClick={() => { setActiveMobilePane('output'); if(activeRightTab === 'visualisation') setActiveRightTab('terminal'); }}
         >
           {structuredErrors.length > 0
             ? <AlertTriangle size={20} color="#ef4444" />

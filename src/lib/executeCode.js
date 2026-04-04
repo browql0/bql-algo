@@ -58,7 +58,7 @@ import { formatErrors, formatErrorReact } from './errors/formatError.js';
  * @param {Function} [options.output]    - Callback streaming : (line: string) => void
  * @param {Function} [options.input]     - Callback async interactif : (varName, type) => Promise<string>
  * @param {number}   [options.maxSteps]  - Limite anti-boucle infinie
- * @param {Function} [options.onArrayUpdate] - Callback pour animation de tableaux : async (name, action, index, values) => void
+ * @param {Function} [options.onArrayUpdate] - Callback pour animation de tableaux : async (name, action, index, values, field) => void
  * @returns {Promise<object>}
  */
 export async function executeCode(

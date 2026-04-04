@@ -367,6 +367,22 @@ const SettingsModal = ({ isOpen, onClose, settings, onSave, defaultSettings }) =
 
             <div className="setting-row">
               <div className="setting-info">
+                <label>Visualisation Avancée (Split View)</label>
+                <span className="setting-desc">Affiche un panneau de détail pour inspecter les éléments sélectionnés.</span>
+              </div>
+              <ToggleSwitch checked={localSettings.advancedArrayView} onChange={(v) => update('advancedArrayView', v)} />
+            </div>
+
+            <div className="setting-row">
+              <div className="setting-info">
+                <label>Mode Compact (Tableaux)</label>
+                <span className="setting-desc">Affiche uniquement les noms des types dans la vue d'ensemble du tableau.</span>
+              </div>
+              <ToggleSwitch checked={localSettings.compactRecordView} onChange={(v) => update('compactRecordView', v)} />
+            </div>
+
+            <div className="setting-row">
+              <div className="setting-info">
                 <label>Mode Débutant strict</label>
                 <span className="setting-desc">Force des règles additionnelles bienveillantes (déclarations requises en haut).</span>
               </div>

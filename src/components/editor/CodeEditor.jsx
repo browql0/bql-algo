@@ -256,6 +256,61 @@ const CodeEditor = forwardRef(({ code, onChange, settings, onFormat, runningLine
     return tokenizeAndMapStructure(code);
   }, [code]);
 
+  // ── Snippets Constants ──
+  const FAST_SNIPPETS = [
+    { label: "SI", insert: "SI " },
+    { label: "POUR", insert: "POUR " },
+    { label: "TANTQUE", insert: "TANTQUE " },
+    { label: "LIRE", insert: "LIRE(" },
+    { label: "ECRIRE", insert: "ECRIRE(" },
+  ];
+
+  const SNIPPET_CATEGORIES = [
+    {
+      name: "Structure",
+      snippets: [
+        { label: "ALGORITHME", insert: "ALGORITHME " },
+        { label: "DEBUT .. FIN", insert: "DEBUT\n  \nFIN" },
+        { label: "CONSTANTES", insert: "CONSTANTES\n  " },
+        { label: "VARIABLES", insert: "VARIABLES\n  " }
+      ]
+    },
+    {
+      name: "Conditions",
+      snippets: [
+        { label: "SI .. ALORS", insert: "SI (...) ALORS\n  \nFINSI" },
+        { label: "SINON", insert: "SINON\n  " },
+        { label: "SINON SI", insert: "SINON SI (...) ALORS\n  " },
+        { label: "SELON", insert: "SELON (...) FAIRE\n  CAS ... :\n    \n  AUTRE :\n    \nFINSELON" }
+      ]
+    },
+    {
+      name: "Boucles",
+      snippets: [
+        { label: "POUR", insert: "POUR i ALLANT DE 0 A n - 1 FAIRE\n  \nFINPOUR" },
+        { label: "TANTQUE", insert: "TANTQUE (...) FAIRE\n  \nFINTANTQUE" },
+        { label: "REPETER", insert: "REPETER\n  \nJUSQUA (...)" }
+      ]
+    },
+    {
+      name: "Tableaux",
+      snippets: [
+        { label: "Tab simple", insert: "Tableau T[5] : ENTIER;" },
+        { label: "Tab. dynamique", insert: "Tableau T[n];" },
+        { label: "Matrice", insert: "Tableau M[3, 4] : ENTIER;" }
+      ]
+    },
+    {
+      name: "Enregistrements",
+      snippets: [
+        { label: "Struct. Type", insert: "Type MonType = Enregistrement\n  champ1 : CHAINE;\n  champ2 : ENTIER;\nFin MonType" },
+        { label: "Var Record", insert: "Variable obj : MonType;" }
+      ]
+    }
+  ];
+
+  const [isSnippetDrawerOpen, setIsSnippetDrawerOpen] = useState(false);
+
   return (
     <div className="code-editor-wrapper">
 
@@ -333,16 +388,44 @@ const CodeEditor = forwardRef(({ code, onChange, settings, onFormat, runningLine
         />
       </div>
 
-      {/* ── Mobile Snippets Bar ── */}
+      {/* ── Mobile Snippets Bar & Drawer ── */}
       {isMobile && (
-        <div className="mobile-snippets-bar" onMouseDown={(e) => e.preventDefault()}>
-          <button onClick={() => insertSnippet('SI ')}>SI</button>
-          <button onClick={() => insertSnippet('POUR ')}>POUR</button>
-          <button onClick={() => insertSnippet('TANTQUE ')}>TANTQUE</button>
-          <button onClick={() => insertSnippet('REPETER\\n  \\nJUSQUA ')}>REPETER</button>
-          <button onClick={() => insertSnippet('VARIABLES\\n  ')}>VARIABLES</button>
-          <button onClick={() => insertSnippet('ECRIRE(')}>ECRIRE</button>
-          <button onClick={() => insertSnippet('LIRE(')}>LIRE</button>
+        <div className="mobile-snippets-wrapper" onMouseDown={(e) => e.preventDefault()}>
+          <div className="mobile-snippets-bar">
+            {/* Bouton pour ouvrir le tiroir complet */}
+            <button 
+              className={`snippet-btn-more ${isSnippetDrawerOpen ? 'active' : ''}`}
+              onClick={() => setIsSnippetDrawerOpen(!isSnippetDrawerOpen)}
+            >
+              {isSnippetDrawerOpen ? '✖ Fermer' : '☰ +'}
+            </button>
+            {/* Raccourcis rapides */}
+            {FAST_SNIPPETS.map(s => (
+              <button key={s.label} onClick={() => insertSnippet(s.insert)}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Tiroir complet des snippets */}
+          {isSnippetDrawerOpen && (
+            <div className="mobile-snippets-drawer">
+              <div className="drawer-content">
+                {SNIPPET_CATEGORIES.map(cat => (
+                  <div className="snippet-category" key={cat.name}>
+                    <div className="category-title">{cat.name}</div>
+                    <div className="category-buttons">
+                      {cat.snippets.map(s => (
+                        <button key={s.label} onClick={() => { insertSnippet(s.insert); setIsSnippetDrawerOpen(false); }}>
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

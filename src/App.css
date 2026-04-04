@@ -9,12 +9,13 @@ body {
   background-image: 
     radial-gradient(ellipse at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
     radial-gradient(ellipse at 90% 80%, rgba(168, 85, 247, 0.15) 0%, transparent 50%);
+  overscroll-behavior-y: none; /* Empêcher le pull-to-refresh natif sur iOS/Android */
 }
 
 .app-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100dvh;
   width: 100vw;
   overflow: hidden;
 }

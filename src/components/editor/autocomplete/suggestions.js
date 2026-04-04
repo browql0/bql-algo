@@ -12,7 +12,8 @@ export const KEYWORDS = [
   'POUR', 'ALLANT', 'DE', 'A', 'PAS', 'FINPOUR',
   'TANTQUE', 'FAIRE', 'FINTANTQUE',
   'REPETER', 'JUSQUA',
-  'VRAI', 'FAUX', 'NON', 'ET', 'OU'
+  'VRAI', 'FAUX', 'NON', 'ET', 'OU',
+  'TYPE', 'ENREGISTREMENT', 'Tableau'
 ];
 
 export const TYPES = [
@@ -110,6 +111,20 @@ export const SNIPPETS = [
     type: 'snippet',
     insertText: 'Tableau T[10] : ENTIER;',
     cursorOffset: -12,
+  },
+  {
+    label: 'Tableau (2D)',
+    detail: 'Déclaration d\'une matrice 2D',
+    type: 'snippet',
+    insertText: 'Tableau M[3,3] : ENTIER;',
+    cursorOffset: -13,
+  },
+  {
+    label: 'ENREGISTREMENT (Type)',
+    detail: 'Déclarer une structure de données',
+    type: 'snippet',
+    insertText: 'TYPE Nom = ENREGISTREMENT\n    champ1 : ENTIER;\n    champ2 : CHAINE;\nFIN Nom',
+    cursorOffset: -54,
   }
 ];
 

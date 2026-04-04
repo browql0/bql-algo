@@ -61,10 +61,13 @@ class Interpreter {
   }
 
   // ── Communication UI ────────────────────────────────────────────────────────
-  async _reportArrayUpdate(name, action, index, arr) {
+  async _reportArrayUpdate(name, action, index, arr, field = null) {
     if (this._onArrayUpdate) {
-      // On envoie une copie du tableau et les détails de l'action
-      await this._onArrayUpdate(name, action, index, [...arr]);
+      // On envoie une copie (objet ou tableau) et les détails de l'action
+      const data = (arr !== null && typeof arr === 'object') 
+        ? (Array.isArray(arr) ? [...arr] : { ...arr }) 
+        : arr;
+      await this._onArrayUpdate(name, action, index, data, field);
     }
   }
 
@@ -213,17 +216,13 @@ class Interpreter {
       dimLengths.push(nSize);
     }
 
-    // Valeur par défaut selon le type
-    let defaultValue = 0;
-    if (node.varType === 'chaine')    defaultValue = "";
-    if (node.varType === 'caractere') defaultValue = " ";
-    if (node.varType === 'booleen')   defaultValue = false;
-
     let arr;
     if (dimLengths.length === 1) {
-      arr = new Array(dimLengths[0]).fill(defaultValue);
+      arr = Array.from({ length: dimLengths[0] }, () => this.env.getDefaultValue(node.varType, node.line));
     } else if (dimLengths.length === 2) {
-      arr = Array.from({ length: dimLengths[0] }, () => new Array(dimLengths[1]).fill(defaultValue));
+      arr = Array.from({ length: dimLengths[0] }, () => 
+        Array.from({ length: dimLengths[1] }, () => this.env.getDefaultValue(node.varType, node.line))
+      );
     } else {
       throw new AlgoRuntimeError({
         message: `La dimensionnalité supérieure à 2 n'est pas supportée.`,
@@ -274,17 +273,13 @@ class Interpreter {
 
     const baseType = entry.type.slice(0, -2); // 'entier[]' -> 'entier'
 
-    // Valeur par défaut selon le type
-    let defaultValue = 0;
-    if (baseType === 'chaine')    defaultValue = "";
-    if (baseType === 'caractere') defaultValue = " ";
-    if (baseType === 'booleen')   defaultValue = false;
-
     let arr;
     if (dimLengths.length === 1) {
-      arr = new Array(dimLengths[0]).fill(defaultValue);
+      arr = Array.from({ length: dimLengths[0] }, () => this.env.getDefaultValue(baseType, node.line));
     } else if (dimLengths.length === 2) {
-      arr = Array.from({ length: dimLengths[0] }, () => new Array(dimLengths[1]).fill(defaultValue));
+      arr = Array.from({ length: dimLengths[0] }, () => 
+        Array.from({ length: dimLengths[1] }, () => this.env.getDefaultValue(baseType, node.line))
+      );
     } else {
       throw new AlgoRuntimeError({
         message: `La dimensionnalité supérieure à 2 n'est pas supportée.`,
@@ -337,6 +332,11 @@ class Interpreter {
          throw new AlgoRuntimeError({ message: `Impossible de modifier '${name}'`, line: targetNode.line });
       }
       this.env.set(name, value, targetNode.line);
+
+      // Détection : si c'est un record (objet), on rapporte l'update
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        await this._reportArrayUpdate(name, 'write', null, value);
+      }
     } else if (targetNode.type === NodeType.ARRAY_ACCESS) {
       const arr = this.env.get(targetNode.name, targetNode.line);
       if (!Array.isArray(arr)) {
@@ -369,6 +369,21 @@ class Interpreter {
          throw new AlgoRuntimeError({ message: `L'objet n'est pas un enregistrement`, line: targetNode.line });
       }
       obj[targetNode.property] = value;
+
+      // Détection : si l'objet fait partie d'un tableau, on notifie la UI du champ précis
+      if (targetNode.object.type === NodeType.ARRAY_ACCESS) {
+        const arrName = targetNode.object.name;
+        const arr = this.env.get(arrName, targetNode.line);
+        const indices = [];
+        for (const idxNode of targetNode.object.indices) {
+          const idxValue = await this._evaluate(idxNode);
+          indices.push(Math.floor(this._toNumber(idxValue, targetNode.line)));
+        }
+        await this._reportArrayUpdate(arrName, 'write', indices, arr, targetNode.property);
+      } else if (targetNode.object.type === NodeType.IDENTIFIER) {
+        const varName = targetNode.object.name;
+        await this._reportArrayUpdate(varName, 'write', null, obj, targetNode.property);
+      }
     }
   }
 
@@ -566,12 +581,33 @@ class Interpreter {
     }
 
     let varNameForUI = "inconnue";
-    if (targetNode.type === NodeType.IDENTIFIER) varNameForUI = targetNode.name;
-    else if (targetNode.type === NodeType.ARRAY_ACCESS) varNameForUI = targetNode.name + "[...]";
-    else if (targetNode.type === NodeType.MEMBER_ACCESS) varNameForUI = targetNode.property;
+    let typeForUI = 'inconnu';
 
-    const typeForUI = 'inconnu';
-    
+    if (targetNode.type === NodeType.IDENTIFIER) {
+      varNameForUI = targetNode.name;
+      try { 
+        typeForUI = this.env.getEntry(targetNode.name, targetNode.line).type; 
+      } catch (e) {}
+    } else if (targetNode.type === NodeType.ARRAY_ACCESS) {
+      varNameForUI = targetNode.name + "[...]";
+      try { 
+        typeForUI = this.env.getEntry(targetNode.name, targetNode.line).type.replace(/\[\]/g, ''); 
+      } catch (e) {}
+    } else if (targetNode.type === NodeType.MEMBER_ACCESS) {
+      varNameForUI = targetNode.property;
+      try {
+        const obj = await this._evaluate(targetNode.object);
+        if (obj && obj.__type) {
+           const def = this.env.customTypes.get(obj.__type);
+           if (def && def[targetNode.property]) {
+             typeForUI = def[targetNode.property];
+           } else {
+             typeForUI = obj.__type;
+           }
+        }
+      } catch (e) {}
+    }
+
     let raw;
     if (this._inputFn) {
       raw = await this._inputFn(varNameForUI, typeForUI);
@@ -580,9 +616,15 @@ class Interpreter {
     }
 
     let finalValue = raw;
-    const num = Number(raw);
-    if (!isNaN(num) && String(raw).trim() !== '') {
-      finalValue = num;
+    // Si on connaît le type, on utilise la méthode de de-typisation du langage pour une erreur claire.
+    if (typeForUI !== 'inconnu') {
+      finalValue = this._coerceInput(raw, typeForUI, varNameForUI, targetNode.line);
+    } else {
+      // Fallback par défaut
+      const num = Number(raw);
+      if (!isNaN(num) && String(raw).trim() !== '') {
+        finalValue = num;
+      }
     }
 
     await this._setTargetValue(targetNode, finalValue);

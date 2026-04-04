@@ -394,10 +394,10 @@ input:checked + .slider:before { transform: translateX(20px); background-color: 
 @media (max-width: 768px) {
   .settings-modal {
     flex-direction: column;
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100dvh;
     max-width: 100vw;
-    max-height: 100vh;
+    max-height: 100dvh;
     border-radius: 0;
     border: none;
   }
@@ -542,3 +542,10 @@ input:checked + .slider:before { transform: translateX(20px); background-color: 
 .btn-secondary:hover { background: rgba(255, 255, 255, 0.05); }
 .btn-primary { background: #3b82f6; color: #fff; border: none; padding: 0.6rem 1.25rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; }
 .btn-primary:hover { background: #2563eb; }
+
+@media (max-width: 768px) {
+  .modal-content {
+    width: 95%;
+    max-height: 90dvh;
+  }
+}
