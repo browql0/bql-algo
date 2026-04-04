@@ -73,6 +73,7 @@ export const SIMPLE_KEYWORDS = new Map([
   ['ET',          TokenType.ET          ],
   ['OU',          TokenType.OU          ],
   ['NON',         TokenType.NON         ],
+  ['MOD',         TokenType.MOD         ],  // opérateur modulo (mot-clé)
 
   // Types de données
   ['ENTIER',      TokenType.TYPE_ENTIER    ],

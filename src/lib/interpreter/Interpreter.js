@@ -816,7 +816,8 @@ class Interpreter {
         });
         return this._toNumber(left, node.line) / r;
       }
-      case '%': {
+      case '%':
+      case 'MOD': {
         const r = this._toNumber(right, node.line);
         if (r === 0) throw new AlgoRuntimeError({
           message: `Impossible de calculer le modulo par zéro`,

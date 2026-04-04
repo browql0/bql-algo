@@ -1821,6 +1821,7 @@ class Parser {
 
     // ── 5. Borne de fin ──────────────────────────────────────────────────────
     // PAS est un soft-keyword : IDENTIFIER avec valeur 'PAS'
+    let to = new NumberNode(0, this._current()); // valeur par défaut en cas d'erreur
     if (
       this._isSoftKeyword('PAS') ||
       this._check(TokenType.FAIRE) ||
@@ -1831,15 +1832,16 @@ class Parser {
         this._current(),
         { hint: `Précisez la valeur de fin. Ex : POUR ${varName} ALLANT DE 1 A 10 FAIRE` }
       ));
+      // Ne pas lire l'expression : le token courant est PAS/FAIRE/FINPOUR
+    } else {
+      to = this._parseExpression();
     }
-    const to = this._parseExpression();
 
     // ── 6. PAS (optionnel) ───────────────────────────────────────────────────
-    //   • Absent    → step = null (pas implicite = 1 à l'exécution)
-    //   • PAS 1     → ERREUR : interdit (inutile)
+    //   • Absent    → step = null (pas implicite = direction auto à l'exécution)
     //   • PAS 0     → ERREUR : interdit (boucle infinie)
-    //   • PAS n≠0,1 → valide
-    let step = null; // null = PAS absent = pas implicite de 1
+    //   • PAS n≠0   → valide (PAS 1 redondant mais toléré)
+    let step = null; // null = PAS absent = direction auto déduite à l'exécution
 
     // PAS est un soft-keyword : IDENTIFIER avec valeur 'PAS'
     if (this._isSoftKeyword('PAS')) {
@@ -1882,14 +1884,9 @@ class Parser {
               pasTok,
               { hint: `Utilisez un pas non nul, ex : PAS 2 ou PAS -1` }
             ));
-          } else if (rawVal === 1) {
-            this._addError(this._makeError(
-              `PAS 1 interdit : le pas de 1 est implicite, n'écrivez pas "PAS 1"`,
-              pasTok,
-              { hint: `Supprimez "PAS 1". Ex : POUR ${varName} ALLANT DE 1 A 10 FAIRE` }
-            ));
           } else {
-            step = stepExpr; // pas valide, on l'utilise
+            // PAS valide (y compris PAS 1 qui est redondant mais toléré)
+            step = stepExpr;
           }
         } else {
           // Pas dynamique (variable ou expression) : on l'accepte pour l'AST,

@@ -47,7 +47,7 @@ const AuthLayout = () => {
             </div>
             <pre><code>
               <span className="keyword">ALGORITHME</span><span className="function">_Moyenne</span>;<br/>
-              <span className="keyword">VARIABLES</span>:<br/>
+              <span className="keyword">VARIABLES</span><br/>
               &nbsp;&nbsp;somme, i : <span className="variable">ENTIER</span>;<br/>
               &nbsp;&nbsp;note : <span className="variable">REEL</span>;<br/>
               <span className="keyword">DEBUT</span><br/>
