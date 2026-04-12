@@ -1,8 +1,8 @@
 /* ═══════════════════════════════════════════════════════════════════
-   INTERACTIVE TERMINAL — BQL Algo
-   Terminal avec support LIRE() interactif
-════════════════════════════════════════════════════════════════════ */
+   INTERACTIVE TERMINAL — BQL Algo  |  Premium Edition
+   ═══════════════════════════════════════════════════════════════════ */
 
+/* ── Container ───────────────────────────────────────────────────── */
 .iterm-container {
   width: 100%;
   flex: 1;
@@ -11,217 +11,379 @@
   flex-direction: column;
   overflow: hidden;
   position: relative;
-  transition: background 0.3s;
-}
-
-/* Default Theme (Hacker) */
-.iterm-theme-hacker { background: rgba(5, 7, 15, 0.98); }
-.iterm-theme-hacker .iterm-output { color: #34d399; }
-.iterm-theme-hacker .iterm-prompt { color: #10b981; }
-.iterm-theme-hacker .iterm-empty { color: #334155; }
-
-/* Matrix Theme */
-.iterm-theme-matrix { background: #000; border: 1px solid #003300; }
-.iterm-theme-matrix .iterm-output { color: #00ff41; text-shadow: 0 0 5px rgba(0, 255, 65, 0.5); }
-.iterm-theme-matrix .iterm-prompt { color: #008f11; }
-
-/* Classic Console (White on Black) */
-.iterm-theme-classic { background: #000; }
-.iterm-theme-classic .iterm-output { color: #eee; }
-.iterm-theme-classic .iterm-prompt { color: #aaa; }
-
-/* Light Theme (Solarized-like) */
-.iterm-theme-light { background: #fdf6e3; }
-.iterm-theme-light .iterm-output { color: #586e75; }
-.iterm-theme-light .iterm-prompt { color: #2aa198; }
-.iterm-theme-light .iterm-input-field { background: #eee8d5; color: #073642; border-color: #93a1a1; }
-
-/* Ocean Theme */
-.iterm-theme-ocean { background: #001b2a; }
-.iterm-theme-ocean .iterm-output { color: #7dd3fc; }
-.iterm-theme-ocean .iterm-prompt { color: #0ea5e9; }
-
-/* BQL Special Theme */
-.iterm-theme-bql { background: #0f1223; }
-.iterm-theme-bql .iterm-output { color: #60a5fa; }
-.iterm-theme-bql .iterm-prompt { color: #3b82f6; }
-
-
-/* ── Zone de sortie scrollable ───────────────────────────────────── */
-
-.iterm-output {
-  flex: 1;
-  padding: 1.25rem 1.5rem;
-  overflow-y: auto;
-  color: #a7f3d0;
-  line-height: 1.75;
-  box-sizing: border-box;
   font-variant-numeric: tabular-nums;
 }
 
-/* ── Scrollbar ───────────────────────────────────────────────────── */
-.iterm-output::-webkit-scrollbar        { width: 8px; }
-.iterm-output::-webkit-scrollbar-track  { background: transparent; }
-.iterm-output::-webkit-scrollbar-thumb  { background: #334155; border-radius: 4px; }
-.iterm-output::-webkit-scrollbar-thumb:hover { background: #475569; }
+/* ══════════════════════════════════════════════════════════════════
+   THEMES
+   ══════════════════════════════════════════════════════════════════ */
 
-/* ── Lignes de sortie ────────────────────────────────────────────── */
+/* ── Hacker (default) */
+.iterm-theme-hacker {
+  background: #050710;
+}
+.iterm-theme-hacker .iterm-output   { color: #a7f3d0; }
+.iterm-theme-hacker .iterm-prompt   { color: #10b981; }
+
+/* ── Matrix */
+.iterm-theme-matrix {
+  background: #000;
+  border-left: 1px solid #001a00;
+}
+.iterm-theme-matrix .iterm-output { color: #00ff41; text-shadow: 0 0 6px rgba(0,255,65,0.6); }
+.iterm-theme-matrix .iterm-prompt { color: #00aa28; }
+.iterm-theme-matrix .iterm-status-dot { background: #00ff41; box-shadow: 0 0 6px #00ff41; }
+.iterm-theme-matrix .iterm-header { border-bottom-color: #002800; }
+
+/* ── Classic */
+.iterm-theme-classic {
+  background: #0c0c0c;
+}
+.iterm-theme-classic .iterm-output { color: #eeeeee; }
+.iterm-theme-classic .iterm-prompt { color: #aaaaaa; }
+
+/* ── Light (Solarized) */
+.iterm-theme-light {
+  background: #fdf6e3;
+}
+.iterm-theme-light .iterm-output        { color: #586e75; }
+.iterm-theme-light .iterm-prompt        { color: #2aa198; }
+.iterm-theme-light .iterm-input-field   { background: #eee8d5; color: #073642; border-color: #93a1a1; }
+.iterm-theme-light .iterm-header        { background: #eee8d5; border-bottom-color: #d3ccbc; }
+.iterm-theme-light .iterm-header-title  { color: #586e75; }
+.iterm-theme-light .iterm-status-dot    { background: #2aa198; box-shadow: 0 0 4px #2aa198; }
+.iterm-theme-light .iterm-empty-state   { color: #93a1a1; }
+
+/* ── Ocean */
+.iterm-theme-ocean {
+  background: #001b2a;
+}
+.iterm-theme-ocean .iterm-output { color: #7dd3fc; }
+.iterm-theme-ocean .iterm-prompt { color: #0ea5e9; }
+.iterm-theme-ocean .iterm-status-dot { background: #38bdf8; box-shadow: 0 0 6px rgba(56,189,248,0.7); }
+
+/* ── BQL Special */
+.iterm-theme-bql {
+  background: #080e20;
+}
+.iterm-theme-bql .iterm-output { color: #93c5fd; }
+.iterm-theme-bql .iterm-prompt { color: #3b82f6; }
+.iterm-theme-bql .iterm-status-dot { background: #60a5fa; box-shadow: 0 0 6px rgba(96,165,250,0.7); }
+
+/* ══════════════════════════════════════════════════════════════════
+   HEADER BAR (titre + statut + badge)
+   ══════════════════════════════════════════════════════════════════ */
+.iterm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  height: 32px;
+  flex-shrink: 0;
+  background: rgba(0,0,0,0.25);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  gap: 0.75rem;
+}
+
+.iterm-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.iterm-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 6px rgba(16,185,129,0.8);
+  flex-shrink: 0;
+  animation: dotGlow 2.5s ease-in-out infinite;
+}
+.iterm-status-dot.running {
+  background: #f59e0b;
+  box-shadow: 0 0 8px rgba(245,158,11,0.9);
+  animation: dotBlink 0.8s ease-in-out infinite;
+}
+@keyframes dotGlow {
+  0%,100% { box-shadow: 0 0 4px rgba(16,185,129,0.6); }
+  50%      { box-shadow: 0 0 10px rgba(16,185,129,1); }
+}
+@keyframes dotBlink {
+  0%,100% { opacity:1; }
+  50%      { opacity:0.3; }
+}
+
+.iterm-header-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.3);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.iterm-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.iterm-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 100px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  user-select: none;
+}
+.iterm-badge--ready   { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.25); }
+.iterm-badge--running { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.25); animation: pulse 1s ease-in-out infinite; }
+.iterm-badge--done    { background: rgba(96,165,250,0.1);  color: #93c5fd; border: 1px solid rgba(96,165,250,0.2); }
+
+@keyframes pulse {
+  0%,100% { opacity:1; }
+  50%      { opacity:0.6; }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   OUTPUT ZONE
+   ══════════════════════════════════════════════════════════════════ */
+.iterm-output {
+  flex: 1;
+  padding: 1rem 1.25rem;
+  overflow-y: auto;
+  line-height: 1.8;
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+}
+
+.iterm-output::-webkit-scrollbar       { width: 5px; }
+.iterm-output::-webkit-scrollbar-track { background: transparent; }
+.iterm-output::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+.iterm-output::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+
+/* ── Lines ── */
 .iterm-line {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 10px;
   padding: 1px 0;
+  animation: lineIn 0.15s ease;
+}
+@keyframes lineIn {
+  from { opacity:0; transform:translateY(3px); }
+  to   { opacity:1; transform:translateY(0); }
 }
 
 .iterm-prompt {
-  color: #34d399;
-  font-weight: bold;
+  font-weight: 700;
   flex-shrink: 0;
   user-select: none;
   min-width: 14px;
+  opacity: 0.7;
 }
 
 .iterm-text {
   white-space: pre-wrap;
-  word-break: break-all;
+  word-break: break-word;
   flex: 1;
 }
 
-/* Variantes de ligne */
-.iterm-line--warn .iterm-text  { color: #fbbf24; }
+/* Line variants */
+.iterm-line--warn  .iterm-text { color: #fbbf24; }
+.iterm-line--warn  .iterm-prompt { color: #f59e0b; }
 .iterm-line--error .iterm-text { color: #f87171; }
+.iterm-line--error .iterm-prompt { color: #ef4444; }
 
-/* ── État vide / chargement ─────────────────────────────────────── */
-.iterm-empty {
-  color: #475569;
-  font-style: italic;
+/* ══════════════════════════════════════════════════════════════════
+   EMPTY STATE (premium)
+   ══════════════════════════════════════════════════════════════════ */
+.iterm-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 0.6rem;
+  padding: 2rem;
+  text-align: center;
+  user-select: none;
 }
 
+.iterm-empty-icon {
+  font-size: 2rem;
+  opacity: 0.12;
+  animation: floatUp 3.5s ease-in-out infinite;
+  line-height: 1;
+}
+@keyframes floatUp {
+  0%,100% { transform:translateY(0); }
+  50%      { transform:translateY(-7px); }
+}
+
+.iterm-empty-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.18);
+  letter-spacing: 0.01em;
+}
+
+.iterm-empty-sub {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.1);
+  line-height: 1.5;
+}
+
+.iterm-shortcut {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+.iterm-shortcut kbd {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 0.7rem;
+  font-family: inherit;
+  color: rgba(255,255,255,0.3);
+  box-shadow: 0 2px 0 rgba(0,0,0,0.3);
+}
+.iterm-shortcut span {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.15);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   RUNNING STATE
+   ══════════════════════════════════════════════════════════════════ */
 .iterm-running {
-  color: #64748b;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  color: rgba(255,255,255,0.25);
+  font-size: 0.85rem;
+  padding: 2px 0;
 }
 
 .iterm-dot-anim {
-  animation: dotPulse 1.2s ease-in-out infinite;
-  letter-spacing: 4px;
+  display: inline-flex;
+  gap: 3px;
+}
+.iterm-dot-anim span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: dotBounce 1.2s ease-in-out infinite;
+}
+.iterm-dot-anim span:nth-child(2) { animation-delay: 0.2s; }
+.iterm-dot-anim span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dotBounce {
+  0%,80%,100% { transform:scale(0.6); opacity:0.4; }
+  40%          { transform:scale(1);   opacity:1; }
 }
 
-@keyframes dotPulse {
-  0%, 100% { opacity: 0.3; }
-  50%       { opacity: 1;   }
-}
-
-/* ── Zone d'input interactif (LIRE) ─────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════
+   INPUT ZONE (LIRE)
+   ══════════════════════════════════════════════════════════════════ */
 .iterm-input-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 4px;
-  padding: 8px 0;
-  border-top: 1px solid rgba(52, 211, 153, 0.15);
+  padding: 10px 0 4px;
   animation: inputAppear 0.2s ease;
 }
-
 @keyframes inputAppear {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity:0; transform:translateY(5px); }
+  to   { opacity:1; transform:translateY(0); }
 }
 
 .iterm-prompt--input {
   color: #60a5fa;
-  font-size: 1.1em;
+  font-size: 1.05em;
+  font-weight: 700;
 }
 
 .iterm-input-form {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .iterm-input-field {
   flex: 1;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(96, 165, 250, 0.4);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(96,165,250,0.3);
   border-radius: 6px;
   color: #e2e8f0;
-  padding: 0.4rem 0.75rem;
+  padding: 0.45rem 0.85rem;
   font-family: inherit;
   font-size: inherit;
   outline: none;
   caret-color: #60a5fa;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
-
 .iterm-input-field:focus {
+  background: rgba(96,165,250,0.06);
   border-color: #60a5fa;
-  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.15);
+  box-shadow: 0 0 0 3px rgba(96,165,250,0.12);
 }
-
 .iterm-input-field::placeholder {
-  color: #475569;
+  color: rgba(255,255,255,0.2);
   font-style: italic;
 }
 
-/* Bouton soumettre */
 .iterm-submit-btn {
-  background: rgba(96, 165, 250, 0.1);
-  border: 1px solid rgba(96, 165, 250, 0.3);
+  background: rgba(96,165,250,0.1);
+  border: 1px solid rgba(96,165,250,0.25);
   color: #60a5fa;
   border-radius: 6px;
-  padding: 0.4rem 0.6rem;
+  padding: 0.45rem 0.7rem;
   cursor: pointer;
-  font-size: 1.1em;
+  font-size: 1.05em;
   line-height: 1;
-  transition: background 0.2s, transform 0.1s;
+  transition: all 0.15s;
   flex-shrink: 0;
 }
+.iterm-submit-btn:hover  { background: rgba(96,165,250,0.2); transform:scale(1.06); }
+.iterm-submit-btn:active { transform:scale(0.96); }
 
-.iterm-submit-btn:hover {
-  background: rgba(96, 165, 250, 0.2);
-  transform: scale(1.05);
-}
-
-.iterm-submit-btn:active {
-  transform: scale(0.97);
-}
-
-/* ── Hint de type ────────────────────────────────────────────────── */
+/* ── Type hint ── */
 .iterm-hint {
-  font-size: 0.8em;
-  color: #64748b;
-  padding: 4px 0 8px 22px;
+  font-size: 0.76em;
+  color: rgba(255,255,255,0.22);
+  padding: 3px 0 8px 24px;
   line-height: 1.5;
 }
-
 .iterm-hint code {
-  color: #a78bfa;
-  background: rgba(167, 139, 250, 0.1);
+  color: #c4b5fd;
+  background: rgba(167,139,250,0.1);
   padding: 1px 5px;
   border-radius: 3px;
 }
+.iterm-hint strong { color: rgba(255,255,255,0.35); }
 
-.iterm-hint strong {
-  color: #94a3b8;
+/* ── Separator between output and input ── */
+.iterm-separator {
+  height: 1px;
+  margin: 4px 0;
+  background: linear-gradient(90deg, transparent, rgba(96,165,250,0.2), transparent);
+  flex-shrink: 0;
 }
 
-/* ── Responsive mobile ───────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════
+   MOBILE
+   ══════════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  .iterm-output {
-    padding: 0.75rem 1rem;
-    font-size: 14px; /* Un peu plus lisible */
-  }
-
-  .iterm-input-field {
-    padding: 0.6rem 0.75rem;
-    font-size: 16px !important; /* iOS Safari Zoom Fix */
-  }
-
-  .iterm-submit-btn {
-    padding: 0.6rem 0.8rem;
-    font-size: 1.2em;
-  }
+  .iterm-output        { padding: 0.75rem 0.9rem; font-size: 14px; }
+  .iterm-input-field   { padding: 0.6rem 0.75rem; font-size: 16px !important; }
+  .iterm-submit-btn    { padding: 0.6rem 0.8rem; font-size: 1.2em; }
+  .iterm-header        { height: 28px; }
+  .iterm-header-title  { display: none; }
+  .iterm-empty-icon    { font-size: 1.6rem; }
 }

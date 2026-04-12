@@ -1,20 +1,18 @@
 /**
  * InteractiveTerminal.jsx
  * ─────────────────────────────────────────────────────────────────────────────
- * Terminal React interactif pour le pseudo-langage marocain.
+ * Terminal React interactif pour BQL Algo.
  *
  * Fonctionnement :
- *   1. ECRIRE() → chaque sortie est streamée en temps réel via onNewLine()
- *   2. LIRE()    → l'interpréteur appelle requestInput(varName, type) qui
- *                  retourne une Promise; le terminal affiche un champ input;
- *                  quand l'utilisateur tape Enter → resolve(value)
+ *   1. ECRIRE() → chaque sortie streamée en temps réel via outputCallback()
+ *   2. LIRE()   → retourne une Promise; le terminal affiche un champ input
  *
  * Props :
  *   lines        : string[]   — lignes déjà produites (snapshot)
- *   inputPrompt  : object|null — { varName, type, resolve } ou null
- *   onSubmitInput: (value) => void — appelé quand user soumet une valeur
- *   isRunning    : boolean     — true pendant l'exécution
- *   settings     : object      — préférences (fontSize, fontFamily, theme)
+ *   inputPrompt  : object|null — { varName, type } ou null
+ *   onSubmitInput: (value) => void
+ *   isRunning    : boolean
+ *   settings     : object      — préférences (fontSize, fontFamily, terminalTheme…)
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -37,33 +35,32 @@ const InteractiveTerminal = ({
   settings,
 }) => {
   const [inputValue, setInputValue] = useState('');
-  const scrollRef  = useRef(null);
-  const inputRef   = useRef(null);
+  const scrollRef = useRef(null);
+  const inputRef  = useRef(null);
 
-  // Style dynamique (vitesse gérée au niveau de l'interpréteur / layout)
+  // Dynamic font style from settings
   const fontStyle = {
-    fontSize: `${settings?.terminalFontSize || 15}px`,
+    fontSize: `${settings?.terminalFontSize || 14}px`,
     fontFamily: settings?.fontFamily === 'fira'     ? "'Fira Code', monospace"
               : settings?.fontFamily === 'consolas' ? "'Consolas', monospace"
               : settings?.fontFamily === 'ubuntu'   ? "'Ubuntu Mono', monospace"
               : "'JetBrains Mono', monospace",
   };
 
-  // Auto-scroll vers le bas à chaque nouvelle ligne ou prompt
+  // Auto-scroll to bottom on new output or prompt
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [lines, inputPrompt]);
 
-  // Focus automatique sur l'input quand un prompt apparaît
+  // Focus input when a LIRE() prompt appears
   useEffect(() => {
     if (inputPrompt && inputRef.current) {
       inputRef.current.focus();
     }
   }, [inputPrompt]);
 
-  // Reset de l'input après soumission
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!inputPrompt || !onSubmitInput) return;
@@ -73,32 +70,64 @@ const InteractiveTerminal = ({
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      handleSubmit(e);
-    }
+    if (e.key === 'Enter') handleSubmit(e);
   };
 
   const theme = settings?.terminalTheme || 'hacker';
 
+  // Status badge
+  const badge = isRunning
+    ? { label: 'Exécution', cls: 'iterm-badge--running' }
+    : lines.length > 0
+    ? { label: 'Terminé',   cls: 'iterm-badge--done' }
+    : { label: 'Prêt',      cls: 'iterm-badge--ready' };
+
+  const isEmpty = lines.length === 0 && !inputPrompt && !isRunning;
+
   return (
     <div className={`iterm-container iterm-theme-${theme}`} style={fontStyle}>
 
-      {/* ── Zone de sortie (scrollable) ── */}
+      {/* ── Header bar ── */}
+      <div className="iterm-header">
+        <div className="iterm-header-left">
+          <span className={`iterm-status-dot${isRunning ? ' running' : ''}`} />
+          <span className="iterm-header-title">bql_output</span>
+        </div>
+        <div className="iterm-header-right">
+          <span className={`iterm-badge ${badge.cls}`}>{badge.label}</span>
+        </div>
+      </div>
+
+      {/* ── Output zone (scrollable) ── */}
       <div className="iterm-output" ref={scrollRef}>
 
-        {/* État initial vide */}
-        {lines.length === 0 && !inputPrompt && !isRunning && (
-          <span className="iterm-empty">En attente d'exécution…</span>
+        {/* Premium empty state */}
+        {isEmpty && (
+          <div className="iterm-empty-state">
+            <div className="iterm-empty-icon">⬡</div>
+            <div className="iterm-empty-title">Aucune sortie</div>
+            <div className="iterm-empty-sub">
+              Exécutez votre algorithme pour voir la sortie ici.
+            </div>
+            <div className="iterm-shortcut">
+              <kbd>Ctrl</kbd>
+              <span>+</span>
+              <kbd>Enter</kbd>
+            </div>
+          </div>
         )}
 
-        {/* Animation d'exécution sans sortie encore */}
+        {/* Running animation (no output yet) */}
         {isRunning && lines.length === 0 && !inputPrompt && (
-          <span className="iterm-running">
-            <span className="iterm-dot-anim">●●●</span> Exécution en cours…
-          </span>
+          <div className="iterm-running">
+            <div className="iterm-dot-anim">
+              <span /><span /><span />
+            </div>
+            Exécution en cours…
+          </div>
         )}
 
-        {/* Lignes de sortie */}
+        {/* Output lines */}
         {lines.map((line, i) => (
           <div key={i} className={`iterm-line ${_lineClass(line)}`}>
             <span className="iterm-prompt">&gt;</span>
@@ -106,7 +135,12 @@ const InteractiveTerminal = ({
           </div>
         ))}
 
-        {/* Prompt LIRE en attente */}
+        {/* Separator before input */}
+        {inputPrompt && lines.length > 0 && (
+          <div className="iterm-separator" />
+        )}
+
+        {/* Interactive LIRE() input */}
         {inputPrompt && (
           <div className="iterm-input-row">
             <span className="iterm-prompt iterm-prompt--input">?</span>
@@ -118,9 +152,7 @@ const InteractiveTerminal = ({
                 value={inputValue}
                 onChange={e => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={
-                  `${inputPrompt.varName} (${TYPE_HINTS[inputPrompt.type] ?? inputPrompt.type})`
-                }
+                placeholder={`${inputPrompt.varName} (${TYPE_HINTS[inputPrompt.type] ?? inputPrompt.type})`}
                 spellCheck={false}
                 autoComplete="off"
                 autoCorrect="off"
@@ -133,7 +165,7 @@ const InteractiveTerminal = ({
           </div>
         )}
 
-        {/* Curseur clignotant (en attente input) */}
+        {/* Type hint */}
         {inputPrompt && (
           <div className="iterm-hint">
             💡 Variable <code>{inputPrompt.varName}</code> de type <strong>{inputPrompt.type.toUpperCase()}</strong>
@@ -146,12 +178,11 @@ const InteractiveTerminal = ({
 };
 
 /**
- * Détermine la classe CSS d'une ligne selon son contenu.
- * Permet de colorier différemment les avertissements, erreurs, etc.
+ * Determines CSS class for a line based on its content.
  */
 function _lineClass(line) {
   if (line.startsWith('[LIRE]') || line.startsWith('[Erreur]')) return 'iterm-line--warn';
-  if (line.startsWith('[runtime')) return 'iterm-line--error';
+  if (line.startsWith('[runtime') || line.startsWith('[Erreur interne]'))  return 'iterm-line--error';
   return '';
 }
 

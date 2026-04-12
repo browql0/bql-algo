@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { AlertCircle, Mail, Lock } from 'lucide-react';
 
@@ -9,6 +9,10 @@ const Login = () => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Page que l'utilisateur voulait visiter avant d'être redirigé vers /login
+  const redirectTo = location.state?.from?.pathname || '/editor';
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -31,7 +35,8 @@ const Login = () => {
         : error.message);
       setLoading(false);
     } else {
-      navigate('/editor');
+      // Rediriger vers la page d'origine ou /editor par défaut
+      navigate(redirectTo, { replace: true });
     }
   };
 

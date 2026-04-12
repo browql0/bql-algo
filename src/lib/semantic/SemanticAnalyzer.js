@@ -342,12 +342,17 @@ class SemanticAnalyzer {
            value: name,
          });
        } else if (entry.isArray) {
-         this._addError({
-           message: `Affectation invalide : le tableau '${name}' ne peut pas être utilisé sans indice`,
-           line: node.line,
-           column: node.column,
-           value: name,
-         });
+          const _dims = entry.dimensions ?? 1;
+          const _idxEx = _dims === 1
+            ? name + '[i]'
+            : name + '[' + Array.from({length:_dims},(_,k)=>(['i','j','k'][k]||('i'+k))).join(', ') + ']';
+          this._addError({
+            message: `Affectation invalide : le tableau '${name}' ne peut pas recevoir une valeur scalaire`,
+            line: node.line,
+            column: node.column,
+            value: name,
+            hint: `Affectez case par case : ${_idxEx} <- valeur;`,
+          });
        } else {
          entry.initialized = true;
          if (node.value) {
@@ -651,22 +656,80 @@ class SemanticAnalyzer {
    * On l'ignore silencieusement pour éviter les fausses erreurs en cascade.
    */
   _analyzeInput(node) {
-    const target = node.target || node.variable; 
-    
-    // Si target est un noeud complexe géré par _analyzeTarget
+    const target = node.target;
+
+    // ── Nœud AST complet (nouveau chemin)
     if (target && typeof target === 'object') {
-       if (target.type === NodeType.ARRAY_ACCESS || target.type === NodeType.IDENTIFIER || target.type === NodeType.MEMBER_ACCESS) {
-          this._analyzeTarget(target, true, false);
+      if (target.type === NodeType.ARRAY_ACCESS) {
+        // LIRE(notes[i]) ou LIRE(M[i, j]) → chemin normal
+        this._analyzeTarget(target, true, false);
+        return;
+      }
+
+      if (target.type === NodeType.MEMBER_ACCESS) {
+        this._analyzeTarget(target, true, false);
+        return;
+      }
+
+      if (target.type === NodeType.IDENTIFIER) {
+        const name = target.name;
+        if (!isValidVariableName(name)) return;
+
+        const entry = this.symbolTable.variables[name] || this.symbolTable.constantes[name];
+        if (!entry) {
+          this._addError({
+            message: `Identifiant '${name}' non déclaré`,
+            line: node.line,
+            column: node.column,
+            value: name,
+            hint: `Déclarez '${name}' dans le bloc VARIABLE(S) avant DEBUT.`,
+          });
           return;
-       }
+        }
+
+        if (entry.immutable) {
+          this._addError({
+            message: `Impossible de lire la constante '${name}' avec LIRE`,
+            line: node.line,
+            column: node.column,
+            value: name,
+          });
+          return;
+        }
+
+        // ── Erreur pédagogique : tableau ou matrice sans indice
+        if (entry.isArray) {
+          const dims = entry.dimensions ?? 1;
+          if (dims === 1) {
+            this._addError({
+              message: `Impossible de lire le tableau '${name}' entier avec LIRE`,
+              line: node.line,
+              column: node.column,
+              value: name,
+              hint: `Utilisez un indice pour lire une case du tableau : LIRE(${name}[i]);`,
+            });
+          } else {
+            const idxPlaceholders = Array.from({ length: dims }, (_, k) => ['i','j','k'][k] || `i${k}`).join(', ');
+            this._addError({
+              message: `Impossible de lire la matrice '${name}' entière avec LIRE`,
+              line: node.line,
+              column: node.column,
+              value: name,
+              hint: `Utilisez des indices pour lire une case : LIRE(${name}[${idxPlaceholders}]);`,
+            });
+          }
+          return;
+        }
+
+        // Variable scalaire → OK
+        entry.initialized = true;
+        return;
+      }
     }
 
-    // Fallback pour compatibilité (si target est juste un nom en string)
+    // ── Fallback legacy (target = string)
     const name = typeof target === 'string' ? target : target?.name;
-
-    if (!name || !isValidVariableName(name)) {
-      return; 
-    }
+    if (!name || !isValidVariableName(name)) return;
 
     const entry = this.symbolTable.variables[name] || this.symbolTable.constantes[name];
     if (!entry) {
@@ -675,7 +738,7 @@ class SemanticAnalyzer {
         line: node.line,
         column: node.column,
         value: name,
-        hint: `Déclarez '${name}' dans le bloc VARIABLES avant DEBUT.`,
+        hint: `Déclarez '${name}' dans le bloc VARIABLE(S) avant DEBUT.`,
       });
     } else if (entry.immutable) {
       this._addError({
@@ -751,7 +814,14 @@ class SemanticAnalyzer {
           return null;
         }
         if (entry.isArray) {
-          this._addError({ message: `Affectation invalide : le tableau '${name}' ne peut pas être modifié sans indice`, line: node.line, column: node.column });
+          const dims = entry.dimensions ?? 1;
+          const idxEx = dims === 1 ? `${name}[i]` : `${name}[${Array.from({length:dims},(_,k)=>(['i','j','k'][k]||('i'+k))).join(', ')}]`;
+          this._addError({
+            message: `Affectation invalide : le tableau '${name}' ne peut pas recevoir une valeur scalaire`,
+            line: node.line,
+            column: node.column,
+            hint: `Affectez case par case : ${idxEx} <- valeur;`,
+          });
           return null;
         }
         entry.initialized = true;
@@ -848,7 +918,7 @@ class SemanticAnalyzer {
         // Opérateurs logiques → booleen
         if (['ET', 'OU'].includes(operator)) return 'booleen';
         // Opérateurs de comparaison → booleen
-        if (['=', '!=', '<', '<=', '>', '>='].includes(operator)) return 'booleen';
+        if (['=', '!=', '<>', '<', '<=', '>', '>='].includes(operator)) return 'booleen';
         // Arithmétique → numérique (on ne peut pas distinguer entier/reel sans évaluation)
         if (['+', '-', '*', '/', '%', '^'].includes(operator)) {
           const leftType  = this._inferExprType(node.left);

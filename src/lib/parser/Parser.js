@@ -1372,6 +1372,20 @@ class Parser {
       target = new ArrayAccessNode(nameTok.value, sizes, nameTok);
     }
 
+    // 1b. Catch de l'erreur classique M[i][j] au lieu de M[i, j]
+    if (this._check(TokenType.LBRACKET)) {
+      this._addError(this._makeError(
+        `Syntaxe incorrecte pour l'accès matriciel`,
+        this._current(),
+        { hint: `En BQL, on utilise une seule paire de crochets : écrivez ${nameTok.value}[..., ...] au lieu de ${nameTok.value}[...][...]` }
+      ));
+      this._advance(); // Consume '['
+      while(!this._check(TokenType.RBRACKET) && !this._check(TokenType.SEMICOLON) && !this._isAtEnd()) {
+        this._advance();
+      }
+      if (this._check(TokenType.RBRACKET)) this._advance();
+    }
+
     // 2. Accès membre (ex: .nom)
     let hasMemberAccess = false;
     while (this._match(TokenType.DOT)) {
@@ -2169,11 +2183,26 @@ class Parser {
       }
 
       targetNode = new ArrayAccessNode(varTok.value, indices, varTok);
-    } else {
-      // Variable simple
+    }
+
+    // Capture syntaxe incorrecte M[i][j] → erreur pédagogique
+    if (this._check(TokenType.LBRACKET)) {
+      this._addError(this._makeError(
+        `Syntaxe incorrecte pour l'accès matriciel`,
+        this._current(),
+        { hint: `En BQL, on utilise une seule paire de crochets : écrivez ${varTok.value}[..., ...] au lieu de ${varTok.value}[...][...]` }
+      ));
+      this._advance();
+      while(!this._check(TokenType.RBRACKET) && !this._isAtEnd()) this._advance();
+      if (this._check(TokenType.RBRACKET)) this._advance();
+    }
+
+    // Fallback variable simple SEULEMENT si aucun accès indexé n'a été parsé
+    if (!hasArrayAccess) {
       targetNode = new IdentifierNode(varTok.value, varTok);
     }
     
+
     // NOUVEAU : Lecture d'un champ d'enregistrement (ex: LIRE(e.nom) ou LIRE(T[i].nom))
     let hasMemberAccess = false;
     while (this._match(TokenType.DOT)) {
@@ -2380,6 +2409,18 @@ class Parser {
         }
 
         node = new ArrayAccessNode(idTok.value, indices, idTok);
+      }
+      
+      // Capture syntaxe matrice M[i][j]
+      if (this._check(TokenType.LBRACKET)) {
+        this._addError(this._makeError(
+          `Syntaxe incorrecte pour l'accès matriciel`,
+          this._current(),
+          { hint: `En BQL, on utilise une seule paire de crochets : écrivez ${idTok.value}[..., ...] au lieu de ${idTok.value}[...][...]` }
+        ));
+        this._advance();
+        while(!this._check(TokenType.RBRACKET) && !this._isAtEnd()) this._advance();
+        if (this._check(TokenType.RBRACKET)) this._advance();
       }
       
       // Suite d'accès membres (ex: variable.champ.souschamp)

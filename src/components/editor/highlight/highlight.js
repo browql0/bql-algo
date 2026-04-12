@@ -23,7 +23,7 @@ const TYPES = ['ENTIER', 'REEL', 'CHAINE', 'CARACTERE', 'BOOLEEN'];
 
 const FUNCTIONS = ['ECRIRE', 'LIRE'];
 const BOOLEANS = ['VRAI', 'FAUX'];
-const OPERATORS = ['<-', '←', '=', '<', '>', '<=', '>=', '!=', '+', '-', '*', '/', '%', '^', 'ET', 'OU', 'NON'];
+const OPERATORS = ['<-', '←', '=', '<>', '<', '>', '<=', '>=', '+', '-', '*', '/', '%', '^', 'ET', 'OU', 'NON'];
 
 function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& = whole matched string

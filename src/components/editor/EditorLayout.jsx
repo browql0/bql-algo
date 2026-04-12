@@ -1,25 +1,53 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
-import { TerminalSquare, Play, Loader2, BookOpen, Trophy, Settings, Plus, X, Share2, DownloadCloud, Check, User, CreditCard, LogOut, RotateCcw, AlertTriangle, Code, Terminal, Wand2, StepForward, List, MoreVertical } from 'lucide-react';
-import CodeEditor from './CodeEditor';
-import InteractiveTerminal from './InteractiveTerminal';
-import ErrorPanel from './ErrorPanel';
-import SettingsModal from './SettingsModal';
-import ProfileModal from './ProfileModal';
-import BillingModal from './BillingModal';
-import ArrayVisualizer from './ArrayVisualizer';
-import { executeCode, getStructuredErrors } from '../../lib/executeCode.js';
-import { formatCode } from '../../lib/formatter/Formatter.js';
-import './EditorLayout.css';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import { supabase } from "../../lib/supabase";
+import {
+  TerminalSquare,
+  Play,
+  Loader2,
+  BookOpen,
+  Trophy,
+  Settings,
+  Plus,
+  X,
+  Share2,
+  DownloadCloud,
+  Check,
+  User,
+  CreditCard,
+  LogOut,
+  RotateCcw,
+  AlertTriangle,
+  Code,
+  Terminal,
+  Wand2,
+  StepForward,
+  List,
+  Menu,
+  Award,
+} from "lucide-react";
+import CodeEditor from "./CodeEditor";
+import InteractiveTerminal from "./InteractiveTerminal";
+import ErrorPanel from "./ErrorPanel";
+import SettingsModal from "./SettingsModal";
+import ProfileModal from "./ProfileModal";
+import BillingModal from "./BillingModal";
+import ArrayVisualizer from "./ArrayVisualizer";
+import { ValidationOverlay } from "./ValidationOverlay";
+import { executeCode, getStructuredErrors } from "../../lib/executeCode.js";
+import { analyzeFeedback } from "../../lib/feedbackAnalyzer.js";
+import { compareOutputs, getStringDiffInfo, numericMatch } from "../../lib/outputUtils.js";
+import { formatCode } from "../../lib/formatter/Formatter.js";
+import "./EditorLayout.css";
 
 const DEFAULT_SETTINGS = {
-  fontSize: '14',
-  fontFamily: 'jetbrains',
-  lineHeight: '1.5',
+  fontSize: "14",
+  fontFamily: "jetbrains",
+  lineHeight: "1.5",
   fontLigatures: true,
   editorZoom: 100,
-  tabSize: '4',
+  tabSize: "4",
   wordWrap: false,
   lineNumbers: true,
   highlightActiveLine: true,
@@ -39,18 +67,18 @@ const DEFAULT_SETTINGS = {
   highlightRunningLine: false,
   simplifiedErrors: true,
   beginnerMode: true,
-  errorDetailLevel: 'normal',
+  errorDetailLevel: "normal",
   autoGotoFirstError: true,
   groupSimilarErrors: true,
   showCorrectionSuggestions: true,
-  terminalTheme: 'hacker',
-  terminalFontSize: '14',
+  terminalTheme: "hacker",
+  terminalFontSize: "14",
   clearTerminalOnRun: true,
   keepHistory: false,
-  terminalSpeed: 'normal',
-  globalTheme: 'dark',
-  accentColor: 'blue',
-  interfaceDensity: 'comfortable',
+  terminalSpeed: "normal",
+  globalTheme: "dark",
+  accentColor: "blue",
+  interfaceDensity: "comfortable",
   enableAnimations: true,
   enableVisualEffects: false,
   autoSave: false,
@@ -58,7 +86,7 @@ const DEFAULT_SETTINGS = {
   confirmBeforeReset: true,
   showFieldNames: false,
   advancedArrayView: true,
-  compactRecordView: true
+  compactRecordView: true,
 };
 
 const EditorLayout = () => {
@@ -67,11 +95,11 @@ const EditorLayout = () => {
   // Editor Settings State (defined first to be used in files init)
   const [settings, setSettings] = useState(() => {
     try {
-      const saved = localStorage.getItem('bql_editor_settings');
+      const saved = localStorage.getItem("bql_editor_settings");
       if (saved) {
         return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
       }
-    } catch (e) { }
+    } catch (e) {}
     return DEFAULT_SETTINGS;
   });
 
@@ -79,43 +107,44 @@ const EditorLayout = () => {
   const [files, setFiles] = useState(() => {
     let shouldRestore = DEFAULT_SETTINGS.restoreLastSession;
     try {
-      const savedSettings = localStorage.getItem('bql_editor_settings');
+      const savedSettings = localStorage.getItem("bql_editor_settings");
       if (savedSettings) {
         shouldRestore = JSON.parse(savedSettings).restoreLastSession;
       }
 
       if (shouldRestore !== false) {
-        const savedFiles = localStorage.getItem('bql_files_cache');
+        const savedFiles = localStorage.getItem("bql_files_cache");
         if (savedFiles) {
           const parsed = JSON.parse(savedFiles);
-          if (parsed && Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (parsed && Array.isArray(parsed) && parsed.length > 0)
+            return parsed;
         }
       }
-    } catch (e) { }
+    } catch (e) {}
 
-    return [{ id: 1, name: 'main.bql', content: '' }];
+    return [{ id: 1, name: "main.bql", content: "" }];
   });
 
   const [activeFileId, setActiveFileId] = useState(() => files[0]?.id || 1);
   const [fileCounter, setFileCounter] = useState(() => {
     if (files.length === 0) return 2;
-    const ids = files.map(f => f.id);
+    const ids = files.map((f) => f.id);
     return Math.max(...ids) + 1;
   });
 
   // --- STATES & REFS Initialization ---
-  const [activeRightTab, setActiveRightTab] = useState('terminal');
-  const [activeMobilePane, setActiveMobilePane] = useState('editor');
+  const [activeRightTab, setActiveRightTab] = useState("terminal");
+  const [activeMobilePane, setActiveMobilePane] = useState("editor");
   const [outputLines, setOutputLines] = useState([]);
   const [structuredErrors, setStructuredErrors] = useState([]);
-  const [errorSourceCode, setErrorSourceCode] = useState('');
+  const [errorSourceCode, setErrorSourceCode] = useState("");
   const [isExecuting, setIsExecuting] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [formatMessage, setFormatMessage] = useState('');
+  const [formatMessage, setFormatMessage] = useState("");
 
   // Array Visualizer state
-  const [arrayData, setArrayData]           = useState(new Map());
-  const [recordData, setRecordData]         = useState(new Map());
+  const [arrayData, setArrayData] = useState(new Map());
+  const [recordData, setRecordData] = useState(new Map());
   const [lastArrayAction, setLastArrayAction] = useState(null);
 
   // Pedagogy state (Lot 3)
@@ -128,17 +157,62 @@ const EditorLayout = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
-  const [user, setUser] = useState(null);
+
+  // Auth depuis le contexte centralisé (plus besoin de gérer localement)
+  const { user, signOut } = useAuth();
+
+  // ── Drag Resize ───────────────────────────────────────────────────────────
+  const [splitRatio, setSplitRatio] = useState(52); // % pour le pane gauche
+  const isDraggingRef = useRef(false);
+  const resizerRef = useRef(null);
+  const workspaceRef = useRef(null);
+
+  useEffect(() => {
+    const onMove = (clientX) => {
+      if (!isDraggingRef.current || !workspaceRef.current) return;
+      const rect = workspaceRef.current.getBoundingClientRect();
+      const ratio = ((clientX - rect.left) / rect.width) * 100;
+      setSplitRatio(Math.min(Math.max(ratio, 25), 75)); // clamp 25%–75%
+    };
+    const onUp = () => {
+      if (!isDraggingRef.current) return;
+      isDraggingRef.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      resizerRef.current?.classList.remove("is-dragging");
+    };
+    const onMouseMove = (e) => onMove(e.clientX);
+    const onTouchMove = (e) => onMove(e.touches[0].clientX);
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onUp);
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    window.addEventListener("touchend", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onUp);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onUp);
+    };
+  }, []);
+
+  const handleResizerMouseDown = (e) => {
+    e.preventDefault();
+    isDraggingRef.current = true;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    resizerRef.current?.classList.add("is-dragging");
+  };
 
   // ─ Auto Save Effect
   useEffect(() => {
     if (settings.autoSave !== false) {
-      localStorage.setItem('bql_files_cache', JSON.stringify(files));
+      localStorage.setItem("bql_files_cache", JSON.stringify(files));
     }
   }, [files, settings.autoSave]);
 
   useEffect(() => {
-    const savedHistory = localStorage.getItem('bql_terminal_history');
+    const savedHistory = localStorage.getItem("bql_terminal_history");
     if (savedHistory && settings.keepHistory !== false) {
       setOutputLines(JSON.parse(savedHistory));
     }
@@ -152,19 +226,28 @@ const EditorLayout = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
       // Auto-switch mobile pane if window is resized to mobile
-      if (mobile && activeMobilePane === 'editor' && activeRightTab !== 'terminal') {
+      if (
+        mobile &&
+        activeMobilePane === "editor" &&
+        activeRightTab !== "terminal"
+      ) {
         // Optionally sync here or let user decide
       }
     };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, [activeMobilePane, activeRightTab]);
 
   // Sync mobile pane with right tabs for desktop users who resize or vice-versa
   useEffect(() => {
     if (isMobile) {
-      if (activeRightTab === 'terminal' || activeRightTab === 'errors' || activeRightTab === 'variables' || activeRightTab === 'visualisation') {
-        if (activeMobilePane === 'editor') {
+      if (
+        activeRightTab === "terminal" ||
+        activeRightTab === "errors" ||
+        activeRightTab === "variables" ||
+        activeRightTab === "visualisation"
+      ) {
+        if (activeMobilePane === "editor") {
           // If we click a right tab toggle in desktop then resize, or if something triggers it
         }
       }
@@ -173,49 +256,83 @@ const EditorLayout = () => {
 
   useEffect(() => {
     if (settings.keepHistory !== false && outputLines.length > 0) {
-      localStorage.setItem('bql_terminal_history', JSON.stringify(outputLines));
+      localStorage.setItem("bql_terminal_history", JSON.stringify(outputLines));
     }
   }, [outputLines, settings.keepHistory]);
 
   const handleSaveSettings = (newSettings) => {
     setSettings(newSettings);
-    localStorage.setItem('bql_editor_settings', JSON.stringify(newSettings));
+    localStorage.setItem("bql_editor_settings", JSON.stringify(newSettings));
   };
 
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const activeFile = files.find(f => f.id === activeFileId) || files[0];
+  const [activeCourseLesson, setActiveCourseLesson] = useState(null);
 
-  // Auth Listener
+  // Nouveaux états de validation du défi
+  const [validationState, setValidationState] = useState("idle"); // idle, validating, success, error
+  const [validationResults, setValidationResults] = useState(null);
+
   useEffect(() => {
-    const fetchUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUser(session.user);
+    if (location.state && location.state.codeToRun) {
+      const code = location.state.codeToRun;
+
+      if (location.state.lessonId) {
+        setActiveCourseLesson({
+          lessonId: location.state.lessonId,
+          expectedOutput: location.state.expectedOutput,
+          lessonTitle: location.state.lessonTitle,
+          testCases: location.state.testCases,
+          isChallenge: location.state.isChallenge,
+          lessonExercise: location.state.lessonExercise,
+          lessonContent: location.state.lessonContent,
+        });
       }
-    };
-    fetchUser();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user || null);
-    });
+      navigate(location.pathname, { replace: true, state: {} });
 
-    return () => authListener?.subscription?.unsubscribe();
-  }, []);
+      const EXERCICE_ID = 9999;
+      setFiles((currFiles) => {
+        const hasExercice = currFiles.some((f) => f.id === EXERCICE_ID);
+        if (hasExercice) {
+          return currFiles.map((f) =>
+            f.id === EXERCICE_ID ? { ...f, content: code } : f,
+          );
+        } else {
+          return [
+            ...currFiles,
+            { id: EXERCICE_ID, name: "exercice.bql", content: code },
+          ];
+        }
+      });
+      setActiveFileId(EXERCICE_ID);
+    }
+  }, [location.state, location.pathname, navigate]);
 
-  const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || "Visiteur BQL";
+  const activeFile = files.find((f) => f.id === activeFileId) || files[0];
+
+  const displayName =
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    user?.email?.split("@")[0] ||
+    "Visiteur BQL";
   const displayEmail = user?.email || "Non connecté";
   const userInitials = displayName.substring(0, 2).toUpperCase();
 
   const handleCodeChange = (newCode) => {
-    setFiles(files.map(f => f.id === activeFileId ? { ...f, content: newCode } : f));
+    setFiles(
+      files.map((f) =>
+        f.id === activeFileId ? { ...f, content: newCode } : f,
+      ),
+    );
   };
 
   const createNewFile = () => {
     const newFile = {
       id: fileCounter,
       name: `fichier${fileCounter}.bql`,
-      content: ''
+      content: "",
     };
     setFiles([...files, newFile]);
     setActiveFileId(newFile.id);
@@ -227,15 +344,19 @@ const EditorLayout = () => {
     if (files.length === 1) return; // Prevent closing the last file
 
     if (settings.confirmBeforeReset !== false) {
-      const fileToClose = files.find(f => f.id === idToClose);
-      if (fileToClose && fileToClose.content.trim() !== '') {
-        if (!window.confirm(`Êtes-vous sûr de vouloir fermer "${fileToClose.name}" ? Vous risquez de perdre son contenu.`)) {
+      const fileToClose = files.find((f) => f.id === idToClose);
+      if (fileToClose && fileToClose.content.trim() !== "") {
+        if (
+          !window.confirm(
+            `Êtes-vous sûr de vouloir fermer "${fileToClose.name}" ? Vous risquez de perdre son contenu.`,
+          )
+        ) {
           return;
         }
       }
     }
 
-    const newFiles = files.filter(f => f.id !== idToClose);
+    const newFiles = files.filter((f) => f.id !== idToClose);
     setFiles(newFiles);
     if (activeFileId === idToClose) {
       setActiveFileId(newFiles[newFiles.length - 1].id);
@@ -270,7 +391,7 @@ const EditorLayout = () => {
 
     // Reset de l'état
     setIsExecuting(true);
-    setActiveRightTab('terminal');
+    setActiveRightTab("terminal");
 
     // Nettoyage terminal conditionnel (Lot 2)
     if (settings.clearTerminalOnRun !== false) {
@@ -278,7 +399,7 @@ const EditorLayout = () => {
     }
 
     setStructuredErrors([]);
-    setErrorSourceCode('');
+    setErrorSourceCode("");
     setInputPrompt(null);
     inputResolverRef.current = null;
     setRunningLine(null);
@@ -290,17 +411,20 @@ const EditorLayout = () => {
     setLastArrayAction(null);
 
     // Basculer vers le terminal avant l'exécution
-    setActiveMobilePane('output');
+    setActiveMobilePane("output");
 
     // ── Callback output : ECRIRE() stream chaque ligne en direct ────────────
     const outputCallback = (line) => {
-      setOutputLines(prev => [...prev, line]);
+      setOutputLines((prev) => [...prev, line]);
     };
 
     // ── Callback Pédagogique (Lot 3) ──
     const onStep = (line) => {
       // On ne surligne QUE si on est en mode pas-à-pas (évite les sauts rapides)
-      if (settings.highlightRunningLine !== false && settings.stepByStepExecution === true) {
+      if (
+        settings.highlightRunningLine !== false &&
+        settings.stepByStepExecution === true
+      ) {
         setRunningLine(line);
       }
     };
@@ -313,7 +437,7 @@ const EditorLayout = () => {
 
     const waitStep = () => {
       if (settings.stepByStepExecution !== true) return Promise.resolve();
-      return new Promise(resolve => {
+      return new Promise((resolve) => {
         stepResolverRef.current = resolve;
       });
     };
@@ -335,34 +459,33 @@ const EditorLayout = () => {
       const isRecord = index === null && !Array.isArray(values);
 
       if (isRecord) {
-        setRecordData(prev => {
+        setRecordData((prev) => {
           const next = new Map(prev);
           const highlight = { type: action, field };
           next.set(name, { values, highlight });
           return next;
         });
       } else {
-        setArrayData(prev => {
+        setArrayData((prev) => {
           const next = new Map(prev);
-          const highlight = (action !== 'create')
-            ? { index, type: action, field }
-            : null;
+          const highlight =
+            action !== "create" ? { index, type: action, field } : null;
           next.set(name, { values, highlight });
           return next;
         });
       }
 
-      if (action !== 'create') {
-        const fieldText = field ? ` (champ ${field})` : '';
+      if (action !== "create") {
+        const fieldText = field ? ` (champ ${field})` : "";
         const targetText = isRecord ? name : `${name}[${index}]`;
-        const actionText = action === 'read' ? 'Lecture de' : 'Modification de';
+        const actionText = action === "read" ? "Lecture de" : "Modification de";
         setLastArrayAction({ text: `${actionText} ${targetText}${fieldText}` });
-      } else if (action === 'create') {
+      } else if (action === "create") {
         setLastArrayAction({ text: `Création du tableau ${name}` });
       }
 
       // Pause pour l'animation
-      await new Promise(r => setTimeout(r, 80));
+      await new Promise((r) => setTimeout(r, 80));
     };
 
     try {
@@ -371,7 +494,7 @@ const EditorLayout = () => {
         output: outputCallback,
         input: inputCallback,
         onArrayUpdate: onArrayUpdate,
-        terminalSpeed: settings.terminalSpeed || 'instant', // Lot 2
+        terminalSpeed: settings.terminalSpeed || "instant", // Lot 2
         onStep,
         onSnapshot,
         waitStep,
@@ -383,7 +506,11 @@ const EditorLayout = () => {
       setInputPrompt(null);
 
       // ── Construire les erreurs structurées pour ErrorPanel ─────────────────
-      const structured = getStructuredErrors(result.errors, currentSource, settings);
+      const structured = getStructuredErrors(
+        result.errors,
+        currentSource,
+        settings,
+      );
       setStructuredErrors(structured);
       setErrorSourceCode(currentSource);
 
@@ -392,24 +519,73 @@ const EditorLayout = () => {
         if (result.output.length > 0 && outputLines.length === 0) {
           setOutputLines(result.output);
         }
-        setActiveRightTab('terminal');
+        setActiveRightTab("terminal");
+
+        // Validation Automatique (Uniquement si ce n'est pas un challenge)
+        if (
+          activeCourseLesson &&
+          activeCourseLesson.expectedOutput &&
+          !activeCourseLesson.isChallenge
+        ) {
+          const finalOutStr = result.output.join("\n").trim();
+          const expectedStr = activeCourseLesson.expectedOutput.trim();
+
+          if (
+            finalOutStr === expectedStr ||
+            result.output.some((line) => line.includes(expectedStr))
+          ) {
+            const handleLessonSuccess = async () => {
+              if (user && activeCourseLesson.lessonId) {
+                await supabase
+                  .from("user_progress")
+                  .upsert(
+                    {
+                      user_id: user.id,
+                      lesson_id: activeCourseLesson.lessonId,
+                      completed: true,
+                    },
+                    { onConflict: "user_id,lesson_id" },
+                  );
+              }
+              // Pour les exercices classiques non-challenge, on utilise directement l'overlay success
+              setValidationResults({ cases: [], keywordErrors: [] });
+              setValidationState("success");
+            };
+            handleLessonSuccess();
+          } else {
+            setOutputLines((prev) => [
+              ...prev,
+              ``,
+              `❌ ÉCHEC DE LA VALIDATION`,
+              `-------------------------`,
+              `Résultat attendu  : "${expectedStr}"`,
+              `Résultat obtenu   : "${finalOutStr}"`,
+              `-------------------------`,
+            ]);
+          }
+        }
       } else {
         // Erreurs : résumé dans le terminal + basculer vers le panneau erreurs
         const summaryParts = [];
-        if (result.lexicalErrors?.length) summaryParts.push(`${result.lexicalErrors.length} lexicale(s)`);
-        if (result.syntaxErrors?.length) summaryParts.push(`${result.syntaxErrors.length} syntaxique(s)`);
-        if (result.semanticErrors?.length) summaryParts.push(`${result.semanticErrors.length} sémantique(s)`);
-        if (result.runtimeErrors?.length) summaryParts.push(`${result.runtimeErrors.length} d'exécution`);
+        if (result.lexicalErrors?.length)
+          summaryParts.push(`${result.lexicalErrors.length} lexicale(s)`);
+        if (result.syntaxErrors?.length)
+          summaryParts.push(`${result.syntaxErrors.length} syntaxique(s)`);
+        if (result.semanticErrors?.length)
+          summaryParts.push(`${result.semanticErrors.length} sémantique(s)`);
+        if (result.runtimeErrors?.length)
+          summaryParts.push(`${result.runtimeErrors.length} d'exécution`);
 
         const total = result.errors.length;
-        const summary = summaryParts.length > 0
-          ? `[Erreurs : ${summaryParts.join(', ')}]`
-          : `[${total} erreur(s) détectée(s)]`;
+        const summary =
+          summaryParts.length > 0
+            ? `[Erreurs : ${summaryParts.join(", ")}]`
+            : `[${total} erreur(s) détectée(s)]`;
 
-        setOutputLines(prev =>
-          prev.length > 0 ? [...prev, summary] : [summary]
+        setOutputLines((prev) =>
+          prev.length > 0 ? [...prev, summary] : [summary],
         );
-        setActiveRightTab('errors');
+        setActiveRightTab("errors");
 
         // Lot 3 : autoGotoFirstError
         if (settings.autoGotoFirstError !== false && structured.length > 0) {
@@ -421,9 +597,9 @@ const EditorLayout = () => {
       }
     } catch (unexpected) {
       // Crash inattendu hors du pipeline
-      setOutputLines(prev => [
+      setOutputLines((prev) => [
         ...prev,
-        `[Erreur interne] ${unexpected?.message ?? 'Erreur inconnue'}`,
+        `[Erreur interne] ${unexpected?.message ?? "Erreur inconnue"}`,
       ]);
       setInputPrompt(null);
     } finally {
@@ -432,38 +608,344 @@ const EditorLayout = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeFile]);
 
-  // ── handleSubmitInput : appelé quand l'user tape et soumet dans le terminal ─
-  const handleSubmitInput = useCallback((value) => {
-    // Afficher la valeur saisie dans le terminal (comme un vrai terminal)
-    const isPedagogic = settings?.showFieldNames === true;
-    const lineToPrint = isPedagogic ? `${inputPrompt?.varName ?? '?'}: ${value}` : String(value);
-    setOutputLines(prev => [...prev, lineToPrint]);
-    // Masquer le prompt
-    setInputPrompt(null);
-    // Résoudre la Promise que l'interpréteur attend
-    if (inputResolverRef.current) {
-      inputResolverRef.current(value);
-      inputResolverRef.current = null;
+  // ── handleValidateChallenge : Valider les test_cases et sémantique ──
+  const handleValidateChallenge = useCallback(async () => {
+    if (
+      !activeCourseLesson ||
+      !activeCourseLesson.isChallenge ||
+      !activeCourseLesson.testCases
+    )
+      return;
+
+    setValidationState("validating");
+    setValidationResults(null);
+    setIsExecuting(true);
+
+    const source = activeFile.content.trim();
+    const upperSource = source.toUpperCase();
+
+    // 1. Déterminer les règles de validation (support pour Array legacy ou Object enrichi)
+    let validationRules = {
+      mode: "logic_first",
+      required_keywords: [],
+      forbidden_keywords: [],
+      cases: [],
+      strict_output: true,
+    };
+
+    let parsedCases = activeCourseLesson.testCases;
+    if (typeof parsedCases === "string") {
+      try {
+        parsedCases = JSON.parse(parsedCases);
+      } catch (e) {
+        console.error("Erreur de parsing des tests cases:", e);
+      }
     }
-  }, [inputPrompt, settings]);
+
+    if (Array.isArray(parsedCases)) {
+      validationRules.cases = parsedCases;
+    } else if (
+      typeof parsedCases === "object" &&
+      parsedCases !== null &&
+      parsedCases.cases
+    ) {
+      validationRules = { ...validationRules, ...parsedCases };
+    }
+
+    // 2. Vérification sémantique (Mots-clés)
+    let keywordErrors = [];
+    if (validationRules.required_keywords?.length > 0) {
+      for (const kw of validationRules.required_keywords) {
+        if (!upperSource.includes(kw.toUpperCase())) {
+          keywordErrors.push(`Le mot-clé '${kw}' est requis mais absent.`);
+        }
+      }
+    }
+    if (validationRules.forbidden_keywords?.length > 0) {
+      for (const kw of validationRules.forbidden_keywords) {
+        if (upperSource.includes(kw.toUpperCase())) {
+          keywordErrors.push(
+            `Le mot-clé '${kw}' est interdit dans cet exercice.`,
+          );
+        }
+      }
+    }
+
+    if (keywordErrors.length > 0) {
+      setIsExecuting(false);
+      setValidationResults({ cases: [], keywordErrors });
+      setValidationState("error");
+      return;
+    }
+
+    // 2.5 Validation préliminaire de Syntaxe et Sémantique (AST Dry-Run)
+    let astErrors = { lexicalErrors: [], syntaxErrors: [], semanticErrors: [], runtimeErrors: [] };
+    try {
+      const dryRun = await executeCode(source, { inputs: [], terminalSpeed: 'instant' });
+      astErrors.lexicalErrors = dryRun.lexicalErrors || [];
+      astErrors.syntaxErrors = dryRun.syntaxErrors || [];
+      astErrors.semanticErrors = dryRun.semanticErrors || [];
+      // On ignore dryRun.runtimeErrors car on n'a pas fourni d'inputs, un crash sur LIRE est normal ici.
+    } catch (e) {
+      console.warn("Dry run failed", e);
+    }
+
+    // 3. Exécution des cas de tests
+    let allPassed = true;
+    let evaluatedCases = [];
+
+    // Pause artificielle pour l'UX de validation (animation loader)
+    await new Promise((r) => setTimeout(r, 2200));
+
+    for (let i = 0; i < validationRules.cases.length; i++) {
+      const tc = validationRules.cases[i];
+      const inputsArray = String(tc.input)
+        .split("\n")
+        .map((s) => s.trim());
+      const expectedStr = String(tc.output).trim();
+      let testResult = {
+        input: inputsArray.join(" | "),
+        expected: expectedStr,
+        got: "",
+        passed: false,
+        reason: null,
+      };
+
+      try {
+        const result = await executeCode(source, {
+          inputs: inputsArray,
+          output: () => {},
+          terminalSpeed: "instant",
+        });
+
+        if (!result.success || result.errors.length > 0) {
+          allPassed = false;
+          testResult.reason = "Le code a déclenché une erreur lors de ce test.";
+          testResult.got = "[Échec d'exécution]";
+          // Conserver les erreurs de l'interpréteur pour le feedback
+          testResult._runtimeErrors = result.runtimeErrors || [];
+          evaluatedCases.push(testResult);
+          continue;
+        }
+
+        const terminalLines = result.output;
+        const finalOutStr = terminalLines.join("\n").trim();
+        testResult.got = finalOutStr;
+        try {
+          let passedResult = { passed: false, isAmbiguous: false };
+          // Compare outputs using validation mode
+          if (validationRules.mode === "exact_output") {
+            passedResult = compareOutputs(finalOutStr, expectedStr);
+          } else if (
+            validationRules.mode === "final_output" ||
+            validationRules.mode === "semantic_check"
+          ) {
+            const lastLine =
+              terminalLines.length > 0
+                ? String(terminalLines[terminalLines.length - 1])
+                : "";
+            passedResult = compareOutputs(lastLine, expectedStr);
+            // Si le mode est final_output/semantic, on accepte aussi si la sortie complète contient exactement l'attendu 
+            if (!passedResult.passed && (finalOutStr.trim().includes(expectedStr.trim()) || finalOutStr === expectedStr.trim())) {
+              passedResult.passed = true;
+            }
+          } else {
+            // contains_output / logic_first (default)
+            const normExp = expectedStr.trim();
+            passedResult.passed = terminalLines.some((line) => {
+               const l = String(line || '').trim();
+               return l === normExp || l.includes(normExp);
+            });
+            // Fix: S'il existe sur plusieurs lignes (ex: 15\n2), vérifier la sortie globale
+            if (!passedResult.passed && finalOutStr.trim().includes(normExp)) {
+               passedResult.passed = true;
+            }
+          }
+
+          testResult.passed = passedResult.passed;
+          testResult.isAmbiguous = passedResult.isAmbiguous;
+          
+          if (!testResult.passed && testResult.isAmbiguous) {
+             testResult.diffInfo = getStringDiffInfo(testResult.got, expectedStr);
+          }
+        } catch (compErr) {
+          console.error("=========================================");
+          console.error("[INTERNAL ERROR] Output comparison crashed:", compErr);
+          console.error("=========================================");
+          testResult.passed = false;
+          testResult.reason = "Crash interne de la vérification de la sortie.";
+          testResult._interpreter_crash = true;
+        }
+
+        if (!testResult.passed) allPassed = false;
+      } catch (e) {
+        console.error("=========================================");
+        console.error("[INTERNAL ERROR] executeCode violently crashed on test case:", i);
+        console.error(e);
+        console.error("=========================================");
+        allPassed = false;
+        testResult.reason = "Crash interne du système d'exécution (Interpréteur BQL).";
+        testResult.passed = false;
+        testResult._interpreter_crash = true;
+      }
+
+      evaluatedCases.push(testResult);
+    }
+
+    setIsExecuting(false);
+
+    // 4. Bilan
+    // Nouveau système de validation plus pédagogique et flexible
+    const isLogicFirstMode = validationRules.mode === 'logic_first' || validationRules.mode === 'contains_output';
+    const strictOutput = validationRules.strict_output !== false; // true par défaut
+
+    const finalCases = evaluatedCases.map(tc => {
+      const numMatch = numericMatch(tc.got, tc.expected);
+      const isFormatIssue = !tc.passed && !tc.reason && numMatch;
+
+      // Si erreur de format uniquement mais qu'on n'est pas strict, on valide complètement (perfect)
+      if (isFormatIssue && !strictOutput) {
+        return {
+          ...tc,
+          passed: true, 
+          isAmbiguous: false, 
+          _numericOk: true,
+          formatWarning: false
+        };
+      }
+
+      // En mode logic_first, c'est un warning. Sinon, ça reste un fail.
+      return {
+        ...tc,
+        _numericOk: numMatch,
+        formatWarning: isLogicFirstMode && isFormatIssue
+      };
+    });
+
+    const allPerfect = finalCases.every(tc => tc.passed);
+    // Si la logique est correcte pour tout (soit passé direct, soit format_warning), c'est gagné.
+    const allLogicPassed = isLogicFirstMode && finalCases.every(tc => tc.passed || tc.formatWarning);
+    const hasFormatOnly = !allPerfect && allLogicPassed;
+
+    if ((allPassed || allLogicPassed) && evaluatedCases.length > 0) {
+      if (user && activeCourseLesson.lessonId) {
+        await supabase
+          .from("user_progress")
+          .upsert(
+            {
+              user_id: user.id,
+              lesson_id: activeCourseLesson.lessonId,
+              completed: true,
+            },
+            { onConflict: "user_id,lesson_id" },
+          );
+      }
+      
+      const results = { cases: finalCases, keywordErrors: [], hasFormatOnly };
+      
+      if (hasFormatOnly) {
+        results.cases = finalCases.map(tc => ({
+          ...tc,
+          // on force à passed pour l'UX général mais on garde formatWarning=true pour l'UI
+          passed: tc.passed || tc.formatWarning
+        }));
+      }
+
+      setValidationResults(results);
+      setValidationState(hasFormatOnly ? 'warning' : 'success');
+    } else {
+      // Construire le rapport de feedback pédagogique
+      const lessonContext = {
+        required_keywords: validationRules.required_keywords || [],
+        description: activeCourseLesson.lessonExercise || activeCourseLesson.lessonTitle || '',
+        title: activeCourseLesson.lessonTitle || '',
+      };
+      
+      // On regroupe les RuntimeErrors collectées durant l'exécution des tests
+      const collectedRuntimeErrors = [];
+      for (const resultsOfTest of evaluatedCases) {
+         if (resultsOfTest._runtimeErrors && resultsOfTest._runtimeErrors.length > 0) {
+            collectedRuntimeErrors.push(...resultsOfTest._runtimeErrors);
+         }
+      }
+      astErrors.runtimeErrors = collectedRuntimeErrors;
+
+      const feedbackReport = analyzeFeedback(source, evaluatedCases, lessonContext, astErrors);
+      
+      const isInternalError = 
+        feedbackReport.errorType === 'VALIDATOR_INTERNAL_ERROR' || 
+        feedbackReport.errorType === 'INTERPRETER_INTERNAL_ERROR';
+
+      // Si l'analyse approfondie confirme que c'est UNIQUEMENT un problème de format, on valide !
+      if (feedbackReport.errorType === 'OUTPUT_FORMAT') {
+        if (user && activeCourseLesson.lessonId) {
+          supabase
+            .from("user_progress")
+            .upsert(
+              {
+                user_id: user.id,
+                lesson_id: activeCourseLesson.lessonId,
+                completed: true,
+              },
+              { onConflict: "user_id,lesson_id" }
+            ).then();
+        }
+        
+        const formatCases = evaluatedCases.map(tc => ({
+            ...tc,
+            passed: tc.passed || true,
+            formatWarning: !tc.passed
+        }));
+
+        setValidationResults({ cases: formatCases, keywordErrors: [], feedbackReport, hasFormatOnly: true });
+        setValidationState("warning");
+      } else if (isInternalError) {
+        setValidationResults({ cases: evaluatedCases, keywordErrors: [], feedbackReport });
+        setValidationState("internal_error");
+      } else {
+        setValidationResults({ cases: evaluatedCases, keywordErrors: [], feedbackReport });
+        setValidationState("error");
+      }
+    }
+  }, [activeFile, activeCourseLesson, user]);
+
+  // ── handleSubmitInput : appelé quand l'user tape et soumet dans le terminal ─
+  const handleSubmitInput = useCallback(
+    (value) => {
+      // Afficher la valeur saisie dans le terminal (comme un vrai terminal)
+      const isPedagogic = settings?.showFieldNames === true;
+      const lineToPrint = isPedagogic
+        ? `${inputPrompt?.varName ?? "?"}: ${value}`
+        : String(value);
+      setOutputLines((prev) => [...prev, lineToPrint]);
+      // Masquer le prompt
+      setInputPrompt(null);
+      // Résoudre la Promise que l'interpréteur attend
+      if (inputResolverRef.current) {
+        inputResolverRef.current(value);
+        inputResolverRef.current = null;
+      }
+    },
+    [inputPrompt, settings],
+  );
 
   const handleFormatDoc = () => {
     try {
       const formatted = formatCode(activeFile.content, settings.tabSize);
       handleCodeChange(formatted);
       setFormatMessage("Code formaté avec succès");
-      setTimeout(() => setFormatMessage(''), 3000);
+      setTimeout(() => setFormatMessage(""), 3000);
     } catch (e) {
       console.error(e);
       setFormatMessage("Erreur lors du formatage");
-      setTimeout(() => setFormatMessage(''), 3000);
+      setTimeout(() => setFormatMessage(""), 3000);
     }
   };
 
   const handleDownload = () => {
-    const blob = new Blob([activeFile.content], { type: 'text/plain' });
+    const blob = new Blob([activeFile.content], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = activeFile.name;
     document.body.appendChild(a);
@@ -473,11 +955,10 @@ const EditorLayout = () => {
   };
 
   const handleShare = () => {
-    navigator.clipboard.writeText(activeFile.content)
-      .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      });
+    navigator.clipboard.writeText(activeFile.content).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
   };
 
   const handleNextStep = () => {
@@ -499,20 +980,20 @@ const EditorLayout = () => {
     setIsResetConfirmOpen(false);
     setOutputLines([]);
     setStructuredErrors([]);
-    setErrorSourceCode('');
-    setActiveRightTab('terminal');
+    setErrorSourceCode("");
+    setActiveRightTab("terminal");
     setRunningLine(null);
     setVariablesSnapshot({});
 
     // Clear terminal history if needed
     if (settings.keepHistory === false) {
-      localStorage.removeItem('bql_terminal_history');
+      localStorage.removeItem("bql_terminal_history");
     }
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/login');
+    await signOut();
+    navigate("/login");
   };
 
   const handleWorkspaceClick = () => {
@@ -520,14 +1001,17 @@ const EditorLayout = () => {
   };
 
   const handleErrorClick = useCallback((line, col) => {
-    setActiveMobilePane('editor');
+    setActiveMobilePane("editor");
     setTimeout(() => {
       editorRef.current?.jumpToLine(line, col);
     }, 50);
   }, []);
 
   return (
-    <div className={`editor-layout global-theme-${settings?.globalTheme || 'dark'} density-${settings?.interfaceDensity || 'normal'} accent-${settings?.accentColor || 'blue'} ${settings?.enableAnimations !== false ? 'animations-enabled' : ''} ${settings?.enableVisualEffects !== false ? 'visual-effects-enabled' : ''}`} onClick={handleWorkspaceClick}>
+    <div
+      className={`editor-layout global-theme-${settings?.globalTheme || "dark"} density-${settings?.interfaceDensity || "normal"} accent-${settings?.accentColor || "blue"} ${settings?.enableAnimations !== false ? "animations-enabled" : ""} ${settings?.enableVisualEffects !== false ? "visual-effects-enabled" : ""}`}
+      onClick={handleWorkspaceClick}
+    >
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
@@ -550,19 +1034,44 @@ const EditorLayout = () => {
 
       {/* ── Confirm Reset Modal ── */}
       {isResetConfirmOpen && (
-        <div className="modal-backdrop" onClick={() => setIsResetConfirmOpen(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', margin: 'auto' }}>
+        <div
+          className="modal-backdrop"
+          onClick={() => setIsResetConfirmOpen(false)}
+        >
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: "400px", margin: "auto" }}
+          >
             <div className="modal-header">
               <h3>Réinitialiser la console</h3>
-              <button className="close-btn" onClick={() => setIsResetConfirmOpen(false)}><X size={20} /></button>
+              <button
+                className="close-btn"
+                onClick={() => setIsResetConfirmOpen(false)}
+              >
+                <X size={20} />
+              </button>
             </div>
-            <div className="modal-body" style={{ padding: '1.5rem', lineHeight: 1.5, maxHeight: 'none' }}>
-              Voulez-vous vraiment réinitialiser la console et effacer l'historique d'exécution ?
+            <div
+              className="modal-body"
+              style={{ padding: "1.5rem", lineHeight: 1.5, maxHeight: "none" }}
+            >
+              Voulez-vous vraiment réinitialiser la console et effacer
+              l'historique d'exécution ?
             </div>
             <div className="modal-footer">
-              <button className="btn-secondary" onClick={() => setIsResetConfirmOpen(false)}>Annuler</button>
-              <button className="btn-primary" style={{ background: '#ef4444' }} onClick={confirmReset}>
-               Réinitialiser
+              <button
+                className="btn-secondary"
+                onClick={() => setIsResetConfirmOpen(false)}
+              >
+                Annuler
+              </button>
+              <button
+                className="btn-primary"
+                style={{ background: "#ef4444" }}
+                onClick={confirmReset}
+              >
+                Réinitialiser
               </button>
             </div>
           </div>
@@ -576,18 +1085,24 @@ const EditorLayout = () => {
             <div className="logo-icon-wrap-sm">
               <TerminalSquare size={18} />
             </div>
-            <h2>BQL<span>algo</span></h2>
+            <h2>
+              BQL<span>algo</span>
+            </h2>
           </Link>
           <nav className="editor-nav">
             {/* Using editor-nav-link to avoid App.css .nav-link bleed (the pink line) */}
-            <a href="#cours" className="editor-nav-link"><BookOpen size={16} /> Espace Cours</a>
-            <a href="#defis" className="editor-nav-link"><Trophy size={16} /> Défis</a>
+            <Link to="/cours" className="editor-nav-link">
+              <BookOpen size={16} /> Espace Cours
+            </Link>
+            <a href="#defis" className="editor-nav-link">
+              <Trophy size={16} /> Défis
+            </a>
           </nav>
         </div>
 
         <div className="header-center">
           <div className="action-pill">
-            <span className="env-badge">BQL Environnement</span>
+           
 
             {isExecuting && settings.stepByStepExecution && (
               <button
@@ -600,14 +1115,34 @@ const EditorLayout = () => {
             )}
 
             <button
-              className={`run-button ${isExecuting ? 'executing' : ''}`}
+              className={`run-button ${isExecuting ? "executing" : ""}`}
               onClick={handleRun}
               disabled={isExecuting && !settings.stepByStepExecution}
               title="Exécuter le code (Ctrl+Enter)"
             >
-              {isExecuting ? <Loader2 size={16} className="spin" /> : <Play size={16} fill="currentColor" />}
-              {isExecuting ? 'Stop' : 'Exécuter'}
+              {isExecuting ? (
+                <Loader2 size={16} className="spin" />
+              ) : (
+                <Play size={16} fill="currentColor" />
+              )}
+              {isExecuting ? "Stop" : "Exécuter"}
             </button>
+
+            {activeCourseLesson?.isChallenge && (
+              <button
+                className="run-button"
+                style={{
+                  background: "linear-gradient(to right, #eab308, #d97706)",
+                  marginLeft: "10px",
+                  boxShadow: "0 4px 15px rgba(217, 119, 6, 0.4)",
+                }}
+                onClick={handleValidateChallenge}
+                disabled={isExecuting}
+                title="Confronter le code aux cas de test"
+              >
+                <Award size={16} fill="currentColor" /> Valider
+              </button>
+            )}
 
             {!isExecuting && !isMobile && (
               <button
@@ -624,22 +1159,42 @@ const EditorLayout = () => {
         <div className="header-right">
           {!isMobile ? (
             <>
-              <button className="icon-btn" onClick={handleFormatDoc} title="Formater le code (Shift+Alt+F)">
+              <button
+                className="icon-btn"
+                onClick={handleFormatDoc}
+                title="Formater le code (Shift+Alt+F)"
+              >
                 <Wand2 size={18} />
               </button>
               <div className="header-divider"></div>
 
-              <button className="icon-btn" onClick={handleDownload} title="Télécharger le fichier">
+              <button
+                className="icon-btn"
+                onClick={handleDownload}
+                title="Télécharger le fichier"
+              >
                 <DownloadCloud size={18} />
               </button>
 
-              <button className="icon-btn" onClick={handleShare} title={copied ? "Code copié !" : "Copier le code"}>
-                {copied ? <Check size={18} color="#34d399" /> : <Share2 size={18} />}
+              <button
+                className="icon-btn"
+                onClick={handleShare}
+                title={copied ? "Code copié !" : "Copier le code"}
+              >
+                {copied ? (
+                  <Check size={18} color="#34d399" />
+                ) : (
+                  <Share2 size={18} />
+                )}
               </button>
 
               <div className="header-divider"></div>
 
-              <button className="icon-btn" onClick={() => setIsSettingsOpen(true)} title="Paramètres de l'éditeur">
+              <button
+                className="icon-btn"
+                onClick={() => setIsSettingsOpen(true)}
+                title="Paramètres de l'éditeur"
+              >
                 <Settings size={18} />
               </button>
 
@@ -647,25 +1202,75 @@ const EditorLayout = () => {
             </>
           ) : (
             <div className="profile-menu-container">
-              <button className="icon-btn" onClick={(e) => { e.stopPropagation(); setIsMobileMenuOpen(!isMobileMenuOpen); }}>
-                <MoreVertical size={20} />
+              <button
+                className="icon-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsMobileMenuOpen(!isMobileMenuOpen);
+                }}
+              >
+                <Menu size={20} />
               </button>
               {isMobileMenuOpen && (
-                <div className="profile-menu mobile-action-menu" onClick={e => e.stopPropagation()}>
+                <div
+                  className="profile-menu mobile-action-menu"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <div className="profile-links">
-                    <button onClick={() => { handleFormatDoc(); setIsMobileMenuOpen(false); }}>
+                    <Link
+                      to="/cours"
+                      className="mobile-nav-link"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <BookOpen size={16} /> Espace Cours
+                    </Link>
+                    <a
+                      href="#defis"
+                      className="mobile-nav-link"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <Trophy size={16} /> Défis
+                    </a>
+                    <div className="header-divider-horizontal" />
+                    <button
+                      onClick={() => {
+                        handleFormatDoc();
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
                       <Wand2 size={16} /> Formater
                     </button>
-                    <button onClick={() => { handleDownload(); setIsMobileMenuOpen(false); }}>
+                    <button
+                      onClick={() => {
+                        handleDownload();
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
                       <DownloadCloud size={16} /> Télécharger
                     </button>
-                    <button onClick={() => { handleShare(); setIsMobileMenuOpen(false); }}>
+                    <button
+                      onClick={() => {
+                        handleShare();
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
                       <Share2 size={16} /> Partager
                     </button>
-                    <button onClick={() => { setIsSettingsOpen(true); setIsMobileMenuOpen(false); }}>
+                    <button
+                      onClick={() => {
+                        setIsSettingsOpen(true);
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
                       <Settings size={16} /> Paramètres
                     </button>
-                    <button onClick={() => { handleReset(); setIsMobileMenuOpen(false); }} className="danger-text">
+                    <button
+                      onClick={() => {
+                        handleReset();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="danger-text"
+                    >
                       <RotateCcw size={16} /> Réinitialiser
                     </button>
                   </div>
@@ -675,7 +1280,14 @@ const EditorLayout = () => {
           )}
 
           <div className="profile-menu-container">
-            <div className="user-avatar" title="Mon Profil" onClick={(e) => { e.stopPropagation(); setIsProfileOpen(!isProfileOpen); }}>
+            <div
+              className="user-avatar"
+              title="Mon Profil"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsProfileOpen(!isProfileOpen);
+              }}
+            >
               {user ? (
                 <span className="avatar-initials">{userInitials}</span>
               ) : (
@@ -684,24 +1296,43 @@ const EditorLayout = () => {
             </div>
 
             {isProfileOpen && (
-              <div className="profile-menu" onClick={e => e.stopPropagation()}>
+              <div
+                className="profile-menu"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <div className="profile-header">
                   <div className="profile-header-avatar">{userInitials}</div>
                   <div className="profile-header-info">
-                    <p className="profile-name" title={displayName}>{displayName}</p>
-                    <p className="profile-email" title={displayEmail}>{displayEmail}</p>
+                    <p className="profile-name" title={displayName}>
+                      {displayName}
+                    </p>
+                    <p className="profile-email" title={displayEmail}>
+                      {displayEmail}
+                    </p>
                   </div>
                 </div>
                 <div className="profile-links">
-                  <button onClick={() => { setIsProfileModalOpen(true); setIsProfileOpen(false); }}>
+                  <button
+                    onClick={() => {
+                      setIsProfileModalOpen(true);
+                      setIsProfileOpen(false);
+                    }}
+                  >
                     <User size={14} /> Profil
                   </button>
-                  <button onClick={() => { setIsBillingModalOpen(true); setIsProfileOpen(false); }}>
+                  <button
+                    onClick={() => {
+                      setIsBillingModalOpen(true);
+                      setIsProfileOpen(false);
+                    }}
+                  >
                     <CreditCard size={14} /> Facturation
                   </button>
                 </div>
                 <div className="profile-footer">
-                  <button className="logout-btn" onClick={handleLogout}><LogOut size={14} /> Se déconnecter</button>
+                  <button className="logout-btn" onClick={handleLogout}>
+                    <LogOut size={14} /> Se déconnecter
+                  </button>
                 </div>
               </div>
             )}
@@ -710,27 +1341,93 @@ const EditorLayout = () => {
       </header>
 
       {/* ── Main Workspace (Split Screen / Mobile Stack) ── */}
-      <main className={`editor-workspace ${isMobile ? 'mobile-view' : 'desktop-view'}`}>
+      <main
+        ref={workspaceRef}
+        className={`editor-workspace ${isMobile ? "mobile-view" : "desktop-view"}`}
+      >
         {/* Left Pane: Code Editor */}
-        <div className={`workspace-pane editor-pane-wrapper ${activeMobilePane === 'editor' ? 'mobile-active' : 'mobile-hidden'}`}>
+        <div
+          className={`workspace-pane editor-pane-wrapper ${activeMobilePane === "editor" ? "mobile-active" : "mobile-hidden"}`}
+          style={!isMobile ? { flex: `0 0 ${splitRatio}%` } : undefined}
+        >
+          {activeCourseLesson?.isChallenge && (
+            <div
+              style={{
+                padding: "15px 20px",
+                background: "rgba(250, 204, 21, 0.08)",
+                borderBottom: "1px solid rgba(250, 204, 21, 0.2)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  marginBottom: "8px",
+                }}
+              >
+                <Award size={20} color="#facc15" />
+                <h3
+                  style={{
+                    margin: 0,
+                    color: "#facc15",
+                    fontSize: "1.1rem",
+                    fontWeight: 800,
+                  }}
+                >
+                  {activeCourseLesson.lessonTitle}
+                </h3>
+              </div>
+              <p
+                style={{
+                  color: "#cbd5e1",
+                  fontSize: "0.92rem",
+                  marginBottom: "8px",
+                  lineHeight: "1.5",
+                }}
+              >
+                {activeCourseLesson.lessonContent}
+              </p>
+              <div
+                style={{
+                  fontSize: "0.85rem",
+                  color: "#94a3b8",
+                  fontStyle: "italic",
+                  padding: "8px",
+                  background: "rgba(0,0,0,0.2)",
+                  borderRadius: "6px",
+                  borderLeft: "3px solid #64748b",
+                }}
+              >
+                {activeCourseLesson.lessonExercise}
+              </div>
+            </div>
+          )}
           <div className="pane-header">
             <div className="tabs-container">
-              {files.map(file => (
+              {files.map((file) => (
                 <div
                   key={file.id}
-                  className={`tab ${activeFileId === file.id ? 'active' : ''}`}
+                  className={`tab ${activeFileId === file.id ? "active" : ""}`}
                   onClick={() => setActiveFileId(file.id)}
                 >
                   {file.name}
                   {files.length > 1 && (
-                    <button className="close-tab-btn" onClick={(e) => closeFile(e, file.id)}>
+                    <button
+                      className="close-tab-btn"
+                      onClick={(e) => closeFile(e, file.id)}
+                    >
                       <X size={12} />
                     </button>
                   )}
                 </div>
               ))}
             </div>
-            <button className="add-file-btn" onClick={createNewFile} title="Créer un fichier .bql">
+            <button
+              className="add-file-btn"
+              onClick={createNewFile}
+              title="Créer un fichier .bql"
+            >
               <Plus size={16} />
             </button>
           </div>
@@ -745,36 +1442,52 @@ const EditorLayout = () => {
             />
           </div>
         </div>
-        <div className="workspace-resizer mobile-resizer-hidden"></div>
+        {/* Drag Resizer — hidden on mobile via CSS */}
+        <div
+          ref={resizerRef}
+          className="workspace-resizer"
+          onMouseDown={handleResizerMouseDown}
+          onTouchStart={(e) => handleResizerMouseDown(e.touches[0])}
+          title="Glisser pour redimensionner"
+        />
 
-        {/* Right Pane: Terminal & Cours */}
-        <div className={`workspace-pane terminal-pane-wrapper ${activeMobilePane === 'output' ? 'mobile-active' : 'mobile-hidden'}`}>
+        {/* Right Pane: Terminal & Output */}
+        <div
+          className={`workspace-pane terminal-pane-wrapper ${activeMobilePane === "output" ? "mobile-active" : "mobile-hidden"}`}
+          style={!isMobile ? { flex: `0 0 ${100 - splitRatio}%` } : undefined}
+        >
           <div className="pane-header">
             <div className="tabs-container">
               <div
-                className={`tab ${activeRightTab === 'terminal' ? 'active' : ''}`}
-                onClick={() => setActiveRightTab('terminal')}
+                className={`tab ${activeRightTab === "terminal" ? "active" : ""}`}
+                onClick={() => setActiveRightTab("terminal")}
               >
                 Terminal
               </div>
               <div
-                className={`tab ${activeRightTab === 'errors' ? 'active' : ''}`}
-                onClick={() => setActiveRightTab('errors')}
+                className={`tab ${activeRightTab === "errors" ? "active" : ""}`}
+                onClick={() => setActiveRightTab("errors")}
               >
                 {structuredErrors.length > 0 && (
-                  <AlertTriangle size={12} style={{ color: '#ef4444', marginRight: 4 }} />
+                  <AlertTriangle
+                    size={12}
+                    style={{ color: "#ef4444", marginRight: 4 }}
+                  />
                 )}
-                Erreurs {structuredErrors.length > 0 ? `(${structuredErrors.length})` : ''}
+                Erreurs{" "}
+                {structuredErrors.length > 0
+                  ? `(${structuredErrors.length})`
+                  : ""}
               </div>
               <div
-                className={`tab ${activeRightTab === 'visualisation' ? 'active' : ''}`}
-                onClick={() => setActiveRightTab('visualisation')}
+                className={`tab ${activeRightTab === "visualisation" ? "active" : ""}`}
+                onClick={() => setActiveRightTab("visualisation")}
               >
                 Visualisation
               </div>
               <div
-                className={`tab ${activeRightTab === 'variables' ? 'active' : ''}`}
-                onClick={() => setActiveRightTab('variables')}
+                className={`tab ${activeRightTab === "variables" ? "active" : ""}`}
+                onClick={() => setActiveRightTab("variables")}
               >
                 <List size={12} style={{ marginRight: 4 }} />
                 Variables
@@ -782,7 +1495,7 @@ const EditorLayout = () => {
             </div>
           </div>
           <div className="pane-content">
-            {activeRightTab === 'terminal' && (
+            {activeRightTab === "terminal" && (
               <InteractiveTerminal
                 lines={outputLines}
                 inputPrompt={inputPrompt}
@@ -791,20 +1504,26 @@ const EditorLayout = () => {
                 settings={settings}
               />
             )}
-            {activeRightTab === 'variables' && (
+            {activeRightTab === "variables" && (
               <div className="variables-visualizer">
                 {Object.keys(variablesSnapshot).length === 0 ? (
-                  <div className="empty-variables">Aucune variable détectée pour le moment.</div>
+                  <div className="empty-variables">
+                    Aucune variable détectée pour le moment.
+                  </div>
                 ) : (
                   <div className="variables-grid">
                     {Object.entries(variablesSnapshot).map(([name, data]) => (
                       <div key={name} className="variable-card">
                         <div className="var-header">
-                          <span className="var-type">{data.type.toUpperCase()}</span>
+                          <span className="var-type">
+                            {data.type.toUpperCase()}
+                          </span>
                           <span className="var-name">{name}</span>
                         </div>
                         <div className="var-value">
-                          {Array.isArray(data.value) ? `[Tableau ${data.value.length}]` : String(data.value)}
+                          {Array.isArray(data.value)
+                            ? `[Tableau ${data.value.length}]`
+                            : String(data.value)}
                         </div>
                       </div>
                     ))}
@@ -812,7 +1531,7 @@ const EditorLayout = () => {
                 )}
               </div>
             )}
-            {activeRightTab === 'errors' && (
+            {activeRightTab === "errors" && (
               <ErrorPanel
                 errors={structuredErrors}
                 sourceCode={errorSourceCode}
@@ -826,7 +1545,10 @@ const EditorLayout = () => {
               arrays={arrayData}
               records={recordData}
               lastAction={lastArrayAction}
-              visible={settings.showArrayVisualizer !== false && activeRightTab === 'visualisation'}
+              visible={
+                settings.showArrayVisualizer !== false &&
+                activeRightTab === "visualisation"
+              }
               settings={settings}
               isMobile={isMobile}
             />
@@ -834,11 +1556,13 @@ const EditorLayout = () => {
         </div>
       </main>
 
+
+
       {/* ── Bottom Nav Bar (mobile only) ── */}
       <nav className="mobile-bottom-nav">
         <button
-          className={`mobile-nav-btn${activeMobilePane === 'editor' ? ' mobile-nav-btn--active' : ''}`}
-          onClick={() => setActiveMobilePane('editor')}
+          className={`mobile-nav-btn${activeMobilePane === "editor" ? " mobile-nav-btn--active" : ""}`}
+          onClick={() => setActiveMobilePane("editor")}
         >
           <Code size={20} />
           <span>Éditeur</span>
@@ -849,20 +1573,26 @@ const EditorLayout = () => {
           onClick={handleRun}
           disabled={isExecuting}
         >
-          {isExecuting
-            ? <Loader2 size={24} className="spin" />
-            : <Play size={24} fill="currentColor" />
-          }
+          {isExecuting ? (
+            <Loader2 size={24} className="spin" />
+          ) : (
+            <Play size={24} fill="currentColor" />
+          )}
         </button>
 
         <button
-          className={`mobile-nav-btn${activeMobilePane === 'output' && activeRightTab !== 'visualisation' ? ' mobile-nav-btn--active' : ''}`}
-          onClick={() => { setActiveMobilePane('output'); if(activeRightTab === 'visualisation') setActiveRightTab('terminal'); }}
+          className={`mobile-nav-btn${activeMobilePane === "output" && activeRightTab !== "visualisation" ? " mobile-nav-btn--active" : ""}`}
+          onClick={() => {
+            setActiveMobilePane("output");
+            if (activeRightTab === "visualisation")
+              setActiveRightTab("terminal");
+          }}
         >
-          {structuredErrors.length > 0
-            ? <AlertTriangle size={20} color="#ef4444" />
-            : <Terminal size={20} />
-          }
+          {structuredErrors.length > 0 ? (
+            <AlertTriangle size={20} color="#ef4444" />
+          ) : (
+            <Terminal size={20} />
+          )}
           <span>Sortie</span>
         </button>
       </nav>
@@ -870,19 +1600,43 @@ const EditorLayout = () => {
       {/* ── Status Bar (desktop only via CSS) ── */}
       <footer className="editor-statusbar">
         <div className="status-left">
-          <span className="status-item"><TerminalSquare size={14} /> BQL-Strict</span>
+          <span className="status-item">
+            <TerminalSquare size={14} /> BQL-Strict
+          </span>
           <span className="status-item">UTF-8</span>
           <span className="status-item success">● Serveur Connecté</span>
-          {formatMessage && <span className="status-item" style={{ color: '#34d399', fontWeight: 'bold' }}>✓ {formatMessage}</span>}
+          {formatMessage && (
+            <span
+              className="status-item"
+              style={{ color: "#34d399", fontWeight: "bold" }}
+            >
+              ✓ {formatMessage}
+            </span>
+          )}
         </div>
         <div className="status-right">
-          <span className="status-item">Ln {activeFile.content.split('\n').length}, Col {activeFile.content.length - activeFile.content.lastIndexOf('\n')}</span>
+          <span className="status-item">
+            Ln {activeFile.content.split("\n").length}, Col{" "}
+            {activeFile.content.length - activeFile.content.lastIndexOf("\n")}
+          </span>
           <span className="status-item">Espaces: 2</span>
         </div>
       </footer>
+
+      {/* Validation Overlay */}
+      <ValidationOverlay 
+        isOpen={validationState !== 'idle'} 
+        status={validationState} 
+        results={validationResults} 
+        onClose={() => setValidationState('idle')}
+        onContinue={() => {
+          setValidationState('idle');
+          setActiveCourseLesson(null);
+          navigate('/cours'); 
+        }}
+      />
     </div>
   );
 };
-
 
 export default EditorLayout;

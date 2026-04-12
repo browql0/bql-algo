@@ -830,7 +830,8 @@ class Interpreter {
         return Math.pow(this._toNumber(left, node.line), this._toNumber(right, node.line));
 
       case '=':  return left === right || String(left) === String(right);
-      case '!=': return left !== right;
+      case '!=': return left !== right;  // compat legacy
+      case '<>': return left !== right;  // syntaxe BQL officielle
       case '<':  return left < right;
       case '<=': return left <= right;
       case '>':  return left > right;

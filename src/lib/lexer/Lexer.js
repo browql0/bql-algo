@@ -396,9 +396,11 @@ class Lexer {
         if (this._match('-')) {
           this.tokens.push(new Token(TokenType.ASSIGN, '<-', line, col));
         } else if (this._match('=')) {
-          this.tokens.push(new Token(TokenType.LTE,   '<=', line, col));
+          this.tokens.push(new Token(TokenType.LTE,    '<=', line, col));
+        } else if (this._match('>')) {
+          this.tokens.push(new Token(TokenType.NE,     '<>', line, col));
         } else {
-          this.tokens.push(new Token(TokenType.LT,    '<',  line, col));
+          this.tokens.push(new Token(TokenType.LT,     '<',  line, col));
         }
         break;
 
@@ -411,14 +413,9 @@ class Lexer {
         }
         break;
 
-      // ── Inégalité ─────────────────────────────────────────────────────────
-      case '!':
-        if (this._match('=')) {
-          this.tokens.push(new Token(TokenType.NE, '!=', line, col));
-        } else {
-          this._addError(`'!' seul n'est pas valide, utilisez '!='`, line, col, ch);
-        }
-        break;
+      // ── Inégalité <> (syntaxe BQL) ──
+      // Le cas '<' est déjà géré ci-dessus, mais '<>' est consommé plus tôt.
+      // Voir le case '<' modifié ci-dessous.
 
       // ── Égalité ───────────────────────────────────────────────────────────
       case '=':

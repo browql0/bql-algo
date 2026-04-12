@@ -350,7 +350,7 @@ const CodeEditor = forwardRef(({ code, onChange, settings, onFormat, runningLine
               ))}
               {line.tokens.length === 0 && <span>&#8203;</span>}
               {line.tokens.map((token, i) => (
-                <span key={i} className={`token-${token.type}`}>
+                <span key={i} className={`token ${token.type}`}>
                   {token.value}
                 </span>
               ))}
