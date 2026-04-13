@@ -13,6 +13,8 @@ import AdminLayout from './components/admin/AdminLayout';
 import AdminDashboard from './components/admin/pages/AdminDashboard';
 import AdminUsers from './components/admin/pages/AdminUsers';
 import AdminAnalytics from './components/admin/pages/AdminAnalytics';
+import TermsOfService from './components/legal/TermsOfService';
+import PrivacyPolicy from './components/legal/PrivacyPolicy';
 const App = () => {
   const navigate = useNavigate();
 
@@ -20,6 +22,8 @@ const App = () => {
     <Routes>
       {/* ── Routes publiques ─────────────────────────────────────────── */}
       <Route path="/" element={<LandingPage onStart={() => navigate('/editor')} />} />
+      <Route path="/terms" element={<TermsOfService />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
 
       {/* Login & SignUp : si l'user est déjà connecté, redirige vers /editor */}
       <Route element={<AuthLayout />}>

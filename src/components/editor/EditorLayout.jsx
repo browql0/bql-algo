@@ -1392,14 +1392,7 @@ const EditorLayout = () => {
                   >
                     <User size={14} /> Profil
                   </button>
-                  <button
-                    onClick={() => {
-                      setIsBillingModalOpen(true);
-                      setIsProfileOpen(false);
-                    }}
-                  >
-                    <CreditCard size={14} /> Facturation
-                  </button>
+
                 </div>
                 <div className="profile-footer">
                   <button className="logout-btn" onClick={handleLogout}>
