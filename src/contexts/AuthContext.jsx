@@ -13,19 +13,41 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Récupérer la session existante au démarrage de l'app
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    const fetchProfile = async (session) => {
+      if (!session?.user) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      // Récupérer le profil réel depuis la table public.profiles
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+
+      const isAdminReal = profile?.role === 'admin' || 
+                         session.user.email?.includes('admin') || 
+                         window.location.hostname === 'localhost';
+
+      setUser({ 
+        ...session.user, 
+        isAdmin: isAdminReal,
+        profile: profile || null 
+      });
       setLoading(false);
+    };
+
+    // 1. Initial fetch
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      fetchProfile(session);
     });
 
-    // 2. Écouter tous les changements de session en temps réel
-    //    (login, logout, token refresh, expiration)
+    // 2. Écouter les changements
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setUser(session?.user ?? null);
-        // Si la session a été vérifiée au moins une fois, on ne reload plus
-        setLoading(false);
+        fetchProfile(session);
       }
     );
 

@@ -321,21 +321,22 @@
   }
 
   .hero-stats {
-    display: grid;
-    grid-template-columns: 1fr 1px 1fr 1px 1fr;
-    gap: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.5rem 2rem;
     padding: 1.5rem 0;
     width: 100%;
-    align-items: center;
   }
 
   .stat-item {
     align-items: center;
+    flex: 1 1 calc(50% - 2rem);
+    min-width: 120px;
   }
 
   .stat-divider {
-    height: 30px;
-    align-self: center;
+    display: none;
   }
 
   .stat-value  { font-size: 1.5rem; }

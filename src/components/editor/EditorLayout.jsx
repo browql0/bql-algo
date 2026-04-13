@@ -26,6 +26,7 @@ import {
   List,
   Menu,
   Award,
+  ShieldCheck,
 } from "lucide-react";
 import CodeEditor from "./CodeEditor";
 import InteractiveTerminal from "./InteractiveTerminal";
@@ -400,10 +401,14 @@ const EditorLayout = () => {
 
     setStructuredErrors([]);
     setErrorSourceCode("");
-    setInputPrompt(null);
-    inputResolverRef.current = null;
+    const startTime = Date.now();
     setRunningLine(null);
     setVariablesSnapshot({});
+
+    // Mettre à jour la date de dernière activité
+    if (user) {
+      supabase.from('profiles').update({ last_active_at: new Date().toISOString() }).eq('id', user.id).then();
+    }
 
     // Arrays reset
     setArrayData(new Map());
@@ -536,6 +541,7 @@ const EditorLayout = () => {
           ) {
             const handleLessonSuccess = async () => {
               if (user && activeCourseLesson.lessonId) {
+                // 1. Progress
                 await supabase
                   .from("user_progress")
                   .upsert(
@@ -546,6 +552,19 @@ const EditorLayout = () => {
                     },
                     { onConflict: "user_id,lesson_id" },
                   );
+
+                // 2. XP & Re-calculation (Real Leveling)
+                const xpToAdd = activeCourseLesson.xp_value || 25;
+                const { data: prof } = await supabase.from('profiles').select('xp, total_lessons_completed').eq('id', user.id).single();
+                if (prof) {
+                  const newXp = (prof.xp || 0) + xpToAdd;
+                  const newLevel = Math.floor(newXp / 100) + 1; // 100 XP par niveau
+                  await supabase.from('profiles').update({ 
+                    xp: newXp, 
+                    level: newLevel,
+                    total_lessons_completed: (prof.total_lessons_completed || 0) + 1
+                  }).eq('id', user.id);
+                }
               }
               // Pour les exercices classiques non-challenge, on utilise directement l'overlay success
               setValidationResults({ cases: [], keywordErrors: [] });
@@ -604,6 +623,17 @@ const EditorLayout = () => {
       setInputPrompt(null);
     } finally {
       setIsExecuting(false);
+      // Logger l'essai (Run simple)
+      if (user && activeCourseLesson?.lessonId) {
+        supabase.from('exercise_attempts').insert({
+          user_id: user.id,
+          lesson_id: activeCourseLesson.lessonId,
+          success: structuredErrors.length === 0,
+          code_submitted: activeFile.content,
+          duration_ms: Date.now() - startTime,
+          error_message: structuredErrors.length > 0 ? structuredErrors[0].message : null
+        }).then();
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeFile]);
@@ -617,6 +647,7 @@ const EditorLayout = () => {
     )
       return;
 
+    const startTime = Date.now();
     setValidationState("validating");
     setValidationResults(null);
     setIsExecuting(true);
@@ -829,6 +860,7 @@ const EditorLayout = () => {
 
     if ((allPassed || allLogicPassed) && evaluatedCases.length > 0) {
       if (user && activeCourseLesson.lessonId) {
+        // 1. Progress
         await supabase
           .from("user_progress")
           .upsert(
@@ -839,6 +871,20 @@ const EditorLayout = () => {
             },
             { onConflict: "user_id,lesson_id" },
           );
+
+        // 2. XP & Leveling
+        const xpToAdd = activeCourseLesson.xp_value || 50; // Plus d'XP pour les challenges
+        const { data: prof } = await supabase.from('profiles').select('xp, total_lessons_completed').eq('id', user.id).single();
+        if (prof) {
+          const newXp = (prof.xp || 0) + xpToAdd;
+          const newLevel = Math.floor(newXp / 100) + 1;
+          await supabase.from('profiles').update({ 
+            xp: newXp, 
+            level: newLevel,
+            total_lessons_completed: (prof.total_lessons_completed || 0) + 1,
+            last_active_at: new Date().toISOString()
+          }).eq('id', user.id);
+        }
       }
       
       const results = { cases: finalCases, keywordErrors: [], hasFormatOnly };
@@ -904,10 +950,22 @@ const EditorLayout = () => {
         setValidationState("internal_error");
       } else {
         setValidationResults({ cases: evaluatedCases, keywordErrors: [], feedbackReport });
-        setValidationState("error");
+        setValidationState('error');
       }
     }
-  }, [activeFile, activeCourseLesson, user]);
+
+    // Logger l'essai (Challenge)
+    if (user && activeCourseLesson?.lessonId) {
+      supabase.from('exercise_attempts').insert({
+        user_id: user.id,
+        lesson_id: activeCourseLesson.lessonId,
+        success: allPassed || allLogicPassed,
+        code_submitted: source,
+        duration_ms: Date.now() - startTime,
+        error_message: allPerfect ? null : "Échec de certains cas de test"
+      }).then();
+    }
+  }, [activeFile, activeCourseLesson, user, setIsExecuting]);
 
   // ── handleSubmitInput : appelé quand l'user tape et soumet dans le terminal ─
   const handleSubmitInput = useCallback(
@@ -1090,13 +1148,13 @@ const EditorLayout = () => {
             </h2>
           </Link>
           <nav className="editor-nav">
-            {/* Using editor-nav-link to avoid App.css .nav-link bleed (the pink line) */}
+            {/* Using editor-nav-link to avoid App.css .nav-link bleed (the pink line) <a href="#defis" className="editor-nav-link">
+              <Trophy size={16} /> Défis
+            </a> */}
             <Link to="/cours" className="editor-nav-link">
               <BookOpen size={16} /> Espace Cours
             </Link>
-            <a href="#defis" className="editor-nav-link">
-              <Trophy size={16} /> Défis
-            </a>
+           
           </nav>
         </div>
 
@@ -1279,7 +1337,21 @@ const EditorLayout = () => {
             </div>
           )}
 
-          <div className="profile-menu-container">
+            {user?.isAdmin && (
+              <button
+                className="admin-dashboard-pill animate-fade-in"
+                onClick={() => navigate("/admin/dashboard")}
+                title="Accéder au Dashboard Admin"
+              >
+                <ShieldCheck size={14} />
+                <span>Admin</span>
+              </button>
+            )}
+
+            <div className="header-divider"></div>
+
+            <div className="profile-menu-container">
+
             <div
               className="user-avatar"
               title="Mon Profil"
