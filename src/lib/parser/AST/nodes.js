@@ -64,7 +64,14 @@ function pos(token) {
 
 /**
  * Racine du programme.
- * ALGORITHME nom ; CONSTANTE(S)... VARIABLE(S): ... DEBUT ... FIN
+ *
+ * Syntaxe de l'en-tête (formes valides) :
+ *   ALGORITHMENom;        ← nom collé directement
+ *   ALGORITHME_Nom;       ← underscore comme séparateur
+ *   ALGORITHME Nom;       ← INVALIDE (espace interdit)
+ *
+ * Structure générale :
+ *   ALGORITHMENom; CONSTANTE(S) ... VARIABLE(S) ... DEBUT ... FIN
  */
 export class ProgramNode {
   /**
@@ -100,8 +107,15 @@ export class BlockNode {
 
 /**
  * Déclaration de variables.
- * VARIABLE:  age : entier;
- * VARIABLES: age : entier; nom : chaine;
+ *
+ * Syntaxe officielle BQL :
+ *   VARIABLE  age : ENTIER;          ← exactement 1 symbole déclaré
+ *   VARIABLES age : ENTIER;          ← 2+ symboles déclarés
+ *   VARIABLES age : ENTIER; nom : CHAINE DE CARACTERE;
+ *
+ * Important : le ':' est INTERDIT immédiatement après VARIABLE ou VARIABLES.
+ *   VARIABLE:  ← INVALIDE
+ *   VARIABLES: ← INVALIDE
  */
 export class VarDeclNode {
   /**

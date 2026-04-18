@@ -10,7 +10,7 @@ import { SkeletonSidebar, SkeletonLesson } from './SkeletonComponents';
 import { LESSON_RENDERERS, GenericRenderer } from './LessonRenderers';
 import './CoursePage.css';
 
-// ─── Rich Lesson Renderer ──────────────────────────────────────────────────────
+//  Rich Lesson Renderer 
 
 const RichLessonContent = ({ lesson, onTryCode }) => {
   const lt = lesson.lesson_type || 'generic';
@@ -18,7 +18,7 @@ const RichLessonContent = ({ lesson, onTryCode }) => {
   return <Renderer lesson={lesson} onTryCode={onTryCode} />;
 };
 
-// ─── LEGACY PLACEHOLDER (kept for reference, not used) ──────────────────────
+//  LEGACY PLACEHOLDER (kept for reference, not used) 
 const _LegacyUnused = ({ lesson, onTryCode }) => {
   const lt = lesson.lesson_type || 'generic';
   if (lt === 'intro') return (
@@ -53,20 +53,20 @@ const _LegacyUnused = ({ lesson, onTryCode }) => {
         </LessonSection>
       )}
 
-      <TipCard title="À retenir">
+      <TipCard title="ì retenir">
         La structure <code style={{ color: '#facc15' }}>ALGORITHME_Nom ... DEBUT ... FIN</code> est <strong>toujours obligatoire</strong>. Si vous oubliez DEBUT ou FIN, le programme ne fonctionnera pas.
       </TipCard>
 
       <SummaryCard items={[
         'Un algorithme = suite d\'étapes logiques pour résoudre un problème',
-        'Structure BQL : ALGORITHME_Nom → DEBUT → Instructions → FIN',
+        'Structure BQL : ALGORITHME_Nom   DEBUT   Instructions   FIN',
         'ECRIRE("texte") affiche quelque chose dans le terminal',
-        'Sans variable → pas besoin de bloc VARIABLE(S)',
+        'Sans variable   pas besoin de bloc VARIABLE(S)',
       ]} />
     </div>
   );
 
-  // ─── variables ──────────────────────────────────────────────────────────────
+  //  variables 
   if (lt === 'variables') return (
     <div>
       <InfoCard icon={<Info size={17} />} title="Définition" color="#c084fc">
@@ -91,10 +91,10 @@ const _LegacyUnused = ({ lesson, onTryCode }) => {
         </div>
       </LessonSection>
 
-      <LessonSection icon={<Code2 size={15} />} title="Syntaxe BQL — singulier vs pluriel" step={2}>
+      <LessonSection icon={<Code2 size={15} />} title="Syntaxe BQL  singulier vs pluriel" step={2}>
         <InfoCard color="#c084fc" title="Règle importante">
-          <strong>VARIABLE</strong> (sans S) → une seule variable<br />
-          <strong>VARIABLES</strong> (avec S) → plusieurs variables<br />
+          <strong>VARIABLE</strong> (sans S)   une seule variable<br />
+          <strong>VARIABLES</strong> (avec S)   plusieurs variables<br />
           On ne met <strong>pas de ":" après VARIABLE(S)</strong>. Le ":" vient <em>après le nom</em> de la variable.
         </InfoCard>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -103,7 +103,7 @@ const _LegacyUnused = ({ lesson, onTryCode }) => {
         </div>
       </LessonSection>
 
-      <LessonSection icon={<Zap size={15} />} title="L'affectation avec ←" step={3}>
+      <LessonSection icon={<Zap size={15} />} title="L'affectation avec  " step={3}>
         <p>En BQL, l'opérateur <code style={{ color: '#c084fc' }}>&lt;-</code> assigne une valeur à une variable (comme <code>=</code> dans d'autres langages).</p>
         <VariableDiagram vars={[
           { name: 'age', type: 'ENTIER', value: '18', color: '#facc15' },
@@ -119,15 +119,15 @@ const _LegacyUnused = ({ lesson, onTryCode }) => {
       </WarningCard>
 
       <SummaryCard items={[
-        'VARIABLE (singulier) → 1 seule variable',
-        'VARIABLES (pluriel) → 2 variables ou plus',
+        'VARIABLE (singulier)   1 seule variable',
+        'VARIABLES (pluriel)   2 variables ou plus',
         'Affectation avec <- (pas avec =)',
         '5 types : ENTIER, REEL, CHAINE DE CARACTERE, CARACTERE, BOOLEEN',
       ]} />
     </div>
   );
 
-  // ─── syntaxe ────────────────────────────────────────────────────────────────
+  //  syntaxe 
   if (lt === 'syntaxe') return (
     <div>
       <InfoCard title="La structure BQL">
@@ -135,23 +135,23 @@ const _LegacyUnused = ({ lesson, onTryCode }) => {
       </InfoCard>
       <LessonSection icon={<Code2 size={15} />} title="Les 4 blocs obligatoires" step={1}>
         <FlowDiagram steps={[
-          { label: 'ALGORITHME_Nom', sub: '① Identification', accent: '#c084fc' },
-          { label: 'VARIABLE(S)', sub: '② Déclarations', accent: '#4f8ff0' },
-          { label: 'DEBUT', sub: '③ Début', accent: '#34d399' },
-          { label: 'Instructions', sub: '④ Corps du code', accent: '#facc15' },
-          { label: 'FIN', sub: '⑤ Fermeture', accent: '#fb7185' },
+          { label: 'ALGORITHME_Nom', sub: ' Identification', accent: '#c084fc' },
+          { label: 'VARIABLE(S)', sub: ' Déclarations', accent: '#4f8ff0' },
+          { label: 'DEBUT', sub: ' Début', accent: '#34d399' },
+          { label: 'Instructions', sub: ' Corps du code', accent: '#facc15' },
+          { label: 'FIN', sub: ' Fermeture', accent: '#fb7185' },
         ]} />
       </LessonSection>
       {code && <LessonSection icon={<Code2 size={15} />} title="Exemple complet" step={2}><CodeBlock code={code} title="structure.bql" onTry={tryCode} /></LessonSection>}
       <SummaryCard items={[
-        'ALGORITHME_Nom → en premier, sans espace, underscore recommandé',
-        'VARIABLE(S) → déclarations avant DEBUT',
-        'DEBUT...FIN → tout le code exécutable entre ces blocs',
+        'ALGORITHME_Nom   en premier, sans espace, underscore recommandé',
+        'VARIABLE(S)   déclarations avant DEBUT',
+        'DEBUT...FIN   tout le code exécutable entre ces blocs',
       ]} />
     </div>
   );
 
-  // ─── operateurs ─────────────────────────────────────────────────────────────
+  //  operateurs 
   if (lt === 'operateurs') return (
     <div>
       <LessonSection icon={<Hash size={15} />} title="Opérateurs arithmétiques" step={1}>
@@ -163,15 +163,15 @@ const _LegacyUnused = ({ lesson, onTryCode }) => {
             </div>
           ))}
         </div>
-        <TipCard title="MOD — Modulo">
-          <code style={{ color: '#facc15' }}>7 MOD 2 = 1</code> → Le reste de la division de 7 par 2 est 1 (car 7 = 3×2 + <strong>1</strong>).<br />
+        <TipCard title="MOD  Modulo">
+          <code style={{ color: '#facc15' }}>7 MOD 2 = 1</code>   Le reste de la division de 7 par 2 est 1 (car 7 = 32 + <strong>1</strong>).<br />
           Très utile pour tester si un nombre est pair : <code style={{ color: '#facc15' }}>n MOD 2 = 0</code> signifie "n est pair".
         </TipCard>
       </LessonSection>
 
       <LessonSection icon={<Hash size={15} />} title="Opérateurs de comparaison" step={2}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '0.6rem', marginBottom: '1rem' }}>
-          {[['=', 'Égal'], ['<>', 'Différent'], ['<', 'Inférieur'], ['>', 'Supérieur'], ['<=', 'Inf. ou égal'], ['>=', 'Sup. ou égal']].map(([op, label]) => (
+          {[['=', '0gal'], ['<>', 'Différent'], ['<', 'Inférieur'], ['>', 'Supérieur'], ['<=', 'Inf. ou égal'], ['>=', 'Sup. ou égal']].map(([op, label]) => (
             <div key={op} style={{ background: 'rgba(79,143,240,0.07)', border: '1px solid rgba(79,143,240,0.2)', borderRadius: '10px', padding: '0.7rem', textAlign: 'center' }}>
               <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#4f8ff0', fontFamily: 'monospace' }}>{op}</div>
               <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '0.2rem' }}>{label}</div>
@@ -205,7 +205,7 @@ const _LegacyUnused = ({ lesson, onTryCode }) => {
     </div>
   );
 
-  // ─── io ─────────────────────────────────────────────────────────────────────
+  //  io 
   if (lt === 'io') return (
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -232,21 +232,21 @@ const _LegacyUnused = ({ lesson, onTryCode }) => {
 
       <LessonSection icon={<Hash size={15} />} title="Combiner texte et variables dans ECRIRE" step={2}>
         <p>On peut passer <strong>plusieurs arguments</strong> à ECRIRE en les séparant par des virgules :</p>
-        <CodeBlock code={`ALGORITHME_Multi\nVARIABLES\n  prenom : CHAINE DE CARACTERE;\n  age : ENTIER;\nDEBUT\n  prenom <- "Alice";\n  age <- 25;\n  ECRIRE("Bonjour ", prenom, " ! Tu as ", age, " ans.");\nFIN`} title="multi_args.bql" />
+        <CodeBlock code={`ALGORITHME_Multi;\nVARIABLES\n  prenom : CHAINE DE CARACTERE;\n  age : ENTIER;\nDEBUT\n  prenom <- "Alice";\n  age <- 25;\n  ECRIRE("Bonjour ", prenom, " ! Tu as ", age, " ans.");\nFIN`} title="multi_args.bql" />
       </LessonSection>
 
       <WarningCard>La variable utilisée dans <code style={{ color: '#fb7185' }}>LIRE(x)</code> doit être déclarée AVANT dans VARIABLE(S). Sinon : erreur.</WarningCard>
 
       <SummaryCard items={[
-        'ECRIRE("texte") → affiche dans le terminal',
-        'ECRIRE("texte", variable, ...) → combine texte et variables',
-        'LIRE(variable) → attend la saisie utilisateur',
+        'ECRIRE("texte")   affiche dans le terminal',
+        'ECRIRE("texte", variable, ...)   combine texte et variables',
+        'LIRE(variable)   attend la saisie utilisateur',
         'La variable LIRE doit être déclarée avant d\'être utilisée',
       ]} />
     </div>
   );
 
-  // ─── exemples ───────────────────────────────────────────────────────────────
+  //  exemples 
   if (lt === 'exemples') return (
     <div>
       <InfoCard title="Cas pratique complet">
@@ -262,7 +262,7 @@ const _LegacyUnused = ({ lesson, onTryCode }) => {
     </div>
   );
 
-  // ─── condition_si ───────────────────────────────────────────────────────────
+  //  condition_si 
   if (lt === 'condition_si') return (
     <div>
       <InfoCard icon={<Info size={17} />} title="Définition" color="#facc15">
@@ -285,36 +285,36 @@ const _LegacyUnused = ({ lesson, onTryCode }) => {
     </div>
   );
 
-  // ─── condition_sinon ────────────────────────────────────────────────────────
+  //  condition_sinon 
   if (lt === 'condition_sinon') return (
     <div>
       <InfoCard title="SI / SINON">
-        Le bloc <strong>SINON</strong> est le chemin alternatif — il s'exécute quand la condition est <em>fausse</em>.
+        Le bloc <strong>SINON</strong> est le chemin alternatif  il s'exécute quand la condition est <em>fausse</em>.
       </InfoCard>
       <LessonSection icon={<Code2 size={15} />} title="Deux chemins possibles" step={1}>
         <BranchDiagram condition="SI condition ALORS" trueLabel="Bloc ALORS" falseLabel="Bloc SINON" />
         {code && <CodeBlock code={code} title="si_sinon.bql" onTry={tryCode} />}
       </LessonSection>
-      <TipCard>Maximum <strong>un seul SINON</strong> par bloc SI. Pour plusieurs cas, utilisez SINON SI ou SELON.</TipCard>
+      <TipCard>Maximum <strong>un seul SINON</strong> par bloc SI. Pour plusieurs cas, utilisez SINONSI ou SELON.</TipCard>
       <SummaryCard items={['SI ... ALORS ... SINON ... FINSI', 'SINON = chemin si condition fausse', 'Maximum 1 SINON par SI']} />
     </div>
   );
 
-  // ─── sinon_si ───────────────────────────────────────────────────────────────
+  //  sinon_si 
   if (lt === 'sinon_si') return (
     <div>
       <InfoCard title="Chaîne de conditions">
-        Grâce à <strong>SINON SI</strong>, on évalue plusieurs conditions à la suite. BQL s'arrête au <em>premier bloc vrai</em> rencontré.
+        Grâce à <strong>SINONSI</strong>, on évalue plusieurs conditions à la suite. BQL s'arrête au <em>premier bloc vrai</em> rencontré.
       </InfoCard>
       <LessonSection icon={<Code2 size={15} />} title="Structure en cascade" step={1}>
         {code && <CodeBlock code={code} title="sinon_si.bql" onTry={tryCode} />}
       </LessonSection>
       <TipCard title="Ordre important !">Placez les conditions <strong>du plus restrictif au plus général</strong>. BQL s'arrête dès qu'une condition est vraie.</TipCard>
-      <SummaryCard items={['SINON SI permet d\'enchaîner plusieurs conditions', 'Le 1er bloc VRAI est exécuté', 'Un seul FINSI pour tout le bloc']} />
+      <SummaryCard items={['SINONSI permet d\'enchaîner plusieurs conditions', 'Le 1er bloc VRAI est exécuté', 'Un seul FINSI pour tout le bloc']} />
     </div>
   );
 
-  // ─── condition_imbrique ─────────────────────────────────────────────────────
+  //  condition_imbrique 
   if (lt === 'condition_imbrique') return (
     <div>
       <InfoCard title="Conditions imbriquées">Un bloc SI peut contenir d'autres SI à l'intérieur. Chaque SI a son propre FINSI.</InfoCard>
@@ -324,10 +324,10 @@ const _LegacyUnused = ({ lesson, onTryCode }) => {
     </div>
   );
 
-  // ─── selon ──────────────────────────────────────────────────────────────────
+  //  selon 
   if (lt === 'selon') return (
     <div>
-      <InfoCard title="SELON — sélection multiple">
+      <InfoCard title="SELON  sélection multiple">
         <strong>SELON</strong> évalue une variable et exécute le <strong>CAS</strong> correspondant. <strong>AUTRE</strong> est le cas par défaut.
       </InfoCard>
       <LessonSection icon={<Code2 size={15} />} title="Structure SELON" step={1}>
@@ -335,21 +335,21 @@ const _LegacyUnused = ({ lesson, onTryCode }) => {
         {code && <CodeBlock code={code} title="selon.bql" onTry={tryCode} />}
       </LessonSection>
       <TipCard title="SELON vs SI/SINON">Préférez SELON quand vous testez une variable contre des <strong>valeurs exactes</strong>. C'est plus lisible.</TipCard>
-      <SummaryCard items={['SELON variable FAIRE ... FINSELON', 'CAS valeur: → branche exacte', 'AUTRE: → branche par défaut', 'Fermer avec FINSELON']} />
+      <SummaryCard items={['SELON variable FAIRE ... FINSELON', 'CAS valeur:   branche exacte', 'AUTRE:   branche par défaut', 'Fermer avec FINSELON']} />
     </div>
   );
 
-  // ─── selon_imbrique ─────────────────────────────────────────────────────────
+  //  selon_imbrique 
   if (lt === 'selon_imbrique') return (
     <div>
       <InfoCard title="SELON imbriqué">Un CAS peut contenir d'autres conditions. Utile pour des logiques à deux niveaux.</InfoCard>
-      {code && <LessonSection icon={<Code2 size={15} />} title="Exemple — catégorie + niveau" step={1}><CodeBlock code={code} title="selon_imbrique.bql" onTry={tryCode} /></LessonSection>}
+      {code && <LessonSection icon={<Code2 size={15} />} title="Exemple  catégorie + niveau" step={1}><CodeBlock code={code} title="selon_imbrique.bql" onTry={tryCode} /></LessonSection>}
       <TipCard>Dans un CAS, utilisez des SI/SINON normaux plutôt qu'un SELON imbriqué si cela suffit.</TipCard>
       <SummaryCard items={['Un CAS peut contenir des SI/SINON', 'Fermer avec FINSI (SI internes) et FINSELON']} />
     </div>
   );
 
-  // ─── boucle_intro ───────────────────────────────────────────────────────────
+  //  boucle_intro 
   if (lt === 'boucle_intro') return (
     <div>
       <InfoCard title="Les boucles">
@@ -368,11 +368,11 @@ const _LegacyUnused = ({ lesson, onTryCode }) => {
         {code && <CodeBlock code={code} title="intro_boucle.bql" onTry={tryCode} />}
       </LessonSection>
 
-      <SummaryCard items={['Une boucle répète un bloc automatiquement', 'POUR : nombre de tours connu | TANTQUE : condition | REPETER : ≥1 fois', 'Essentielle pour éviter la répétition de code']} />
+      <SummaryCard items={['Une boucle répète un bloc automatiquement', 'POUR : nombre de tours connu | TANTQUE : condition | REPETER : 01 fois', 'Essentielle pour éviter la répétition de code']} />
     </div>
   );
 
-  // ─── boucle_pour ────────────────────────────────────────────────────────────
+  //  boucle_pour 
   if (lt === 'boucle_pour') return (
     <div>
       <InfoCard title="Boucle POUR">
@@ -380,9 +380,9 @@ const _LegacyUnused = ({ lesson, onTryCode }) => {
       </InfoCard>
 
       <LessonSection icon={<Code2 size={15} />} title="Fonctionnement étape par étape" step={1}>
-        <LoopDiagram type="pour" initLabel="i = début" condLabel="i ≤ fin ?" bodyLabel="Corps" updateLabel="i + 1" />
+        <LoopDiagram type="pour" initLabel="i = début" condLabel="i 0 fin ?" bodyLabel="Corps" updateLabel="i + 1" />
         <InfoCard color="#c084fc" title="Syntaxe exacte">
-          <code style={{ color: '#c084fc' }}>POUR i DE début A fin FAIRE ... FINPOUR</code><br />
+          <code style={{ color: '#c084fc' }}>POUR i ALLANT DE début A fin FAIRE ... FINPOUR</code><br />
           La variable <code>i</code> est incrémentée de 1 automatiquement à chaque tour.
         </InfoCard>
       </LessonSection>
@@ -390,11 +390,11 @@ const _LegacyUnused = ({ lesson, onTryCode }) => {
       {code && <LessonSection icon={<Code2 size={15} />} title="Exemple" step={2}><CodeBlock code={code} title="boucle_pour.bql" onTry={tryCode} /></LessonSection>}
 
       <WarningCard>Fermer avec <code style={{ color: '#fb7185' }}>FINPOUR</code>. Ne pas oublier <code style={{ color: '#fb7185' }}>FAIRE</code> après les bornes.</WarningCard>
-      <SummaryCard items={['POUR i DE debut A fin FAIRE ... FINPOUR', 'i est automatiquement incrémenté de 1 à chaque tour', 'Si debut > fin → boucle ignorée']} />
+      <SummaryCard items={['POUR i ALLANT DE debut A fin FAIRE ... FINPOUR', 'i est automatiquement incrémenté de 1 à chaque tour', 'Si debut > fin   boucle ignorée']} />
     </div>
   );
 
-  // ─── boucle_tantque ─────────────────────────────────────────────────────────
+  //  boucle_tantque 
   if (lt === 'boucle_tantque') return (
     <div>
       <InfoCard title="Boucle TANTQUE">
@@ -413,7 +413,7 @@ const _LegacyUnused = ({ lesson, onTryCode }) => {
     </div>
   );
 
-  // ─── boucle_repeter ─────────────────────────────────────────────────────────
+  //  boucle_repeter 
   if (lt === 'boucle_repeter') return (
     <div>
       <InfoCard title="Boucle REPETER...JUSQU'A">
@@ -421,15 +421,15 @@ const _LegacyUnused = ({ lesson, onTryCode }) => {
       </InfoCard>
       {code && <CodeBlock code={code} title="repeter.bql" onTry={tryCode} />}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-        <InfoCard color="#a78bfa" title="TANTQUE">Condition AVANT → peut ne jamais s'exécuter.</InfoCard>
-        <InfoCard color="#34d399" title="REPETER">Condition APRÈS → au moins 1 exécution garantie.</InfoCard>
+        <InfoCard color="#a78bfa" title="TANTQUE">Condition AVANT   peut ne jamais s'exécuter.</InfoCard>
+        <InfoCard color="#34d399" title="REPETER">Condition APRS   au moins 1 exécution garantie.</InfoCard>
       </div>
       <WarningCard>La boucle s'arrête quand la condition devient <strong>VRAIE</strong> (logique <em>inverse</em> de TANTQUE).</WarningCard>
       <SummaryCard items={["REPETER ... JUSQU'A condition;", 'Condition après le bloc', 'Au moins 1 exécution garantie', 'S\'arrête quand condition = VRAI']} />
     </div>
   );
 
-  // ─── boucle_imbrique ────────────────────────────────────────────────────────
+  //  boucle_imbrique 
   if (lt === 'boucle_imbrique') return (
     <div>
       <InfoCard title="Boucles imbriquées">
@@ -437,11 +437,11 @@ const _LegacyUnused = ({ lesson, onTryCode }) => {
       </InfoCard>
       {code && <LessonSection icon={<Code2 size={15} />} title="Exemple concret" step={1}><CodeBlock code={code} title="boucles_imbriquees.bql" onTry={tryCode} /></LessonSection>}
       <TipCard>Utilisez <code style={{ color: '#facc15' }}>i</code> pour la boucle externe, <code style={{ color: '#facc15' }}>j</code> pour l'interne. Ne jamais réutiliser le même nom !</TipCard>
-      <SummaryCard items={['La boucle interne s\'exécute entièrement par tour de la boucle externe', 'N × M itérations pour des boucles de taille N et M', 'Indispensable pour les matrices 2D']} />
+      <SummaryCard items={['La boucle interne s\'exécute entièrement par tour de la boucle externe', 'N  M itérations pour des boucles de taille N et M', 'Indispensable pour les matrices 2D']} />
     </div>
   );
 
-  // ─── tableau ────────────────────────────────────────────────────────────────
+  //  tableau 
   if (lt === 'tableau') return (
     <div>
       <InfoCard title="Tableau (Array)">
@@ -451,12 +451,12 @@ const _LegacyUnused = ({ lesson, onTryCode }) => {
         <TableauDiagram values={[10, 20, 30]} name="T" color="#4f8ff0" />
         {code && <CodeBlock code={code} title="tableau.bql" onTry={tryCode} />}
       </LessonSection>
-      <WarningCard>Les indices commencent à <strong>0</strong>, pas à 1. Tableau T[3] → indices T[0], T[1], T[2].</WarningCard>
-      <SummaryCard items={['Tableau T[n] : TYPE → taille n', 'T[0] = premier élément', 'T[n-1] = dernier élément', 'Tous les éléments = même type']} />
+      <WarningCard>Les indices commencent à <strong>0</strong>, pas à 1. Tableau T[3]   indices T[0], T[1], T[2].</WarningCard>
+      <SummaryCard items={['Tableau T[n] : TYPE   taille n', 'T[0] = premier élément', 'T[n-1] = dernier élément', 'Tous les éléments = même type']} />
     </div>
   );
 
-  // ─── tableau_parcours ───────────────────────────────────────────────────────
+  //  tableau_parcours 
   if (lt === 'tableau_parcours') return (
     <div>
       <InfoCard title="Parcours de tableau">La boucle POUR est idéale pour parcourir tous les éléments d'un tableau.</InfoCard>
@@ -464,53 +464,53 @@ const _LegacyUnused = ({ lesson, onTryCode }) => {
         <TableauDiagram values={[12, 15, 9, 18]} name="notes" color="#34d399" />
         {code && <CodeBlock code={code} title="parcours.bql" onTry={tryCode} />}
       </LessonSection>
-      <TipCard>Pour un tableau de taille n : <code style={{ color: '#facc15' }}>POUR i DE 0 A n-1 FAIRE</code>. L'indice max = taille - 1.</TipCard>
-      <SummaryCard items={['POUR i DE 0 A n-1 → tous les éléments', 'T[i] → élément à l\'indice i', 'Parfait pour afficher, modifier, chercher']} />
+      <TipCard>Pour un tableau de taille n : <code style={{ color: '#facc15' }}>POUR i ALLANT DE 0 A n-1 FAIRE</code>. L'indice max = taille - 1.</TipCard>
+      <SummaryCard items={['POUR i ALLANT DE 0 A n-1   tous les éléments', 'T[i]   élément à l\'indice i', 'Parfait pour afficher, modifier, chercher']} />
     </div>
   );
 
-  // ─── matrice ────────────────────────────────────────────────────────────────
+  //  matrice 
   if (lt === 'matrice') return (
     <div>
       <InfoCard title="Matrice (tableau 2D)">
-        Une matrice = tableau à deux dimensions. Accès : <code style={{ color: '#a78bfa' }}>M[ligne][colonne]</code>.
+        Une matrice = tableau à deux dimensions. Accès : <code style={{ color: '#a78bfa' }}>M[ligne,colonne]</code>.
       </InfoCard>
-      <LessonSection icon={<Code2 size={15} />} title="Représentation — lignes × colonnes" step={1}>
+      <LessonSection icon={<Code2 size={15} />} title="Représentation  lignes  colonnes" step={1}>
         <MatriceDiagram matrix={[[1,2,3],[4,5,6]]} name="M" color="#a78bfa" />
         {code && <CodeBlock code={code} title="matrice.bql" onTry={tryCode} />}
       </LessonSection>
-      <SummaryCard items={['Tableau M[lignes][colonnes] : TYPE', 'M[i][j] → ligne i, colonne j', 'Indices 0-based dans les deux dimensions']} />
+      <SummaryCard items={['Tableau M[lignes,colonnes] : TYPE', 'M[i,j] = ligne i, colonne j', 'Indices 0-based dans les deux dimensions']} />
     </div>
   );
 
-  // ─── matrice_parcours ───────────────────────────────────────────────────────
+  //  matrice_parcours 
   if (lt === 'matrice_parcours') return (
     <div>
       <InfoCard title="Double boucle">
-        Pour parcourir une matrice : boucle externe → lignes, boucle interne → colonnes.
+        Pour parcourir une matrice : boucle externe   lignes, boucle interne   colonnes.
       </InfoCard>
       <LessonSection icon={<Code2 size={15} />} title="Parcours complet" step={1}>
         <MatriceDiagram matrix={[[1,2],[3,4]]} name="M" color="#a78bfa" />
         {code && <CodeBlock code={code} title="parcours_matrice.bql" onTry={tryCode} />}
       </LessonSection>
       <TipCard>Pour M[L, C] : <code style={{ color: '#facc15' }}>i DE 0 A L-1</code> (lignes) et <code style={{ color: '#facc15' }}>j DE 0 A C-1</code> (colonnes).</TipCard>
-      <SummaryCard items={['Double boucle POUR : i (lignes) × j (colonnes)', 'L×C itérations totales', 'Boucle interne complète par ligne']} />
+      <SummaryCard items={['Double boucle POUR : i (lignes)  j (colonnes)', 'LC itérations totales', 'Boucle interne complète par ligne']} />
     </div>
   );
 
-  // ─── struct ─────────────────────────────────────────────────────────────────
+  //  struct 
   if (lt === 'struct') return (
     <div>
       <InfoCard title="Enregistrement (struct)">
         Regroupe des variables de <strong>types différents</strong> sous un même nom. Accès via la notation pointée.
       </InfoCard>
       <LessonSection icon={<Code2 size={15} />} title="Définition et accès aux champs" step={1}>
-        <InfoCard color="#a78bfa" title="Schéma — TYPE Personne">
+        <InfoCard color="#a78bfa" title="Schéma  TYPE Personne">
           <div style={{ fontFamily: 'monospace', fontSize: '0.82rem', color: '#a78bfa', lineHeight: '1.8' }}>
-            Personne ┐<br />
-            &nbsp;&nbsp;├─ nom : CHAINE DE CARACTERE ← "Alice"<br />
-            &nbsp;&nbsp;├─ age : ENTIER ← 25<br />
-            &nbsp;&nbsp;└─ score : REEL ← 17.5
+            Personne <br />
+            &nbsp;&nbsp;S nom : CHAINE DE CARACTERE   "Alice"<br />
+            &nbsp;&nbsp;S age : ENTIER   25<br />
+            &nbsp;&nbsp; score : REEL   17.5
           </div>
         </InfoCard>
         {code && <CodeBlock code={code} title="struct.bql" onTry={tryCode} />}
@@ -520,7 +520,7 @@ const _LegacyUnused = ({ lesson, onTryCode }) => {
     </div>
   );
 
-  // ─── exercice ───────────────────────────────────────────────────────────────
+  //  exercice 
   if (lt === 'exercice') return (
     <div>
       <div style={{ textAlign: 'center', padding: '1.5rem 0 1.2rem', animation: 'fadeInUp 0.4s ease' }}>
@@ -533,11 +533,11 @@ const _LegacyUnused = ({ lesson, onTryCode }) => {
     </div>
   );
 
-  // ─── generic fallback ───────────────────────────────────────────────────────
+  //  generic fallback 
   return <div><p style={{color:'#cbd5e1'}}>Leçon non trouvée.</p></div>;
 };
 
-// ─── Main CourseViewer ────────────────────────────────────────────────────────
+//  Main CourseViewer 
 
 const CourseViewer = ({ course, onBack }) => {
   const [activeChapterIndex, setActiveChapterIndex] = useState(0);
@@ -568,9 +568,7 @@ const CourseViewer = ({ course, onBack }) => {
       state: {
         codeToRun: lesson.example_code,
         lessonId: lesson.id,
-        expectedOutput: lesson.expected_output,
         lessonTitle: lesson.title,
-        testCases: lesson.test_cases,
         isChallenge: lesson.lesson_type === 'challenge',
         lessonExercise: lesson.exercise,
         lessonContent: lesson.content
@@ -589,7 +587,7 @@ const CourseViewer = ({ course, onBack }) => {
     const lesson = lessons[activeChapterIndex];
     if (!lesson) return;
     const isCompleted = userProgress.has(lesson.id);
-    const isExercise = !!lesson.expected_output;
+    const isExercise = lesson.lesson_type === 'exercice' || lesson.lesson_type === 'challenge';
 
     if (!isCompleted && !isExercise) {
       setCompletingId(lesson.id);
@@ -608,7 +606,7 @@ const CourseViewer = ({ course, onBack }) => {
     if (activeChapterIndex > 0) goToLesson(activeChapterIndex - 1);
   };
 
-  // ─── Loading state → skeleton
+  //  Loading state   skeleton
   if (loading) {
     return (
       <div className="course-viewer-container">
@@ -626,13 +624,13 @@ const CourseViewer = ({ course, onBack }) => {
   if (!currentLesson) return null;
 
   const isCompleted = userProgress.has(currentLesson.id);
-  const isExercise = !!currentLesson.expected_output || currentLesson.lesson_type === 'challenge';
+  const isExercise = currentLesson.lesson_type === 'exercice' || currentLesson.lesson_type === 'challenge';
   const totalXP = lessons.filter(l => userProgress.has(l.id)).reduce((acc, l) => acc + (l.xp_value || 25), 0);
   const progressPct = lessons.length > 0 ? Math.round((userProgress.size / lessons.length) * 100) : 0;
 
   return (
     <div className="course-viewer-container">
-      {/* ─── Mobile Sidebar Overlay ─── */}
+      {/*  Mobile Sidebar Overlay  */}
       {isMobile && sidebarOpen && (
         <div
           onClick={() => setSidebarOpen(false)}
@@ -640,7 +638,7 @@ const CourseViewer = ({ course, onBack }) => {
         />
       )}
 
-      {/* ─── Sidebar ─── */}
+      {/*  Sidebar  */}
       <div
         className="course-sidebar"
         style={isMobile ? {
@@ -665,7 +663,7 @@ const CourseViewer = ({ course, onBack }) => {
               <div style={{ height: '100%', width: `${progressPct}%`, background: 'linear-gradient(90deg, #4f8ff0, #34d399)', borderRadius: '4px', transition: 'width 0.6s ease' }} />
             </div>
             <div style={{ fontSize: '0.7rem', color: progressPct === 100 ? '#34d399' : '#475569', marginTop: '0.4rem', fontWeight: progressPct === 100 ? 700 : 400 }}>
-              {progressPct === 100 ? '✓ Cours terminé !' : `${progressPct}% complété`}
+              {progressPct === 100 ? 'S Cours terminé !' : `${progressPct}% complété`}
             </div>
           </div>
         </div>
@@ -674,7 +672,7 @@ const CourseViewer = ({ course, onBack }) => {
           {lessons.map((lesson, idx) => {
             const done = userProgress.has(lesson.id);
             const active = activeChapterIndex === idx;
-            const isEx = !!lesson.expected_output;
+            const isEx = lesson.lesson_type === 'exercice' || lesson.lesson_type === 'challenge';
             return (
               <button
                 key={lesson.id}
@@ -697,7 +695,7 @@ const CourseViewer = ({ course, onBack }) => {
         </div>
       </div>
 
-      {/* ─── Content area ─── */}
+      {/*  Content area  */}
       <div className="course-content-area" ref={contentRef}>
         <div className="course-content-inner">
 
@@ -810,3 +808,4 @@ const CourseViewer = ({ course, onBack }) => {
 };
 
 export default CourseViewer;
+

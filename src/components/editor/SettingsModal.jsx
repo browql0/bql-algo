@@ -296,14 +296,6 @@ const SettingsModal = ({ isOpen, onClose, settings, onSave, defaultSettings }) =
 
             <div className="setting-row">
               <div className="setting-info">
-                <label>Formater avant exécution</label>
-                <span className="setting-desc">Garantit que le code soumis à l'interpréteur est propre visuellement.</span>
-              </div>
-              <ToggleSwitch checked={localSettings.formatOnRun} onChange={(v) => update('formatOnRun', v)} />
-            </div>
-
-            <div className="setting-row">
-              <div className="setting-info">
                 <label>Normalisation des opérateurs</label>
                 <span className="setting-desc">Ajoute ou retire intelligemment les espaces autour des opérateurs (&lt;-, +, =).</span>
               </div>

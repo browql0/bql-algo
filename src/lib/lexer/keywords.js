@@ -7,6 +7,8 @@
  * Règles importantes :
  *  1. Les mots-clés composés ("SINON SI", "CHAINE DE CARACTERE") sont
  *     détectés en priorité par le lexer, AVANT les mots simples.
+ *     La forme officielle BQL de l'alternative conditionnelle est "SINONSI";
+ *     "SINON SI" reste acceptée comme alias compatible.
  *  2. La comparaison est INSENSIBLE À LA CASSE — le lexer normalise en
  *     toUpperCase() avant le lookup, donc "ecrire", "Ecrire" et "ECRIRE"
  *     produisent tous le même token ECRIRE.
@@ -48,6 +50,7 @@ export const SIMPLE_KEYWORDS = new Map([
   // Condition
   ['SI',          TokenType.SI          ],
   ['ALORS',       TokenType.ALORS       ],
+  ['SINONSI',     TokenType.SINON_SI    ],
   ['SINON',       TokenType.SINON       ],
   ['FINSI',       TokenType.FINSI       ],
   ['SELON',       TokenType.SELON       ],

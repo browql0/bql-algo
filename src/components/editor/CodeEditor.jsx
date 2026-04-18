@@ -7,7 +7,7 @@ import AutocompleteMenu from './autocomplete/AutocompleteMenu';
 import { tokenizeAndMapStructure } from './highlight/highlight';
 
 /**
- * Éditeur BQL Custom
+ * 0diteur BQL Custom
  * Utilise un `<textarea>` transparent superposé sur un `<div>` contenant
  * le texte fractionné en `<span className="token-XXX">` pour la coloration.
  */
@@ -185,7 +185,7 @@ const CodeEditor = forwardRef(({ code, onChange, settings, onFormat, runningLine
           indent += indentString;
         } else {
           // 2. Si la ligne ferme un bloc, le contenu de la SUIVANTE doit reculer pour rester cohérent
-          const isCloser = ['FINSI', 'FINSELON', 'FINPOUR', 'FINTANTQUE', 'JUSQUA', 'FIN'].includes(firstWord) || upperLine.startsWith('SINON SI');
+          const isCloser = ['FINSI', 'FINSELON', 'FINPOUR', 'FINTANTQUE', 'JUSQUA', 'FIN'].includes(firstWord) || upperLine.startsWith('SINONSI') || upperLine.startsWith('SINONSI');
           if (isCloser) {
             if (indent.endsWith(indentString)) {
               indent = indent.slice(0, -indentString.length);
@@ -256,7 +256,7 @@ const CodeEditor = forwardRef(({ code, onChange, settings, onFormat, runningLine
     return tokenizeAndMapStructure(code);
   }, [code]);
 
-  // ── Snippets Constants ──
+  //  Snippets Constants 
   const FAST_SNIPPETS = [
     { label: "SI", insert: "SI " },
     { label: "POUR", insert: "POUR " },
@@ -269,7 +269,7 @@ const CodeEditor = forwardRef(({ code, onChange, settings, onFormat, runningLine
     {
       name: "Structure",
       snippets: [
-        { label: "ALGORITHME", insert: "ALGORITHME " },
+        { label: "ALGORITHME", insert: "ALGORITHME_MonProgramme;\nDEBUT\n  \nFIN" },
         { label: "DEBUT .. FIN", insert: "DEBUT\n  \nFIN" },
         { label: "CONSTANTES", insert: "CONSTANTES\n  " },
         { label: "VARIABLES", insert: "VARIABLES\n  " }
@@ -280,7 +280,7 @@ const CodeEditor = forwardRef(({ code, onChange, settings, onFormat, runningLine
       snippets: [
         { label: "SI .. ALORS", insert: "SI (...) ALORS\n  \nFINSI" },
         { label: "SINON", insert: "SINON\n  " },
-        { label: "SINON SI", insert: "SINON SI (...) ALORS\n  " },
+        { label: "SINONSI", insert: "SINONSI (...) ALORS\n  " },
         { label: "SELON", insert: "SELON (...) FAIRE\n  CAS ... :\n    \n  AUTRE :\n    \nFINSELON" }
       ]
     },
@@ -314,12 +314,12 @@ const CodeEditor = forwardRef(({ code, onChange, settings, onFormat, runningLine
   return (
     <div className="code-editor-wrapper">
 
-      {/* ── Gouttière (Lignes) ── */}
+      {/*  Gouttière (Lignes)  */}
       {settings?.lineNumbers !== false && (
         <div className="line-numbers" ref={lineNumbersRef} style={editorStyle}>
           {lineNumbers.map(num => (
             <div key={num} className={`line-number ${num === runningLine ? 'running-gutter' : ''}`}>
-              {num === runningLine && <div className="running-arrow">▶</div>}
+              {num === runningLine && <div className="running-arrow"></div>}
               {num}
             </div>
           ))}
@@ -327,7 +327,7 @@ const CodeEditor = forwardRef(({ code, onChange, settings, onFormat, runningLine
         </div>
       )}
 
-      {/* ── Calques d'édition superposés ── */}
+      {/*  Calques d'édition superposés  */}
       <div className="editor-layers" style={editorStyle}>
 
         {/* Calque Arrière-plan (Coloré) */}
@@ -388,7 +388,7 @@ const CodeEditor = forwardRef(({ code, onChange, settings, onFormat, runningLine
         />
       </div>
 
-      {/* ── Mobile Snippets Bar & Drawer ── */}
+      {/*  Mobile Snippets Bar & Drawer  */}
       {isMobile && (
         <div className="mobile-snippets-wrapper" onMouseDown={(e) => e.preventDefault()}>
           <div className="mobile-snippets-bar">
@@ -397,7 +397,7 @@ const CodeEditor = forwardRef(({ code, onChange, settings, onFormat, runningLine
               className={`snippet-btn-more ${isSnippetDrawerOpen ? 'active' : ''}`}
               onClick={() => setIsSnippetDrawerOpen(!isSnippetDrawerOpen)}
             >
-              {isSnippetDrawerOpen ? '✖ Fermer' : '☰ +'}
+              {isSnippetDrawerOpen ? 'S Fermer' : 'ܰ +'}
             </button>
             {/* Raccourcis rapides */}
             {FAST_SNIPPETS.map(s => (
@@ -433,3 +433,4 @@ const CodeEditor = forwardRef(({ code, onChange, settings, onFormat, runningLine
 });
 
 export default CodeEditor;
+

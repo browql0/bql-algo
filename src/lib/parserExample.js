@@ -15,13 +15,13 @@ import Interpreter  from './interpreter/Interpreter.js';
 // ── Programme exemple ─────────────────────────────────────────────────────────
 //
 //  Calcule la moyenne de N notes saisies, puis affiche un bilan.
-//  Couvre : déclarations, REPETER/JUSQUA, SI/SINON SI/SINON/FINSI,
+//  Couvre : déclarations, REPETER/JUSQUA, SI/SINONSI/SINON/FINSI,
 //            POUR, opérations arithmétiques et logiques.
 //
 export const SOURCE_CODE = `
 ALGORITHME_CALCULMOYENNE;
 
-VARIABLES:
+VARIABLES
   note     : entier;
   somme    : entier;
   compteur : entier;
@@ -49,7 +49,7 @@ DEBUT
   SI (moyenne >= 10) ALORS
     reussi <- vrai;
     ecrire("Résultat : ADMIS");
-  SINON SI (moyenne >= 8) ALORS
+  SINONSI (moyenne >= 8) ALORS
     reussi <- faux;
     ecrire("Résultat : Rattrapage");
   SINON
@@ -61,7 +61,7 @@ DEBUT
 
   // Affiche chaque note via POUR
   compteur <- 1;
-  POUR compteur DE 1 A n PAS 1
+  POUR compteur ALLANT DE 1 A n PAS 1 FAIRE
     ecrire("  Note ", compteur, " enregistrée");
   FINPOUR
 

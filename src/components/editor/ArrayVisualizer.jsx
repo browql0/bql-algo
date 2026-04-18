@@ -341,7 +341,7 @@ const ArrayVisualizer = ({ arrays, records, lastAction, visible, settings, isMob
               </div>
               <p>Aucun tableau ou matrice détecté.</p>
               <div className="av-no-arrays-example">
-                <code>Tableau M[2][3] : ENTIER;</code>
+                <code>Tableau M[2,3] : ENTIER;</code>
               </div>
             </div>
           ) : (

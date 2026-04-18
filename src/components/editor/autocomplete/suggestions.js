@@ -1,8 +1,8 @@
 /**
  * suggestions.js
- * ─────────────────────────────────────────────────────────────────────────────
+ * 
  * Dictionnaires des mots-clés, types et snippets pour l'auto-complétion BQL.
- * ─────────────────────────────────────────────────────────────────────────────
+ * 
  */
 
 export const KEYWORDS = [
@@ -74,22 +74,22 @@ export const SNIPPETS = [
     label: 'CONSTANTE (section)',
     detail: 'Déclarer une seule constante',
     type: 'snippet',
-    insertText: 'CONSTANTE\n    = : ;',
+    insertText: 'CONSTANTE\n    NOM = valeur : TYPE;',
     cursorOffset: -8,
   },
   {
     label: 'CONSTANTES (section)',
     detail: 'Déclarer plusieurs constantes',
     type: 'snippet',
-    insertText: 'CONSTANTES\n     = 3.14 : REEL;\n     = 100 : ENTIER;',
+    insertText: 'CONSTANTES\n    PI = 3.14 : REEL;\n    MAX = 100 : ENTIER;',
     cursorOffset: -40,
   },
   {
     label: 'ALGORITHME (Structure)',
     detail: 'Structure de base d\'un algorithme',
     type: 'snippet',
-    insertText: 'ALGORITHME_BQL;\nCONSTANTES\n    \nVARIABLES\n    \nDEBUT\n    \nFIN',
-    cursorOffset: -13,
+    insertText: 'ALGORITHME_BQL;\nDEBUT\n    ECRIRE("Bonjour BQL");\nFIN',
+    cursorOffset: -4,
   },
   {
     label: 'ECRIRE("...")',
@@ -139,7 +139,7 @@ export const globalSuggestions = [
     label: kw,
     detail: 'Mot-clé',
     type: 'keyword',
-    insertText: kw + (['ALGORITHME', 'VARIABLES', 'DEBUT', 'FIN'].includes(kw) ? '' : ' ')
+    insertText: kw + (['VARIABLES', 'DEBUT', 'FIN'].includes(kw) ? '' : ' ')
   })),
   // ECRIRE : suggestion mot-clé simple
   {
@@ -162,3 +162,4 @@ export const globalSuggestions = [
     insertText: t + ';'
   }))
 ];
+

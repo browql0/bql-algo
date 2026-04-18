@@ -35,7 +35,7 @@ const Hero = ({ onStart }) => {
             </div>
             <div className="stat-divider"></div>
             <div className="stat-item">
-              <span className="stat-value">Éclair</span>
+              <span className="stat-value">0clair</span>
               <span className="stat-label">Compilation rapide</span>
             </div>
             <div className="stat-divider"></div>
@@ -57,8 +57,8 @@ const Hero = ({ onStart }) => {
               <code>
                 <span className="keyword">DEBUT</span><br/>
                 <span className="comment">  /* Un simple algorithme BQL */</span><br/>
-                {'  '}<span className="variable">x</span> <span className="operator">←</span> <span className="number">42</span>;<br/>
-                {'  '}<span className="variable">y</span> <span className="operator">←</span> <span className="number">10</span>;<br/>
+                {'  '}<span className="variable">x</span> <span className="operator"> </span> <span className="number">42</span>;<br/>
+                {'  '}<span className="variable">y</span> <span className="operator"> </span> <span className="number">10</span>;<br/>
                 {'  '}<span className="keyword">SI</span> (<span className="variable">x</span> <span className="operator">&gt;</span> <span className="variable">y</span>) <span className="keyword">ALORS</span><br/>
                 {'    '}<span className="function">ecrire</span>(<span className="string">"Le secret est "</span>, <span className="variable">x</span>);<br/>
                 {'  '}<span className="keyword">FINSI</span><br/>
@@ -74,3 +74,4 @@ const Hero = ({ onStart }) => {
 };
 
 export default Hero;
+

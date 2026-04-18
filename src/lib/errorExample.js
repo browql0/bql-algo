@@ -14,7 +14,7 @@ import { formatErrors } from './errors/index.js';
 // 1. Code avec une erreur syntaxique (mot-clé mal orthographié "ALOR")
 const CODE_SYNTAX_ERROR = `
 ALGORITHME_TEST;
-VARIABLES:
+VARIABLES
   x : entier;
 DEBUT
   x <- 10;
@@ -35,7 +35,7 @@ FIN
 // 3. Code avec une erreur d'exécution (division par zéro)
 const CODE_RUNTIME_ERROR = `
 ALGORITHME_TEST3;
-VARIABLES:
+VARIABLES
   a : entier;
   b : entier;
 DEBUT

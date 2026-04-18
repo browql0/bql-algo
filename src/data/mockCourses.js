@@ -64,7 +64,7 @@ ECRIRE("L'année d'après, j'aurai ", age, " ans.")
         id: 'c3',
         title: "Les conditions (SI ... ALORS)",
         content: `Les instructions conditionnelles permettent d'exécuter un bloc de code uniquement si une certaine condition est remplie.
-C'est le cœur de l'intelligence d'un programme !
+C'est le cur de l'intelligence d'un programme !
 
 ### Structure
 \`\`\`bql
@@ -92,13 +92,13 @@ FINSI
 
 ### Syntaxe
 \`\`\`bql
-POUR i DE départ A arrivée FAIRE
+POUR i ALLANT DE départ A arrivée FAIRE
   // instructions répétées
 FINPOUR
 \`\`\``,
         codeExample: `ECRIRE("Début du compte à rebours...")
 
-POUR i DE 5 A 1 PAS -1 FAIRE
+POUR i ALLANT DE 5 A 1 PAS -1 FAIRE
   ECRIRE(i)
 FINPOUR
 
@@ -141,7 +141,7 @@ Pour déclarer un tableau, utilisez les crochets \`[]\`.`,
 ECRIRE("Le premier score est : ", scores[0])
 
 // On peut les parcourir
-POUR i DE 0 A 3 FAIRE
+POUR i ALLANT DE 0 A 3 FAIRE
   ECRIRE("Score ", i, " = ", scores[i])
 FINPOUR
 `
@@ -159,9 +159,10 @@ FINPOUR
         id: 'c7',
         title: "Bientôt disponible",
         content: `Les cours sur les sous-programmes et les structures avancées sont en cours de rédaction ! 
-Revenez bientôt pour plus de contenu.`,
+Revenez bientôt POUR plus ALLANT DE contenu.`,
         codeExample: `ECRIRE("A suivre...")`
       }
     ]
   }
 ];
+

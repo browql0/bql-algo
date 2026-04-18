@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { TerminalSquare, ArrowRight, BookOpen, Shuffle, RefreshCcw, Layers, Zap, Box, Code, Trophy, Lock, ChevronRight, Star } from 'lucide-react';
+import { TerminalSquare, ArrowRight, BookOpen, Shuffle, RefreshCcw, Layers, Zap, Box, Code, Trophy, Lock, ChevronRight, Star, Target } from 'lucide-react';
 import CourseViewer from './CourseViewer';
 import { SkeletonBentoCard } from './SkeletonComponents';
 import { useCourses } from '../../hooks/useCourses';
@@ -13,9 +13,10 @@ const LEVEL_COLORS = [
   { bg: '#facc15', glow: 'rgba(250,204,21,0.2)', label: 'Avancé' },
   { bg: '#fb7185', glow: 'rgba(251,113,133,0.2)', label: 'Expert' },
   { bg: '#c084fc', glow: 'rgba(192,132,252,0.2)', label: 'Maître' },
+  { bg: '#22c55e', glow: 'rgba(34,197,94,0.18)', label: 'Projet' },
 ];
 
-const LESSON_COUNTS = { 1: 10, 2: 10, 3: 10, 4: 12, 5: 12, 6: 9 };
+const LESSON_COUNTS = { 1: 12, 2: 11, 3: 12, 4: 14, 5: 12, 6: 10, 7: 5 };
 
 // Mapping strings to components for dynamic Icons
 const ICONS = {
@@ -26,6 +27,7 @@ const ICONS = {
   Zap: Zap,
   Box: Box,
   Code: Code,
+  Target: Target,
   BookOpen: BookOpen
 };
 
@@ -43,7 +45,7 @@ const CoursePage = () => {
   };
 
   const renderSkeletons = () => {
-    return Array(6).fill(0).map((_, index) => (
+    return Array(7).fill(0).map((_, index) => (
       <SkeletonBentoCard key={index} large={index === 0 || index === 3} />
     ));
   };

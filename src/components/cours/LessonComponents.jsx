@@ -399,7 +399,7 @@ const QUICK_REF = [
   { cat: 'Structure', color: '#c084fc', icon: '⬡', items: ['ALGORITHME_Nom', 'VARIABLE x : ENTIER;', 'VARIABLES x : ENTIER; y : REEL;', 'DEBUT ... FIN'] },
   { cat: 'Entrée / Sortie', color: '#4ade80', icon: '↕', items: ['ECRIRE("texte");', 'ECRIRE("val =", x);', 'LIRE(variable);'] },
   { cat: 'Conditions', color: '#facc15', icon: '⑇', items: ['SI cond ALORS ... FINSI', 'SI ... SINON ... FINSI', 'SELON var FAIRE ... FINSELON'] },
-  { cat: 'Boucles', color: '#4f8ff0', icon: '↻', items: ['POUR i DE 1 A n FAIRE ... FINPOUR', 'TANTQUE cond FAIRE ... FINTANTQUE', "REPETER ... JUSQU'A cond;"] },
+  { cat: 'Boucles', color: '#4f8ff0', icon: '↻', items: ['POUR i ALLANT DE 1 A n FAIRE ... FINPOUR', 'TANTQUE cond FAIRE ... FINTANTQUE', "REPETER ... JUSQUA cond;"] },
   { cat: 'Opérateurs', color: '#fb7185', icon: '±', items: ['+  −  *  /  MOD', '=  <>  <  >  <=  >=', 'ET   OU   NON'] },
   { cat: 'Tableaux', color: '#a78bfa', icon: '▦', items: ['Tableau T[n] : TYPE', 'T[i]  ←  valeur', 'Tableau M[l, c] : TYPE'] },
 ];

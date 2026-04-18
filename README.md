@@ -1,138 +1,74 @@
+# BQL Algo
 
-# 🚀 BQL Algo — Plateforme d’apprentissage de l’algorithmique
+BQL Algo is an interactive platform for learning algorithmics with an executable pseudo-language inspired by classroom algorithm notation. Students can read lessons, write BQL code, run it in the browser, and validate exercises.
 
-BQL Algo est une plateforme interactive qui permet d’apprendre, écrire et exécuter des algorithmes directement dans le navigateur. Elle transforme l’apprentissage théorique en une expérience pratique proche d’un vrai langage de programmation.
+## Product Goal
 
----
+Help beginners move from paper algorithms to executable logic:
 
-## 🎯 Objectif
+* understand variables, types, conditions, loops, arrays, matrices, and records
+* run examples immediately
+* receive syntax and runtime feedback
+* practice with progressive lessons and challenges
 
-Permettre aux étudiants de :
-- passer du papier à la pratique 💡  
-- comprendre la logique des algorithmes  
-- exécuter leurs solutions en temps réel  
+## Core Features
 
----
+* Custom BQL lexer, parser, semantic analyzer, and interpreter
+* Browser editor with highlighting and snippets
+* Interactive terminal with `ECRIRE` and `LIRE`
+* Course and progress system
+* Challenge validation through hidden server-side tests
+* Admin analytics and user tracking
 
-## ✨ Fonctionnalités
+## Official Example
 
-- 🧠 **Éditeur intelligent**
-  - Coloration syntaxique du pseudo-algorithme (style marocain)
-  - Auto-complétion
-  - Détection d’erreurs
+Every full BQL example should follow the same structure:
 
-- ⚡ **Exécution instantanée**
-  - Lancer un algorithme sans installation
-  - Résultat en temps réel
-
-- 🖥️ **Console interactive**
-  - Affichage des sorties
-  - Debug simplifié
-
-- 📁 **Gestion de fichiers**
-  - Organisation des algorithmes comme un vrai projet
-
-- 🌙 **Mode sombre**
-  - Confort visuel optimisé
-
-- 🎓 **Système d’apprentissage**
-  - Exercices progressifs
-
----
-
-## 🧠 Pseudo-Algorithme
-
-La plateforme utilise un pseudo-algorithme inspiré du programme marocain, permettant aux étudiants d’écrire des solutions comme sur papier, puis de les exécuter.
-
-Exemple :
-
-```txt
+```bql
+ALGORITHME_Comparaison;
+VARIABLES
+  x : ENTIER;
+  y : ENTIER;
 DEBUT
-  x ← 42
-  y ← 10
+  x <- 42;
+  y <- 10;
 
-  SI (x > y) ALORS
-    ecrire("Le plus grand est ", x)
+  SI x > y ALORS
+    ECRIRE("Le plus grand est ", x);
+  SINON
+    ECRIRE("Le plus grand est ", y);
   FINSI
 FIN
 ```
----
-## 🛠️ Stack Technique
 
-### 🎨 Frontend
-- **React** — Interface moderne et dynamique  
-- **CSS (classique)** — Styling personnalisé  
+## BQL Truth Rule
 
-### ⚙️ Backend
-- **Node.js** — Gestion de la logique serveur  
-
-### 🗄️ Base de données
-- **Supabase** — Stockage et gestion des données  
-
-### 🧠 Moteur d’exécution
-- **Lexer (fait maison)** — Analyse lexicale du pseudo-algorithme  
-- **Parser (fait maison)** — Construction de la structure logique  
-- **Interpréteur personnalisé** — Exécution des algorithmes  
-
----
-
-## ⚙️ Installation
+The parser is the technical source of truth, and `docs/BQL_SPEC.md` is the user-facing source of truth. All lessons, snippets, docs, and examples must pass:
 
 ```bash
-# Cloner le projet
-git clone https://github.com/ton-username/bql-algo.git
+npm run test:examples
+```
 
-# Accéder au dossier
-cd bql-algo
+## Development
 
-# Installer les dépendances
+```bash
 npm install
-
-# Lancer le projet
 npm run dev
 ```
----
-## 🚧 Roadmap
 
-### 🔜 Prochaines fonctionnalités
+Run checks:
 
-- [ ] 📚 Ajout de nouveaux exercices interactifs  
-- [ ] 👤 Système de comptes utilisateurs  
-- [ ] 💾 Sauvegarde et gestion des projets  
-- [ ] 🐞 Debugger visuel (exécution pas à pas)  
-- [ ] 🧮 Support avancé des matrices  
-- [ ] 📝 Mode examen  
+```bash
+npm test
+npm run test:examples
+npm run build
+```
 
----
+## Documentation
 
-## 💡 Pourquoi ce projet ?
+* `docs/BQL_SPEC.md` - official syntax rules
+* `docs/BEGINNER_CURRICULUM.md` - beginner curriculum and sample lessons
 
-L’algorithmique est souvent enseignée de manière théorique, sans possibilité de tester réellement les solutions.
+## Author
 
-**BQL Algo** permet de passer à une approche pratique en offrant un environnement interactif où les étudiants peuvent :
-
-- ⚡ Tester leurs algorithmes instantanément  
-- 👀 Visualiser les résultats en temps réel  
-- 🧠 Comprendre plus facilement la logique  
-
----
-
-## 👨‍💻 Auteur
-
-**Hajjaj Ali**  
-> Développeur du projet BQL Algo
-
----
-
-## ⭐ Support
-
-Si ce projet t’aide ou t’intéresse, n’hésite pas à :
-
-- ⭐ Mettre une étoile au repository  
-- 📢 Le partager avec d’autres étudiants  
-- 💡 Proposer des idées ou contributions  
-
----
-
-🚀 Merci pour ton soutien !
-
+Hajjaj Ali

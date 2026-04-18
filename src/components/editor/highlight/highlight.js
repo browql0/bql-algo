@@ -1,11 +1,11 @@
 /**
  * highlight.js
- * ─────────────────────────────────────────────────────────────────────────────
+ * 
  * Mini-lexer purement UI basé sur des expressions régulières pour la 
  * coloration syntaxique. Contrairement au Lexer principal qui supprime les
  * espaces et retours à la ligne, ce tokeniser PRESERVE tout le texte, ce
  * qui est indispensable pour un calque de surbrillance (overlay).
- * ─────────────────────────────────────────────────────────────────────────────
+ * 
  */
 
 const KEYWORDS = [
@@ -23,7 +23,7 @@ const TYPES = ['ENTIER', 'REEL', 'CHAINE', 'CARACTERE', 'BOOLEEN'];
 
 const FUNCTIONS = ['ECRIRE', 'LIRE'];
 const BOOLEANS = ['VRAI', 'FAUX'];
-const OPERATORS = ['<-', '←', '=', '<>', '<', '>', '<=', '>=', '+', '-', '*', '/', '%', '^', 'ET', 'OU', 'NON'];
+const OPERATORS = ['<-', ' ', '=', '<>', '<', '>', '<=', '>=', '+', '-', '*', '/', '%', '^', 'ET', 'OU', 'NON'];
 
 function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& = whole matched string
@@ -106,7 +106,7 @@ export function tokenizeForHighlight(text) {
     
     // 7. Opérateurs Multi-caractères (ou ET/OU/NON déjà gérés par wordMatch)
     // On re-teste les symboles <-, +, etc.
-    const symbolMatch = text.slice(i).match(new RegExp(`^(<-|←|<=|>=|!=|=|\\+|-|\\*|\\/|%|\\^|<|>|\\(|\\)|\\[|\\]|:|;|,)`));
+    const symbolMatch = text.slice(i).match(new RegExp(`^(<-| |<=|>=|!=|=|\\+|-|\\*|\\/|%|\\^|<|>|\\(|\\)|\\[|\\]|:|;|,)`));
     if (symbolMatch) {
       const symbol = symbolMatch[1];
       const type = /[(|)|\[|\]|:|;|,|.]/.test(symbol) ? 'punctuation' : 'operator';
@@ -123,7 +123,7 @@ export function tokenizeForHighlight(text) {
   return tokens;
 }
 
-// ── Analyseur Structurel ───────────────────────────────────────────────────────
+//  Analyseur Structurel 
 
 export function tokenizeAndMapStructure(text) {
   const codeLines = text.split('\n');
@@ -150,7 +150,7 @@ export function tokenizeAndMapStructure(text) {
       if (t.type === 'keyword' || t.type === 'identifier') {
         const kw = t.value.toUpperCase();
         
-        // Anti "SINON SI" : 
+        // Anti "SINONSI" : 
         const isSinonSi = (kw === 'SI' && lastRelevantKw === 'SINON');
         if (!isSinonSi && t.type === 'keyword') {
           if (OPENERS.includes(kw)) {
@@ -177,3 +177,4 @@ export function tokenizeAndMapStructure(text) {
 
   return result;
 }
+

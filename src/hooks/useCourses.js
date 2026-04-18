@@ -89,7 +89,7 @@ export const useCourseDetails = (courseId) => {
       setLoading(true);
       const { data, error } = await supabase
         .from('lessons')
-        .select('*')
+        .select('id, course_id, title, content, example_code, exercise, lesson_type, xp_value, order, created_at')
         .eq('course_id', courseId)
         .order('order', { ascending: true });
 

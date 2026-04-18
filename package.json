@@ -5,14 +5,20 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:server": "node server/index.js",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node --experimental-vm-modules src/lib/tests/parserTests.js"
+    "test": "node src/lib/tests/runAllTests.js && node src/lib/tests/validateExamples.js",
+    "test:lexer": "node src/lib/tests/lexerTests.js",
+    "test:parser": "node src/lib/tests/parserTests.js",
+    "test:execution": "node src/lib/tests/executionTests.js",
+    "test:examples": "node src/lib/tests/validateExamples.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.100.1",
     "canvas-confetti": "^1.9.4",
+    "express": "^5.2.1",
     "lucide-react": "^1.7.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

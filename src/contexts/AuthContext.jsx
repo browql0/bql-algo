@@ -27,9 +27,11 @@ export const AuthProvider = ({ children }) => {
         .eq('id', session.user.id)
         .single();
 
-      const isAdminReal = profile?.role === 'admin' || 
-                         session.user.email?.includes('admin') || 
-                         window.location.hostname === 'localhost';
+      if (error) {
+        console.warn('Impossible de charger le profil utilisateur:', error.message);
+      }
+
+      const isAdminReal = profile?.role === 'admin';
 
       setUser({ 
         ...session.user, 

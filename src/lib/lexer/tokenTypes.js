@@ -13,7 +13,7 @@ const TokenType = Object.freeze({
   STRING:       'STRING',       // chaîne entre "…"
   CHAR:         'CHAR',         // caractère entre '…'
   IDENTIFIER:   'IDENTIFIER',  // nom de variable / fonction défini par l'utilisateur
-  BOOLEAN:      'BOOLEAN',      // VRAI | FAUX
+  BOOLEAN:      'BOOLEAN',      // littéral VRAI | FAUX (le type officiel est BOOLEEN)
 
   // ── Mots-clés de structure ─────────────────────────────────────────────────
   ALGORITHME:   'ALGORITHME',
@@ -30,7 +30,7 @@ const TokenType = Object.freeze({
   // ── Mots-clés de condition ─────────────────────────────────────────────────
   SI:           'SI',
   ALORS:        'ALORS',
-  SINON_SI:     'SINON_SI',     // SINON SI (deux mots traités comme un seul token)
+  SINON_SI:     'SINON_SI',     // SINONSI officiel; SINON SI accepté comme alias
   SINON:        'SINON',
   FINSI:        'FINSI',
   SELON:        'SELON',

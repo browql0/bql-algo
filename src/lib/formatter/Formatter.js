@@ -72,40 +72,6 @@ export function formatCode(code, tabSize = 2) {
     // Le niveau courant d'indentation sera la taille de la pile modifiée
     let currentIndentLevel = stack.length;
     
-    // --- INSERTION STRICTE DE POINT-VIRGULE (Si demandé structuré) ---
-    // Si la ligne n'est pas un bloc et ne se termine pas par ';' ou ':'
-    const NO_SEMICOLON_STARTS = [
-      'DEBUT', 'FIN', 'SI', 'SINON', 'SINON_SI', 'FINSI', 
-      'SELON', 'CAS', 'AUTRE', 'FINSELON', 
-      'POUR', 'FINPOUR', 'TANTQUE', 'FINTANTQUE', 
-      'REPETER', 'JUSQUA', 'VARIABLES' // variables se finit par :
-    ];
-    
-    if (!line.endsWith(';') && !line.endsWith(':') && line !== 'FIN' && line !== 'DEBUT') {
-      if (!line.toUpperCase().endsWith('ALORS') && !line.toUpperCase().endsWith('FAIRE')) {
-        if (!NO_SEMICOLON_STARTS.includes(firstWord)) {
-          // Ignorer si la ligne commence par un pur commentaire
-          if (!line.startsWith('//')) {
-            // Identifier la présence d'un commentaire en fin de ligne (pour insérer le ; au bon endroit)
-            // Note: ne gère pas les '//' dans les chaînes de caractères parfaitement (trop complexe pour une regexp naïve), 
-            // mais l'essentiel fera l'affaire.
-            const commentIndex = line.indexOf('//');
-            const quoteIndex = line.indexOf('"');
-            const isInQuotes = quoteIndex !== -1 && quoteIndex < commentIndex && line.lastIndexOf('"') > commentIndex;
-            
-            if (commentIndex !== -1 && !isInQuotes) {
-               const beforeComment = line.substring(0, commentIndex).trim();
-               if (beforeComment.length > 0 && !beforeComment.endsWith(';')) {
-                   line = beforeComment + ';' + ' ' + line.substring(commentIndex);
-               }
-            } else {
-               line += ';';
-            }
-          }
-        }
-      }
-    }
-
     // Injection finale dans le code formaté
     formattedLines.push(getIndentString(currentIndentLevel) + line);
 

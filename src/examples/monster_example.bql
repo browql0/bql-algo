@@ -1,0 +1,104 @@
+ALGORITHME_MonsterExample;
+
+TYPE Eleve = ENREGISTREMENT
+  nom : CHAINE de caractere;
+  age : ENTIER;
+  notes : tableau[5] : REEL;
+  moyenne : REEL;
+  admis : BOOLEEN;
+FIN Eleve
+
+CONSTANTES
+  TAILLE_CLASSE = 3;
+  SEUIL_ADMISSION = 10.0;
+
+VARIABLES
+  classe : tableau[3] : Eleve;
+  matrice_notes : tableau[3, 5] : REEL;
+  i : ENTIER;
+  j : ENTIER;
+  somme_moyenne : REEL;
+  moyenne_generale : REEL;
+  message : CHAINE;
+  choix : CARACTERE;
+
+DEBUT
+  ECRIRE("--- DÉMO BQL MONSTER EXAMPLE ---");
+  
+  // Initialisation avec POUR ALLANT DE et PAS
+  POUR i ALLANT DE 0 A TAILLE_CLASSE - 1 PAS 1 FAIRE
+    classe[i].admis <- FAUX;
+    classe[i].moyenne <- 0.0;
+    
+    // Accès matrice
+    POUR j ALLANT DE 0 A 4 FAIRE
+      matrice_notes[i, j] <- 0.0;
+      classe[i].notes[j] <- 0.0;
+    FINPOUR
+  FINPOUR
+
+  // Simulation de données
+  classe[0].nom <- "Alice";
+  classe[0].age <- 20;
+  matrice_notes[0, 0] <- 14.5;
+  matrice_notes[0, 1] <- 16.0;
+
+  classe[1].nom <- "Bob";
+  classe[1].age <- 22;
+  matrice_notes[1, 0] <- 9.0;
+  matrice_notes[1, 1] <- 11.5;
+
+  classe[2].nom <- "Charlie";
+  classe[2].age <- 19;
+  matrice_notes[2, 0] <- 7.5;
+  matrice_notes[2, 1] <- 8.0;
+
+  somme_moyenne <- 0.0;
+
+  // Calculs avec boucles imbriquées
+  POUR i ALLANT DE 0 A TAILLE_CLASSE - 1 FAIRE
+    classe[i].notes[0] <- matrice_notes[i, 0];
+    classe[i].notes[1] <- matrice_notes[i, 1];
+    
+    classe[i].moyenne <- (classe[i].notes[0] + classe[i].notes[1]) / 2.0;
+    
+    // Test SINONSI
+    SI (classe[i].moyenne >= 16.0) ALORS
+      classe[i].admis <- VRAI;
+      message <- "Tres Bien";
+    SINONSI (classe[i].moyenne >= 14.0) ALORS
+      classe[i].admis <- VRAI;
+      message <- "Bien";
+    SINONSI (classe[i].moyenne >= SEUIL_ADMISSION) ALORS
+      classe[i].admis <- VRAI;
+      message <- "Passable";
+    SINON
+      classe[i].admis <- FAUX;
+      message <- "Recale";
+    FINSI
+
+    ECRIRE("Etudiant: ", classe[i].nom, " - Moyenne: ", classe[i].moyenne, " - ", message);
+    
+    somme_moyenne <- somme_moyenne + classe[i].moyenne;
+  FINPOUR
+
+  moyenne_generale <- somme_moyenne / TAILLE_CLASSE;
+  ECRIRE("Moyenne Generale de la classe: ", moyenne_generale);
+
+  // Utilisation de REPETER et SELON
+  REPETER
+    ECRIRE("Voulez-vous quitter ? (O/N)");
+    LIRE(choix);
+    
+    SELON choix FAIRE
+      CAS 'O':
+        ECRIRE("Au revoir !");
+      CAS 'N':
+        ECRIRE("On continue...");
+      AUTRE:
+        ECRIRE("Choix invalide.");
+    FINSELON
+    
+  JUSQUA (choix = 'O');
+
+FIN

@@ -530,6 +530,499 @@ export const BubbleSortVisualizer = ({ array = [5, 3, 8, 1, 9, 2], name = 'T' })
 
 // ─── 8. MatrixTraversalVisualizer ────────────────────────────────────────────
 
+export const SelectionSortVisualizer = ({ array = [29, 10, 14, 37, 13], name = 'T' }) => {
+  const steps = [];
+  const arr = [...array];
+  const n = arr.length;
+
+  steps.push({
+    arr: [...arr],
+    i: -1,
+    j: -1,
+    minIdx: -1,
+    sortedUntil: -1,
+    desc: { text: 'Tableau initial. Le tri par selection cherche le minimum de la zone non triee.', color: AV_COLORS.neutral },
+    vars: [],
+  });
+
+  for (let i = 0; i < n - 1; i++) {
+    let minIdx = i;
+    steps.push({
+      arr: [...arr],
+      i,
+      j: i,
+      minIdx,
+      sortedUntil: i - 1,
+      desc: { text: `On commence une nouvelle passe : le minimum provisoire est ${name}[${i}] = ${arr[i]}.`, color: AV_COLORS.temp },
+      vars: [{ name: 'i', value: i, color: AV_COLORS.active }, { name: 'min', value: minIdx, color: AV_COLORS.temp }],
+    });
+
+    for (let j = i + 1; j < n; j++) {
+      const foundNewMin = arr[j] < arr[minIdx];
+      steps.push({
+        arr: [...arr],
+        i,
+        j,
+        minIdx,
+        sortedUntil: i - 1,
+        desc: foundNewMin
+          ? { text: `${name}[${j}] = ${arr[j]} est plus petit que ${name}[${minIdx}] = ${arr[minIdx]}. Nouveau minimum.`, color: AV_COLORS.compare }
+          : { text: `${name}[${j}] = ${arr[j]} n'est pas plus petit que le minimum courant (${arr[minIdx]}).`, color: AV_COLORS.active },
+        vars: [
+          { name: 'i', value: i, color: AV_COLORS.active },
+          { name: 'j', value: j, color: AV_COLORS.compare },
+          { name: 'min', value: foundNewMin ? j : minIdx, color: AV_COLORS.temp },
+        ],
+      });
+      if (foundNewMin) minIdx = j;
+    }
+
+    if (minIdx !== i) {
+      const tmp = arr[i];
+      arr[i] = arr[minIdx];
+      arr[minIdx] = tmp;
+      steps.push({
+        arr: [...arr],
+        i,
+        j: minIdx,
+        minIdx: i,
+        sortedUntil: i,
+        swapping: true,
+        desc: { text: `On echange le minimum avec ${name}[${i}]. La case ${i} est maintenant triee.`, color: AV_COLORS.found },
+        vars: [{ name: 'min place', value: arr[i], color: AV_COLORS.found, changed: true }],
+      });
+    } else {
+      steps.push({
+        arr: [...arr],
+        i,
+        j: i,
+        minIdx: i,
+        sortedUntil: i,
+        desc: { text: `Le minimum etait deja a la position ${i}. La case est validee.`, color: AV_COLORS.found },
+        vars: [{ name: `${name}[${i}]`, value: arr[i], color: AV_COLORS.found }],
+      });
+    }
+  }
+
+  steps.push({
+    arr: [...arr],
+    i: -1,
+    j: -1,
+    minIdx: -1,
+    sortedUntil: n - 1,
+    done: true,
+    desc: { text: 'Tableau trie. La zone triee a grandi de gauche a droite.', color: AV_COLORS.found },
+    vars: [],
+  });
+
+  const { step, playing, speed, setSpeed, play, stop, reset, stepForward } = useStepPlayer(steps, 900);
+  const cur = steps[step];
+
+  const getState = (i) => {
+    if (i <= cur.sortedUntil || cur.done) return 'sorted';
+    if (i === cur.minIdx) return 'temp';
+    if (i === cur.i) return 'active';
+    if (i === cur.j) return 'compare';
+    return 'neutral';
+  };
+
+  return (
+    <VisualizerWrapper title="Visualiseur - Tri par selection" icon="S"
+      description={cur.desc} variables={cur.vars}
+      controls={<StepControls playing={playing} onPlay={play} onPause={stop} onReset={reset} onStep={stepForward} speed={speed} onSpeedChange={setSpeed} currentStep={step} totalSteps={steps.length} />}>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', padding: '0.5rem 0' }}>
+        {cur.arr.map((v, i) => (
+          <ArrayCell key={i} value={v} index={i} name={name} state={getState(i)} swapAnim={cur.swapping && (i === cur.i || i === cur.j) ? 'avSwapUp 0.3s ease' : undefined} />
+        ))}
+      </div>
+      <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.35rem' }}>
+        Zone triee : {cur.sortedUntil >= 0 ? `indices 0 a ${cur.sortedUntil}` : 'aucune pour le moment'}
+      </div>
+    </VisualizerWrapper>
+  );
+};
+
+export const InsertionSortVisualizer = ({ array = [8, 4, 6, 2, 9], name = 'T' }) => {
+  const steps = [];
+  const arr = [...array];
+  const n = arr.length;
+
+  steps.push({
+    arr: [...arr],
+    i: 1,
+    j: -1,
+    key: null,
+    sortedUntil: 0,
+    desc: { text: `${name}[0] est considere comme une zone deja triee.`, color: AV_COLORS.neutral },
+    vars: [{ name: 'zone triee', value: '0', color: AV_COLORS.found }],
+  });
+
+  for (let i = 1; i < n; i++) {
+    const key = arr[i];
+    let j = i - 1;
+    steps.push({
+      arr: [...arr],
+      i,
+      j,
+      key,
+      sortedUntil: i - 1,
+      desc: { text: `On prend ${name}[${i}] = ${key} et on cherche sa place dans la zone triee.`, color: AV_COLORS.temp },
+      vars: [{ name: 'i', value: i, color: AV_COLORS.active }, { name: 'cle', value: key, color: AV_COLORS.temp }],
+    });
+
+    while (j >= 0 && arr[j] > key) {
+      arr[j + 1] = arr[j];
+      steps.push({
+        arr: [...arr],
+        i,
+        j,
+        key,
+        sortedUntil: i - 1,
+        shifting: j + 1,
+        desc: { text: `${name}[${j}] = ${arr[j]} est plus grand que la cle ${key}. On le decale vers la droite.`, color: AV_COLORS.compare },
+        vars: [{ name: 'j', value: j, color: AV_COLORS.compare }, { name: 'cle', value: key, color: AV_COLORS.temp }],
+      });
+      j--;
+    }
+
+    arr[j + 1] = key;
+    steps.push({
+      arr: [...arr],
+      i,
+      j: j + 1,
+      key,
+      sortedUntil: i,
+      inserted: j + 1,
+      desc: { text: `On insere la cle ${key} en position ${j + 1}. La zone triee grandit.`, color: AV_COLORS.found },
+      vars: [{ name: 'position', value: j + 1, color: AV_COLORS.found }, { name: 'cle', value: key, color: AV_COLORS.temp }],
+    });
+  }
+
+  steps.push({
+    arr: [...arr],
+    i: -1,
+    j: -1,
+    key: null,
+    sortedUntil: n - 1,
+    done: true,
+    desc: { text: 'Tableau trie. Chaque valeur a ete inseree a sa bonne place.', color: AV_COLORS.found },
+    vars: [],
+  });
+
+  const { step, playing, speed, setSpeed, play, stop, reset, stepForward } = useStepPlayer(steps, 900);
+  const cur = steps[step];
+
+  const getState = (i) => {
+    if (i === cur.inserted) return 'found';
+    if (i === cur.i) return 'active';
+    if (i === cur.j || i === cur.shifting) return 'compare';
+    if (i <= cur.sortedUntil || cur.done) return 'sorted';
+    return 'neutral';
+  };
+
+  return (
+    <VisualizerWrapper title="Visualiseur - Tri par insertion" icon="I"
+      description={cur.desc} variables={cur.vars}
+      controls={<StepControls playing={playing} onPlay={play} onPause={stop} onReset={reset} onStep={stepForward} speed={speed} onSpeedChange={setSpeed} currentStep={step} totalSteps={steps.length} />}>
+      {cur.key !== null && (
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.7rem', padding: '0.35rem 0.6rem', border: `1px solid ${AV_COLORS.temp}55`, borderRadius: '8px', color: AV_COLORS.temp, background: 'rgba(250,204,21,0.08)', fontSize: '0.78rem', fontWeight: 800 }}>
+          cle temporaire = {cur.key}
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', padding: '0.5rem 0' }}>
+        {cur.arr.map((v, i) => (
+          <ArrayCell key={i} value={v} index={i} name={name} state={getState(i)} swapAnim={i === cur.shifting ? 'avSlideRight 0.3s ease' : undefined} />
+        ))}
+      </div>
+      <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.35rem' }}>
+        Zone triee : indices 0 a {Math.max(0, cur.sortedUntil)}
+      </div>
+    </VisualizerWrapper>
+  );
+};
+
+export const SelonComparisonVisualizer = ({
+  choices = [
+    { value: 1, label: 'Nouveau dossier' },
+    { value: 2, label: 'Ouvrir dossier' },
+    { value: 3, label: 'Quitter' },
+  ],
+  testValues = [1, 2, 3, 9],
+}) => {
+  const steps = testValues.map((choice) => {
+    const matchIndex = choices.findIndex(item => item.value === choice);
+    const matched = matchIndex >= 0 ? choices[matchIndex] : { value: 'AUTRE', label: 'Choix invalide' };
+    return {
+      choice,
+      matchIndex,
+      matched,
+      siChecks: matchIndex >= 0 ? matchIndex + 1 : choices.length,
+      selonChecks: 1,
+      desc: {
+        text: matchIndex >= 0
+          ? `Avec choix = ${choice}, les deux versions executent "${matched.label}".`
+          : `Avec choix = ${choice}, les deux versions vont vers AUTRE.`,
+        color: matchIndex >= 0 ? AV_COLORS.found : AV_COLORS.temp,
+      },
+      vars: [
+        { name: 'choix', value: choice, color: AV_COLORS.active },
+        { name: 'tests SI', value: matchIndex >= 0 ? matchIndex + 1 : choices.length, color: AV_COLORS.compare },
+        { name: 'lecture SELON', value: 1, color: AV_COLORS.found },
+      ],
+    };
+  });
+
+  const { step, playing, speed, setSpeed, play, stop, reset, stepForward } = useStepPlayer(steps, 1500);
+  const cur = steps[step];
+
+  const renderBranch = (item, index, mode) => {
+    const active = cur.matchIndex === index;
+    const checkedBySi = mode === 'si' && (cur.matchIndex < 0 || index <= cur.matchIndex);
+    return (
+      <div key={`${mode}-${item.value}`} style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '0.75rem',
+        padding: '0.55rem 0.7rem',
+        borderRadius: '8px',
+        border: `1px solid ${active ? AV_COLORS.found : checkedBySi ? AV_COLORS.compare : 'rgba(255,255,255,0.08)'}`,
+        background: active ? 'rgba(52,211,153,0.15)' : checkedBySi ? 'rgba(167,139,250,0.12)' : 'rgba(30,41,59,0.45)',
+        color: active ? AV_COLORS.found : '#94a3b8',
+        fontSize: '0.82rem',
+        transition: 'all 0.25s',
+      }}>
+        <span style={{ fontFamily: 'monospace', fontWeight: 800 }}>
+          {mode === 'si' ? `${index === 0 ? 'SI' : 'SINONSI'} choix = ${item.value}` : `CAS ${item.value}:`}
+        </span>
+        <span>{item.label}</span>
+      </div>
+    );
+  };
+
+  return (
+    <VisualizerWrapper title="Visualiseur - SI repetes vs SELON" icon="?"
+      description={cur.desc} variables={cur.vars}
+      controls={<StepControls playing={playing} onPlay={play} onPause={stop} onReset={reset} onStep={stepForward} speed={speed} onSpeedChange={setSpeed} currentStep={step} totalSteps={steps.length} />}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+        <div style={{ background: 'rgba(11,17,32,0.65)', border: '1px solid rgba(167,139,250,0.22)', borderRadius: '8px', padding: '0.9rem' }}>
+          <div style={{ color: AV_COLORS.compare, fontWeight: 800, marginBottom: '0.7rem', fontSize: '0.82rem' }}>Version SI/SINONSI</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+            {choices.map((item, index) => renderBranch(item, index, 'si'))}
+            <div style={{ padding: '0.55rem 0.7rem', borderRadius: '8px', border: `1px solid ${cur.matchIndex < 0 ? AV_COLORS.temp : 'rgba(255,255,255,0.08)'}`, background: cur.matchIndex < 0 ? 'rgba(250,204,21,0.12)' : 'rgba(30,41,59,0.45)', color: cur.matchIndex < 0 ? AV_COLORS.temp : '#64748b', fontFamily: 'monospace', fontWeight: 800, fontSize: '0.82rem' }}>
+              SINON
+            </div>
+          </div>
+          <div style={{ marginTop: '0.75rem', fontSize: '0.76rem', color: '#94a3b8' }}>
+            Lit les conditions l'une apres l'autre. Plus le menu grandit, plus c'est long a lire.
+          </div>
+        </div>
+
+        <div style={{ background: 'rgba(11,17,32,0.65)', border: '1px solid rgba(52,211,153,0.25)', borderRadius: '8px', padding: '0.9rem' }}>
+          <div style={{ color: AV_COLORS.found, fontWeight: 800, marginBottom: '0.7rem', fontSize: '0.82rem' }}>Version SELON</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+            {choices.map((item, index) => renderBranch(item, index, 'selon'))}
+            <div style={{ padding: '0.55rem 0.7rem', borderRadius: '8px', border: `1px solid ${cur.matchIndex < 0 ? AV_COLORS.temp : 'rgba(255,255,255,0.08)'}`, background: cur.matchIndex < 0 ? 'rgba(250,204,21,0.12)' : 'rgba(30,41,59,0.45)', color: cur.matchIndex < 0 ? AV_COLORS.temp : '#64748b', fontFamily: 'monospace', fontWeight: 800, fontSize: '0.82rem' }}>
+              AUTRE:
+            </div>
+          </div>
+          <div style={{ marginTop: '0.75rem', fontSize: '0.76rem', color: '#94a3b8' }}>
+            Montre directement que l'on teste une seule variable contre plusieurs valeurs exactes.
+          </div>
+        </div>
+      </div>
+    </VisualizerWrapper>
+  );
+};
+
+function countSortOperations(algorithm, input) {
+  const arr = [...input];
+  let comparisons = 0;
+  let swaps = 0;
+  let passes = 0;
+
+  if (algorithm === 'bubble') {
+    for (let i = 0; i < arr.length - 1; i++) {
+      let changed = false;
+      passes++;
+      for (let j = 0; j < arr.length - 1 - i; j++) {
+        comparisons++;
+        if (arr[j] > arr[j + 1]) {
+          [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+          swaps++;
+          changed = true;
+        }
+      }
+      if (!changed) break;
+    }
+  } else if (algorithm === 'selection') {
+    for (let i = 0; i < arr.length - 1; i++) {
+      let min = i;
+      passes++;
+      for (let j = i + 1; j < arr.length; j++) {
+        comparisons++;
+        if (arr[j] < arr[min]) min = j;
+      }
+      if (min !== i) {
+        [arr[i], arr[min]] = [arr[min], arr[i]];
+        swaps++;
+      }
+    }
+  } else {
+    for (let i = 1; i < arr.length; i++) {
+      const key = arr[i];
+      let j = i - 1;
+      passes++;
+      while (j >= 0) {
+        comparisons++;
+        if (arr[j] <= key) break;
+        arr[j + 1] = arr[j];
+        swaps++;
+        j--;
+      }
+      arr[j + 1] = key;
+    }
+  }
+
+  return { comparisons, swaps, passes };
+}
+
+export const SortingComplexityVisualizer = ({ algorithm = 'bubble' }) => {
+  const labels = {
+    bubble: 'Tri a bulles',
+    selection: 'Tri par selection',
+    insertion: 'Tri par insertion',
+  };
+  const samples = [
+    { label: 'deja trie', values: [1, 2, 3, 4, 5, 6] },
+    { label: 'presque trie', values: [1, 2, 4, 3, 5, 6] },
+    { label: 'desordre', values: [6, 2, 5, 1, 4, 3] },
+  ].map(sample => ({ ...sample, stats: countSortOperations(algorithm, sample.values) }));
+  const growth = [5, 10, 20].map(size => {
+    const values = Array.from({ length: size }, (_, index) => size - index);
+    return { size, ...countSortOperations(algorithm, values) };
+  });
+  const maxComparisons = Math.max(...samples.map(item => item.stats.comparisons), ...growth.map(item => item.comparisons));
+
+  return (
+    <VisualizerWrapper title={`Visualiseur - Cout du ${labels[algorithm]}`} icon="#"
+      description={{ text: 'On compare le nombre de comparaisons, deplacements et passes. Moins de barres signifie moins de travail pour le programme.', color: AV_COLORS.active }}
+      variables={samples.map(item => ({ name: item.label, value: `${item.stats.comparisons} comparaisons`, color: item.label === 'desordre' ? AV_COLORS.compare : AV_COLORS.found }))}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '1rem' }}>
+        {samples.map(sample => (
+          <div key={sample.label} style={{ background: 'rgba(30,41,59,0.5)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '0.85rem' }}>
+            <div style={{ color: '#e2e8f0', fontWeight: 800, fontSize: '0.82rem', marginBottom: '0.55rem' }}>{sample.label}</div>
+            <div style={{ display: 'flex', gap: '4px', alignItems: 'end', height: 54, marginBottom: '0.7rem' }}>
+              {sample.values.map(value => (
+                <div key={`${sample.label}-${value}`} style={{ width: 18, height: `${value * 8}px`, background: 'linear-gradient(180deg,#4f8ff0,#34d399)', borderRadius: '4px 4px 0 0' }} />
+              ))}
+            </div>
+            <div style={{ display: 'grid', gap: '0.35rem', fontSize: '0.76rem', color: '#94a3b8' }}>
+              <span>Comparaisons : <strong style={{ color: AV_COLORS.compare }}>{sample.stats.comparisons}</strong></span>
+              <span>Deplacements / echanges : <strong style={{ color: AV_COLORS.temp }}>{sample.stats.swaps}</strong></span>
+              <span>Passes : <strong style={{ color: AV_COLORS.found }}>{sample.stats.passes}</strong></span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ marginTop: '1rem', background: 'rgba(11,17,32,0.65)', border: '1px solid rgba(79,143,240,0.2)', borderRadius: '8px', padding: '0.9rem' }}>
+        <div style={{ color: '#e2e8f0', fontWeight: 800, fontSize: '0.82rem', marginBottom: '0.7rem' }}>Quand le tableau grandit</div>
+        <div style={{ display: 'grid', gap: '0.55rem' }}>
+          {growth.map(item => (
+            <div key={item.size} style={{ display: 'grid', gridTemplateColumns: '70px 1fr 75px', gap: '0.6rem', alignItems: 'center', fontSize: '0.78rem' }}>
+              <span style={{ color: '#94a3b8' }}>{item.size} valeurs</span>
+              <div style={{ height: 12, background: 'rgba(255,255,255,0.06)', borderRadius: '8px', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${Math.max(6, (item.comparisons / maxComparisons) * 100)}%`, background: 'linear-gradient(90deg,#facc15,#fb7185)', borderRadius: '8px' }} />
+              </div>
+              <span style={{ color: AV_COLORS.temp, fontFamily: 'monospace' }}>{item.comparisons}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </VisualizerWrapper>
+  );
+};
+
+export const DebugTraceComparisonVisualizer = ({
+  title = 'Accumulator not initialized',
+  wrongTrace = [
+    { step: 'depart', vars: { somme: '?', i: '-' }, note: 'somme n a pas de valeur claire' },
+    { step: 'i = 0', vars: { somme: '? + 4', i: 0 }, note: 'le calcul part deja mal' },
+    { step: 'i = 1', vars: { somme: '?', i: 1 }, note: 'le resultat reste impossible a verifier' },
+  ],
+  correctTrace = [
+    { step: 'depart', vars: { somme: 0, i: '-' }, note: 'somme est initialisee' },
+    { step: 'i = 0', vars: { somme: 4, i: 0 }, note: '0 + 4' },
+    { step: 'i = 1', vars: { somme: 11, i: 1 }, note: '4 + 7' },
+  ],
+}) => {
+  const total = Math.max(wrongTrace.length, correctTrace.length);
+  const steps = Array.from({ length: total }, (_, index) => {
+    const wrong = wrongTrace[index] || wrongTrace[wrongTrace.length - 1];
+    const correct = correctTrace[index] || correctTrace[correctTrace.length - 1];
+    const diverged = JSON.stringify(wrong?.vars) !== JSON.stringify(correct?.vars);
+    return {
+      index,
+      wrong,
+      correct,
+      diverged,
+      desc: {
+        text: diverged
+          ? `La divergence commence ici : la version correcte garde un etat previsible, la version fausse non.`
+          : `Les deux traces sont encore coherentes a cette etape.`,
+        color: diverged ? AV_COLORS.reject : AV_COLORS.found,
+      },
+      vars: [
+        { name: 'etape', value: index + 1, color: AV_COLORS.active },
+        { name: 'divergence', value: diverged ? 'oui' : 'non', color: diverged ? AV_COLORS.reject : AV_COLORS.found },
+      ],
+    };
+  });
+
+  const { step, playing, speed, setSpeed, play, stop, reset, stepForward } = useStepPlayer(steps, 1600);
+  const cur = steps[step];
+  const varNames = Array.from(new Set([
+    ...wrongTrace.flatMap(item => Object.keys(item.vars || {})),
+    ...correctTrace.flatMap(item => Object.keys(item.vars || {})),
+  ]));
+
+  const renderTrace = (trace, heading, color) => (
+    <div style={{ background: 'rgba(11,17,32,0.65)', border: `1px solid ${color}44`, borderRadius: '8px', padding: '0.85rem' }}>
+      <div style={{ color, fontWeight: 800, marginBottom: '0.7rem', fontSize: '0.82rem' }}>{heading}</div>
+      <div style={{ display: 'grid', gap: '0.4rem' }}>
+        {trace.map((row, index) => {
+          const active = index === cur.index;
+          return (
+            <div key={`${heading}-${index}`} style={{ padding: '0.55rem', borderRadius: '8px', border: `1px solid ${active ? color : 'rgba(255,255,255,0.07)'}`, background: active ? `${color}18` : 'rgba(30,41,59,0.42)' }}>
+              <div style={{ color: active ? color : '#94a3b8', fontWeight: 800, fontSize: '0.78rem', marginBottom: '0.35rem' }}>{row.step}</div>
+              <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}>
+                {varNames.map(varName => (
+                  <span key={varName} style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '0.18rem 0.4rem', color: '#cbd5e1', fontFamily: 'monospace', fontSize: '0.74rem' }}>
+                    {varName} = {String(row.vars?.[varName] ?? '-')}
+                  </span>
+                ))}
+              </div>
+              <div style={{ color: '#64748b', fontSize: '0.72rem' }}>{row.note}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  return (
+    <VisualizerWrapper title={`Visualiseur - Debug avant / apres : ${title}`} icon="!"
+      description={cur.desc} variables={cur.vars}
+      controls={<StepControls playing={playing} onPlay={play} onPause={stop} onReset={reset} onStep={stepForward} speed={speed} onSpeedChange={setSpeed} currentStep={step} totalSteps={steps.length} />}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
+        {renderTrace(wrongTrace, 'Version fausse', AV_COLORS.reject)}
+        {renderTrace(correctTrace, 'Version corrigee', AV_COLORS.found)}
+      </div>
+    </VisualizerWrapper>
+  );
+};
+
 export const MatrixTraversalVisualizer = ({ matrix = [[1,2,3],[4,5,6],[7,8,9]], name = 'M' }) => {
   const steps = [];
   const L = matrix.length, C = matrix[0].length;
@@ -709,7 +1202,7 @@ export const LoopExecutionVisualizer = ({ start = 1, end = 5, bodyLabel = 'ECRIR
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         {/* Loop header */}
         <div style={{ fontFamily: 'monospace', fontSize: '0.82rem', color: '#c084fc', background: 'rgba(192,132,252,0.08)', border: '1px solid rgba(192,132,252,0.2)', borderRadius: '8px', padding: '0.5rem 1rem' }}>
-          POUR i DE {start} A {end} FAIRE
+          POUR i ALLANT DE {start} A {end} FAIRE
         </div>
 
         {/* Iterations */}
