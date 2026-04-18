@@ -45,6 +45,8 @@ function json(status, body, headers = {}) {
       constraints: body?.constraints || null,
       diagnostics: Array.isArray(body?.diagnostics) ? body.diagnostics : [],
       feedbackReport: body?.feedbackReport || null,
+      xpAwarded: Number(body?.xpAwarded || 0),
+      progress: body?.progress || null,
     },
   };
 }

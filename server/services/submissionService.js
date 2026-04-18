@@ -18,6 +18,8 @@ function sanitizeValidationResult(result) {
     constraints: result.constraints || null,
     diagnostics: Array.isArray(result.diagnostics) ? result.diagnostics : [],
     feedbackReport: result.feedbackReport || null,
+    xpAwarded: Number(result.xpAwarded || 0),
+    progress: result.progress || null,
     httpStatus: result.httpStatus || (result.success ? 200 : 400),
   };
 }
@@ -186,30 +188,42 @@ export async function submitLessonSolution({
     success: validation.success,
     code_submitted: code,
     error_message: validation.success ? null : validation.message,
+    passed: validation.passed,
+    total: validation.total,
+    validation_mode: validation.validationMode,
+    error_code: validation.errorCode,
   };
 
-  const { error: attemptError } = await supabaseAdmin
+  const { data: attempt, error: attemptError } = await supabaseAdmin
     .from("exercise_attempts")
-    .insert(attemptPayload);
+    .insert(attemptPayload)
+    .select("id")
+    .single();
 
   if (attemptError) {
     console.warn("Could not record exercise attempt:", attemptError.message);
   }
 
-  if (validation.success) {
-    const { error: progressError } = await supabaseAdmin
-      .from("user_progress")
-      .upsert(
-        {
-          user_id: user.id,
-          lesson_id: lessonId,
-          completed: true,
-        },
-        { onConflict: "user_id,lesson_id" },
-      );
+  if (attempt?.id) {
+    const { data: progressResult, error: progressError } = await supabaseAdmin.rpc(
+      "record_challenge_result",
+      {
+        p_user_id: user.id,
+        p_lesson_id: lessonId,
+        p_attempt_id: attempt.id,
+        p_success: validation.success,
+        p_passed: validation.passed,
+        p_total: validation.total,
+        p_validation_mode: validation.validationMode,
+        p_error_code: validation.errorCode,
+      },
+    );
 
     if (progressError) {
-      console.warn("Could not update user progress:", progressError.message);
+      console.warn("Could not record challenge result:", progressError.message);
+    } else if (progressResult) {
+      validation.xpAwarded = Number(progressResult.xpAwarded || 0);
+      validation.progress = progressResult;
     }
   }
 
