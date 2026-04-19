@@ -1,4 +1,4 @@
-import { isValidVariableName } from './utils.js';
+﻿import { isValidVariableName } from './utils.js';
 
 const controlFlowAnalysisMethods = {
   _analyzeIf(node) {
@@ -50,7 +50,7 @@ const controlFlowAnalysisMethods = {
       return;
     }
 
-    // La variable de boucle doit être déclarée (ou sera créée implicitement)
+    // La variable de boucle doit être déclarée (ou sera cr??e implicitement)
     const entry = this.symbolTable.variables[varName] || this.symbolTable.constantes[varName];
     if (!entry) {
       this._addError({
@@ -74,7 +74,7 @@ const controlFlowAnalysisMethods = {
 
     this._analyzeExpr(node.from);
     this._analyzeExpr(node.to);
-    // node.step est null si PAS est absent (pas implicite de 1 — rien à analyser)
+    // node.step est null si PAS est absent (pas implicite de 1 ? rien à analyser)
     if (node.step !== null && node.step !== undefined) {
       this._analyzeExpr(node.step);
     }
@@ -88,3 +88,4 @@ const controlFlowAnalysisMethods = {
 };
 
 export default controlFlowAnalysisMethods;
+

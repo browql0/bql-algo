@@ -1,18 +1,18 @@
-/**
+﻿/**
  * parserExample.js
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  * Démonstration complète de la chaîne :
- *   Code source  →  Lexer  →  Tokens  →  Parser  →  AST  →  Interpréteur  →  Output
+ *   Code source  → Lexer  ?  Tokens  ?  Parser  ?  AST  ?  Interprêteur  ?  Output
  *
  * Compatible React (importable dans n'importe quel composant).
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  */
 
 import Lexer        from './lexer/Lexer.js';
 import Parser       from './parser/Parser.js';
 import Interpreter  from './interpreter/Interpreter.js';
 
-// ── Programme exemple ─────────────────────────────────────────────────────────
+// -- Programme exemple ---------------------------------------------------------
 //
 //  Calcule la moyenne de N notes saisies, puis affiche un bilan.
 //  Couvre : déclarations, REPETER/JUSQUA, SI/SINONSI/SINON/FINSI,
@@ -33,7 +33,7 @@ DEBUT
 
   ecrire("=== Calcul de Moyenne ===");
 
-  // n est fourni via LIRE (mocké par inputs[])
+  // n est fourni via LIRE (mock? par inputs[])
   lire(n);
   somme    <- 0;
   compteur <- 1;
@@ -68,7 +68,7 @@ DEBUT
 FIN
 `;
 
-// ── Fonction principale ────────────────────────────────────────────────────────
+// -- Fonction principale --------------------------------------------------------
 
 /**
  * Exécute le programme exemple de bout en bout.
@@ -79,7 +79,7 @@ export function runExample(inputs = ['3', '14', '16', '12']) {
   const result = { tokens: [], ast: null, output: [], errors: [] };
 
   try {
-    // ── Étape 1 : Lexer ──────────────────────────────────────────────────────
+    // -- Étape 1 : Lexer ------------------------------------------------------
     const lexer = new Lexer(SOURCE_CODE);
     const { tokens, errors: lexErrors } = lexer.tokenize();
     result.tokens = tokens;
@@ -88,12 +88,12 @@ export function runExample(inputs = ['3', '14', '16', '12']) {
       result.errors.push(...lexErrors.map(e => e.toString()));
     }
 
-    // ── Étape 2 : Parser ─────────────────────────────────────────────────────
+    // -- Étape 2 : Parser -----------------------------------------------------
     const parser = new Parser(tokens);
     const ast    = parser.parse();
     result.ast   = ast;
 
-    // ── Étape 3 : Interpréteur ───────────────────────────────────────────────
+    // -- Étape 3 : Interprêteur -----------------------------------------------
     const interp    = new Interpreter({ inputs });
     const { output } = interp.run(ast);
     result.output   = output;
@@ -105,26 +105,26 @@ export function runExample(inputs = ['3', '14', '16', '12']) {
   return result;
 }
 
-// ── Affichage console (Node.js) ───────────────────────────────────────────────
+// -- Affichage console (Node.js) -----------------------------------------------
 
 export function printExample() {
-  console.log('═'.repeat(60));
-  console.log('  CHAÎNE COMPLÈTE : source → AST → exécution');
-  console.log('═'.repeat(60));
+  console.log('='.repeat(60));
+  console.log('  CHAÎNE COMPLÈTE : source -> AST -> exécution');
+  console.log('='.repeat(60));
 
   // Inputs : n=3, note1=14, note2=16, note3=12
   const { tokens, ast, output, errors } = runExample(['3', '14', '16', '12']);
 
-  console.log(`\n📋 Tokens : ${tokens.length} token(s) produit(s)`);
+  console.log(`\nListe Tokens : ${tokens.length} token(s) produit(s)`);
 
-  console.log('\n🌳 AST (extrait racine) :');
+  console.log('\nAST AST (extrait racine) :');
   if (ast) {
-    console.log(`  ProgramNode  → name    : "${ast.name}"`);
-    console.log(`               → decls   : ${ast.declarations.length} variable(s) déclarée(s)`);
-    console.log(`               → stmts   : ${ast.body.statements.length} instruction(s) dans DEBUT…FIN`);
+    console.log(`  ProgramNode  ? name    : "${ast.name}"`);
+    console.log(`               ? decls   : ${ast.declarations.length} variable(s) déclarée(s)`);
+    console.log(`               -> stmts   : ${ast.body.statements.length} instruction(s) dans DEBUT/FIN`);
   }
 
-  console.log('\n📺 Sortie du programme :');
+  console.log('\nSortie Sortie du programme :');
   if (output.length === 0) {
     console.log('  (aucune sortie)');
   } else {
@@ -138,14 +138,15 @@ export function printExample() {
     console.log('\n✅ Aucune erreur.');
   }
 
-  console.log('\n' + '═'.repeat(60));
+  console.log('\n' + '='.repeat(60));
   return { tokens, ast, output, errors };
 }
 
-// ── Auto-run en Node.js ───────────────────────────────────────────────────────
+// -- Auto-run en Node.js -------------------------------------------------------
 if (typeof process !== 'undefined') {
   const { fileURLToPath } = await import('url');
   if (fileURLToPath(import.meta.url) === process.argv[1]) {
     printExample();
   }
 }
+

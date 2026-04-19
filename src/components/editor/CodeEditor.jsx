@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useEffect, forwardRef, useImperativeHandle } from 'react';
+﻿import React, { useState, useRef, useMemo, useEffect, forwardRef, useImperativeHandle } from 'react';
 import './CodeEditor.css';
 import '../editor/highlight/tokenStyles.css';
 
@@ -7,9 +7,9 @@ import AutocompleteMenu from './autocomplete/AutocompleteMenu';
 import { tokenizeAndMapStructure } from './highlight/highlight';
 
 /**
- * 0diteur BQL Custom
- * Utilise un `<textarea>` transparent superposé sur un `<div>` contenant
- * le texte fractionné en `<span className="token-XXX">` pour la coloration.
+ * Éditeur BQL Custom
+ * Utilise un `<textarea>` transparent superpos? sur un `<div>` contenant
+ * le texte fractionn? en `<span className="token-XXX">` pour la coloration.
  */
 const CodeEditor = forwardRef(({ code, onChange, settings, onFormat, runningLine = null }, ref) => {
   const textareaRef = useRef(null);
@@ -72,16 +72,16 @@ const CodeEditor = forwardRef(({ code, onChange, settings, onFormat, runningLine
 
   const editorStyle = {
     fontSize: `${baseFontSize * zoomFactor}px`,
-    fontFamily: settings?.fontFamily === 'fira' ? "'Fira Code', monospace" :
-      settings?.fontFamily === 'consolas' ? "'Consolas', monospace" :
-        settings?.fontFamily === 'ubuntu' ? "'Ubuntu Mono', monospace" :
+    fontFamily: settings?.fontFamily === 'fira' ?"'Fira Code', monospace" :
+      settings?.fontFamily === 'consolas' ?"'Consolas', monospace" :
+        settings?.fontFamily === 'ubuntu' ?"'Ubuntu Mono', monospace" :
           "'JetBrains Mono', monospace",
     lineHeight: settings?.lineHeight || '1.6',
-    fontVariantLigatures: settings?.fontLigatures !== false ? 'normal' : 'none',
-    tabSize: settings?.tabSize === 'tab' ? 4 : parseInt(settings?.tabSize || 4),
-    whiteSpace: settings?.wordWrap ? 'pre-wrap' : 'pre',
-    wordBreak: settings?.wordWrap ? 'break-all' : 'normal',
-    paddingBottom: isMobile ? '60px' : '0' // Espace pour la barre de snippets
+    fontVariantLigatures: settings?.fontLigatures !== false ?'normal' : 'none',
+    tabSize: settings?.tabSize === 'tab' ?4 : parseInt(settings?.tabSize || 4),
+    whiteSpace: settings?.wordWrap ?'pre-wrap' : 'pre',
+    wordBreak: settings?.wordWrap ?'break-all' : 'normal',
+    paddingBottom: isMobile ?'60px' : '0' // Espace pour la barre de snippets
   };
 
   const updateCursorLine = (target) => {
@@ -115,7 +115,7 @@ const CodeEditor = forwardRef(({ code, onChange, settings, onFormat, runningLine
 
     // Ctrl+S / Cmd+S pour le format On Save
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
-      e.preventDefault(); // éviter la sauvegarde page navigateur
+      e.preventDefault(); // éviter la sauvegardé page navigateur
       if (settings?.formatOnSave !== false && onFormat) {
         onFormat();
       }
@@ -161,16 +161,16 @@ const CodeEditor = forwardRef(({ code, onChange, settings, onFormat, runningLine
       // Mesurer l'indentation de départ
       // Mesurer l'indentation de départ
       const match = currentLine.match(/^\s*/);
-      let indent = match ? match[0] : '';
+      let indent = match ?match[0] : '';
       const indentString = (!settings || settings?.insertSpaces !== false) && settings?.tabSize !== 'tab'
-        ? ' '.repeat(parseInt(settings?.tabSize || 4))
+        ?' '.repeat(parseInt(settings?.tabSize || 4))
         : '\t';
 
       // Analyser le mot-clé pour deviner l'intention
       const trimmedLine = currentLine.trim();
       const upperLine = trimmedLine.toUpperCase();
       const firstWordMatch = trimmedLine.match(/^([a-zA-Z_]\w*)/);
-      const firstWord = firstWordMatch ? firstWordMatch[1].toUpperCase() : null;
+      const firstWord = firstWordMatch ?firstWordMatch[1].toUpperCase() : null;
 
       if (settings?.autoIndentOnEnter !== false) {
         // 1. Si la ligne ouvre un bloc, on ajoute 1 niveau d'indentation
@@ -213,7 +213,7 @@ const CodeEditor = forwardRef(({ code, onChange, settings, onFormat, runningLine
       const end = e.target.selectionEnd;
 
       const indentString = (!settings || settings?.insertSpaces !== false) && settings?.tabSize !== 'tab'
-        ? ' '.repeat(parseInt(settings?.tabSize || 4))
+        ?' '.repeat(parseInt(settings?.tabSize || 4))
         : '\t';
       const newCode = code.substring(0, start) + indentString + code.substring(end);
       onChange(newCode);
@@ -318,7 +318,7 @@ const CodeEditor = forwardRef(({ code, onChange, settings, onFormat, runningLine
       {settings?.lineNumbers !== false && (
         <div className="line-numbers" ref={lineNumbersRef} style={editorStyle}>
           {lineNumbers.map(num => (
-            <div key={num} className={`line-number ${num === runningLine ? 'running-gutter' : ''}`}>
+            <div key={num} className={`line-number ${num === runningLine ?'running-gutter' : ''}`}>
               {num === runningLine && <div className="running-arrow"></div>}
               {num}
             </div>
@@ -339,12 +339,12 @@ const CodeEditor = forwardRef(({ code, onChange, settings, onFormat, runningLine
           {mappedLines.map((line, mappedIdx) => (
             <div
               key={line.lineId}
-              className={`code-line-wrapper ${settings?.highlightActiveLine !== false && (mappedIdx + 1) === cursorLine ? 'active-line' : ''} ${(mappedIdx + 1) === runningLine ? 'running-line' : ''}`}
+              className={`code-line-wrapper ${settings?.highlightActiveLine !== false && (mappedIdx + 1) === cursorLine ?'active-line' : ''} ${(mappedIdx + 1) === runningLine ?'running-line' : ''}`}
             >
               {settings?.renderIndentGuides !== false && line.guides.map((guide, idx) => (
                 <span
                   key={idx}
-                  className={`indent-guide ${guide.isError ? 'indent-guide-error' : ''}`}
+                  className={`indent-guide ${guide.isError ?'indent-guide-error' : ''}`}
                   style={{ left: `${guide.col}ch` }}
                 />
               ))}
@@ -394,10 +394,10 @@ const CodeEditor = forwardRef(({ code, onChange, settings, onFormat, runningLine
           <div className="mobile-snippets-bar">
             {/* Bouton pour ouvrir le tiroir complet */}
             <button 
-              className={`snippet-btn-more ${isSnippetDrawerOpen ? 'active' : ''}`}
+              className={`snippet-btn-more ${isSnippetDrawerOpen ?'active' : ''}`}
               onClick={() => setIsSnippetDrawerOpen(!isSnippetDrawerOpen)}
             >
-              {isSnippetDrawerOpen ? 'S Fermer' : 'ܰ +'}
+              {isSnippetDrawerOpen ?'S Fermer' : 'Ü° +'}
             </button>
             {/* Raccourcis rapides */}
             {FAST_SNIPPETS.map(s => (
@@ -433,4 +433,5 @@ const CodeEditor = forwardRef(({ code, onChange, settings, onFormat, runningLine
 });
 
 export default CodeEditor;
+
 

@@ -77,11 +77,11 @@ export function assertHasErrors(errors, context = 'Expected at least one error')
 
 export function formatError(error) {
   const line = error?.line ?? 0;
-  const column = error?.column ?? 0;
   const message = error?.message ?? String(error);
+  const column = error?.column ?? 0;
   return `L${line}:C${column} ${message}`;
 }
 
 function format(value) {
-  return Array.isArray(value) ? JSON.stringify(value) : String(value);
+  return Array.isArray(value) ?JSON.stringify(value) : String(value);
 }

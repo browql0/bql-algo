@@ -1,6 +1,6 @@
-/**
+﻿/**
  * keywords.js
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  * Table de correspondance entre les mots-clés du pseudo-langage marocain
  * et leurs TokenType respectifs.
  *
@@ -9,31 +9,31 @@
  *     détectés en priorité par le lexer, AVANT les mots simples.
  *     La forme officielle BQL de l'alternative conditionnelle est "SINONSI";
  *     "SINON SI" reste acceptée comme alias compatible.
- *  2. La comparaison est INSENSIBLE À LA CASSE — le lexer normalise en
+ *  2. La comparaison est INSENSIBLE À LA CASSE ? le lexer normalise en
  *     toUpperCase() avant le lookup, donc "ecrire", "Ecrire" et "ECRIRE"
  *     produisent tous le même token ECRIRE.
  *  3. Les identifiants peuvent contenir des lettres, chiffres et underscores.
  *     Exemple : Mon_Algo, compteur_1  sont tous valides.
  *  4. VRAI / FAUX sont des valeurs booléennes, pas de simples mots-clés ;
  *     le lexer leur assigne TokenType.BOOLEAN avec la valeur booléenne JS.
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  */
 
 import TokenType from './tokenTypes.js';
 
-// ── Mots-clés composés (ordre : du plus long au plus court) ─────────────────
+// -- Mots-clés composés (ordre : du plus long au plus court) -----------------
 // Le lexer tente une correspondance sur plusieurs mots consécutifs.
 export const COMPOUND_KEYWORDS = [
   { words: ['SINON', 'SI'],                 type: TokenType.SINON_SI    },
   { words: ['CHAINE', 'DE', 'CARACTERE'],   type: TokenType.TYPE_CHAINE },
-  { words: ['ALLANT', 'DE'],                type: TokenType.ALLANT_DE   }, // ALLANT DE → token composé pour POUR
+  { words: ['ALLANT', 'DE'],                type: TokenType.ALLANT_DE   }, // ALLANT DE ? token compos? pour POUR
   { words: ['FIN', 'TANTQUE'],              type: TokenType.FINTANTQUE  },
   { words: ['FIN', 'POUR'],                 type: TokenType.FINPOUR     },
   { words: ['FIN', 'SI'],                   type: TokenType.FINSI       },
   { words: ['FIN', 'SELON'],                type: TokenType.FINSELON    },
 ];
 
-// ── Mots-clés simples ─────────────────────────────────────────────────────────
+// -- Mots-clés simples ---------------------------------------------------------
 export const SIMPLE_KEYWORDS = new Map([
   // Structure
   ['ALGORITHME',  TokenType.ALGORITHME  ],
@@ -84,7 +84,7 @@ export const SIMPLE_KEYWORDS = new Map([
   ['CARACTERE',   TokenType.TYPE_CARACTERE ],
   ['BOOLEEN',     TokenType.TYPE_BOOLEEN   ],
 
-  // Valeurs booléennes (gérées séparément → token BOOLEAN)
+  // Valeurs booléennes (gérées séparément ? token BOOLEAN)
   ['VRAI',        TokenType.BOOLEAN     ],
   ['FAUX',        TokenType.BOOLEAN     ],
 ]);
@@ -99,3 +99,4 @@ export function getBooleanValue(word) {
   if (word === 'FAUX') return false;
   return null;
 }
+

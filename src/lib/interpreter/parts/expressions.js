@@ -54,6 +54,10 @@ const expressionEvaluationMethods = {
           await this._reportArrayUpdate(node.name, 'read', indices, arr);
           return arr[indices[0]][indices[1]];
         }
+        throw new AlgoRuntimeError({
+          message: `Accès tableau invalide : ${indices.length} indice(s) fourni(s)`,
+          line: node.line,
+        });
       }
 
       case NodeType.MEMBER_ACCESS: {
@@ -97,12 +101,12 @@ const expressionEvaluationMethods = {
   async _evalBinary(node) {
     if (node.operator === 'ET') {
       return this._isTruthy(await this._evaluate(node.left))
-        ? this._isTruthy(await this._evaluate(node.right))
+        ?this._isTruthy(await this._evaluate(node.right))
         : false;
     }
     if (node.operator === 'OU') {
       return this._isTruthy(await this._evaluate(node.left))
-        ? true
+        ?true
         : this._isTruthy(await this._evaluate(node.right));
     }
 
@@ -178,13 +182,13 @@ const expressionEvaluationMethods = {
 
     if (node.type === NodeType.CHAR) return 'caractere';
     if (node.type === NodeType.STRING) return 'chaine';
-    if (node.type === NodeType.NUMBER) return Number.isInteger(node.value) ? 'entier' : 'reel';
+    if (node.type === NodeType.NUMBER) return Number.isInteger(node.value) ?'entier' : 'reel';
     if (node.type === NodeType.BOOLEAN) return 'booleen';
 
     if (node.type === NodeType.IDENTIFIER) {
       try {
         return this.env.getEntry(node.name, node.line).type;
-      } catch (e) {
+      } catch {
         return null;
       }
     }
@@ -192,8 +196,8 @@ const expressionEvaluationMethods = {
     if (node.type === NodeType.ARRAY_ACCESS) {
       try {
         const entryType = this.env.getEntry(node.name, node.line).type;
-        return entryType.endsWith('[]') ? entryType.slice(0, -2) : entryType;
-      } catch (e) {
+        return entryType.endsWith('[]') ?entryType.slice(0, -2) : entryType;
+      } catch {
         return null;
       }
     }
@@ -202,7 +206,7 @@ const expressionEvaluationMethods = {
       const objectType = this._resolveExpressionType(node.object);
       if (!objectType) return null;
 
-      const recordType = objectType.endsWith('[]') ? objectType.slice(0, -2) : objectType;
+      const recordType = objectType.endsWith('[]') ?objectType.slice(0, -2) : objectType;
       const fields = this.env.customTypes.get(recordType);
       return fields?.[node.property] ?? null;
     }

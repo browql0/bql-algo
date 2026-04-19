@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+﻿import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Shield, ArrowLeft, BookOpen, Users, Code, AlertTriangle, Scale, Bell } from 'lucide-react';
 import './Legal.css';
@@ -6,7 +6,7 @@ import './Legal.css';
 const TermsOfService = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
-    document.title = "Conditions d'utilisation – BQL Algo";
+    document.title = "Conditions d'utilisation - BQL Algo";
   }, []);
 
   return (
@@ -29,9 +29,9 @@ const TermsOfService = () => {
 
       <div className="legal-container">
 
-        {/* ── Résumé ── */}
+        {/* -- Résumé -- */}
         <div className="legal-summary">
-          <h2>📋 En résumé</h2>
+          <h2>Liste En résumé</h2>
           <div className="summary-grid">
             <div className="summary-item">
               <BookOpen size={18} />
@@ -52,14 +52,14 @@ const TermsOfService = () => {
           </div>
         </div>
 
-        {/* ── Article 1 ── */}
+        {/* -- Article 1 -- */}
         <section className="legal-section">
           <div className="legal-section-header">
             <span className="legal-section-number">01</span>
             <h2>Présentation du service</h2>
           </div>
           <p>
-            BQL Algo (ci-après « la Plateforme » ou « le Service ») est une plateforme d'apprentissage interactive dédiée à l'algorithmique. Elle permet aux utilisateurs d'apprendre les concepts fondamentaux de la programmation et de l'algorithmique à travers un langage pédagogique personnalisé (BQL), un éditeur de code en ligne, des cours structurés et des exercices progressifs.
+            BQL Algo (ci-après " la Plateforme " ou " le Service ") est une plateforme d'apprentissage interactive dédiée à l'algorithmique. Elle permet aux utilisateurs d'apprendre les concepts fondamentaux de la programmation et de l'algorithmique à travers un langage pédagogique personnalisé (BQL), un éditeur de code en ligne, des cours structurés et des exercices progressifs.
           </p>
           <p>
             BQL Algo est conçu à des fins exclusivement éducatives. Nous nous engageons à fournir un environnement d'apprentissage inclusif, sécurisé et stimulant pour les apprenants de tous niveaux.
@@ -69,7 +69,7 @@ const TermsOfService = () => {
           </p>
         </section>
 
-        {/* ── Article 2 ── */}
+        {/* -- Article 2 -- */}
         <section className="legal-section">
           <div className="legal-section-header">
             <span className="legal-section-number">02</span>
@@ -95,7 +95,7 @@ const TermsOfService = () => {
           </p>
         </section>
 
-        {/* ── Article 3 ── */}
+        {/* -- Article 3 -- */}
         <section className="legal-section">
           <div className="legal-section-header">
             <span className="legal-section-number">03</span>
@@ -128,7 +128,7 @@ const TermsOfService = () => {
           </p>
         </section>
 
-        {/* ── Article 4 ── */}
+        {/* -- Article 4 -- */}
         <section className="legal-section">
           <div className="legal-section-header">
             <span className="legal-section-number">04</span>
@@ -137,7 +137,7 @@ const TermsOfService = () => {
 
           <h3>4.1 Contenu de la plateforme</h3>
           <p>
-            L'ensemble du contenu pédagogique disponible sur BQL Algo — incluant les cours, les exercices, les défis, le langage BQL, le design de l'interface et le code source de la Plateforme — est la propriété exclusive de BQL Algo et est protégé par les lois relatives à la propriété intellectuelle et au droit d'auteur.
+            L'ensemble du contenu pédagogique disponible sur BQL Algo , incluant les cours, les exercices, les défis, le langage BQL, le design de l'interface et le code source de la Plateforme, est la propriété exclusive de BQL Algo et est protégé par les lois relatives à la propriété intellectuelle et au droit d'auteur.
           </p>
           <p>
             Toute reproduction, distribution, modification ou utilisation commerciale de ce contenu sans autorisation écrite préalable de BQL Algo est strictement interdite.
@@ -145,21 +145,21 @@ const TermsOfService = () => {
 
           <h3>4.2 Votre contenu</h3>
           <p>
-            Le code que vous écrivez dans l'éditeur BQL Algo vous appartient pleinement. En le soumettant à la Plateforme pour évaluation ou stockage, vous accordez à BQL Algo une licence limitée, non exclusive et non transférable, uniquement dans le but de faire fonctionner le Service (exécution, sauvegarde, analyse pédagogique anonymisée).
+            Le code que vous écrivez dans l'éditeur BQL Algo vous appartient pleinement. En le soumettant à la Plateforme pour évaluation ou stockage, vous accordez à BQL Algo une licence limitée, non exclusive et non transférable, uniquement dans le but de faire fonctionner le Service (exécution, sauvegardé, analyse pédagogique anonymisée).
           </p>
           <p>
             BQL Algo ne revendique aucun droit de propriété sur vos créations personnelles.
           </p>
         </section>
 
-        {/* ── Article 5 ── */}
+        {/* -- Article 5 -- */}
         <section className="legal-section">
           <div className="legal-section-header">
             <span className="legal-section-number">05</span>
             <h2>Limitation de responsabilité</h2>
           </div>
           <p>
-            BQL Algo est fourni « en l'état » et « tel que disponible », sans garantie d'aucune sorte, expresse ou implicite. Nous ne garantissons pas que le Service sera disponible en permanence, sans interruption, ni exempt d'erreurs ou de bugs.
+            BQL Algo est fourni " en l'état " et " tel que disponible ", sans garantie d'aucune sorte, expresse ou implicite. Nous ne garantissons pas que le Service sera disponible en permanence, sans interruption, ni exempt d'erreurs ou de bugs.
           </p>
           <p>
             Dans les limites permises par la loi applicable, BQL Algo ne saurait être tenu responsable de :
@@ -175,7 +175,7 @@ const TermsOfService = () => {
           </p>
         </section>
 
-        {/* ── Article 6 ── */}
+        {/* -- Article 6 -- */}
         <section className="legal-section">
           <div className="legal-section-header">
             <span className="legal-section-number">06</span>
@@ -198,7 +198,7 @@ const TermsOfService = () => {
           </p>
         </section>
 
-        {/* ── Article 7 ── */}
+        {/* -- Article 7 -- */}
         <section className="legal-section">
           <div className="legal-section-header">
             <span className="legal-section-number">07</span>
@@ -212,7 +212,7 @@ const TermsOfService = () => {
           </p>
         </section>
 
-        {/* ── Article 8 ── */}
+        {/* -- Article 8 -- */}
         <section className="legal-section">
           <div className="legal-section-header">
             <span className="legal-section-number">08</span>
@@ -226,7 +226,7 @@ const TermsOfService = () => {
           </p>
         </section>
 
-        {/* ── Contact ── */}
+        {/* -- Contact -- */}
         <div className="legal-contact-card">
           <h3>Des questions ?</h3>
           <p>Si vous avez des questions concernant ces Conditions d'utilisation, n'hésitez pas à nous contacter.</p>
@@ -250,3 +250,4 @@ const TermsOfService = () => {
 };
 
 export default TermsOfService;
+

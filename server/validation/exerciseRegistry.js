@@ -150,7 +150,6 @@ function forbiddenFromRules(rules) {
 function buildGenericExercise({ lesson, rules, expectedOutput }) {
   const strictTests = casesFromRules(rules, expectedOutput).map((testCase, index) => ({
     id: testCase.id || `case-${index + 1}`,
-    input: testCase.input ?? "",
     output: testCase.output ?? testCase.expected ?? expectedOutput ?? "",
   }));
   const requiredConcepts = conceptsFromLegacyKeywords(rules);
@@ -161,15 +160,15 @@ function buildGenericExercise({ lesson, rules, expectedOutput }) {
     goal: rules.goal || lesson?.content || lesson?.exercise || "",
     validationMode:
       requiredConcepts.length > 0 || (rules.forbidden_keywords || []).length > 0
-        ? "result_plus_constraints"
+        ?"result_plus_constraints"
         : "result_only",
     inputs: rules.inputs || [],
     expectedOutput: rules.expectedOutput || {
       kind:
         rules.mode === "exact_output"
-          ? "exact_output"
+          ?"exact_output"
           : rules.mode === "semantic_check"
-            ? "final_output"
+            ?"final_output"
             : "final_output",
       strict: rules.strict_output !== false,
     },

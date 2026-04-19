@@ -24,14 +24,14 @@ const Login = () => {
     setLoading(true);
     setError(null);
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
       setError(error.message === 'Invalid login credentials' 
-        ? "Email ou mot de passe incorrect." 
+        ?"Email ou mot de passe incorrect." 
         : error.message);
       setLoading(false);
     } else {
@@ -130,12 +130,12 @@ const Login = () => {
         </div>
 
         <button type="submit" className="auth-submit-btn" disabled={loading}>
-          {loading ? 'Connexion en cours...' : 'Se connecter'}
+          {loading ?'Connexion en cours...' : 'Se connecter'}
         </button>
       </form>
 
       <div className="auth-footer">
-        Pas encore de compte ? <Link to="/signup" className="auth-link">Créez-en un</Link>
+        Pas encore de compte ?<Link to="/signup" className="auth-link">Créez-en un</Link>
       </div>
     </>
   );

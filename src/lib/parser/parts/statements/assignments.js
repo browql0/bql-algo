@@ -1,4 +1,4 @@
-import TokenType from '../../../lexer/tokenTypes.js';
+﻿import TokenType from '../../../lexer/tokenTypes.js';
 import {
   ProgramNode, BlockNode, VarDeclNode, ArrayDeclNode, ConstDeclNode,
   NumberNode, StringNode, CharNode, BooleanNode, IdentifierNode,
@@ -103,11 +103,9 @@ const assignmentStatementMethods = {
     const nameTok = this._advance(); // IDENTIFIER
     let target = new IdentifierNode(nameTok.value, nameTok);
     
-    let hasArrayAccess = false;
 
     // 1. Accès au tableau optionnel (sans mot-clé Tableau, car on accède potentiellement à un champ d'une case d'un tableau d'enregistrements)
     if (this._match(TokenType.LBRACKET)) {
-      hasArrayAccess = true;
       let sizes = [];
       if (this._check(TokenType.RBRACKET)) {
          sizes.push(new NumberNode(0, this._current()));
@@ -140,9 +138,7 @@ const assignmentStatementMethods = {
     }
 
     // 2. Accès membre (ex: .nom)
-    let hasMemberAccess = false;
     while (this._match(TokenType.DOT)) {
-      hasMemberAccess = true;
       if (!this._check(TokenType.IDENTIFIER)) {
         this._addError(this._makeError('Nom du champ attendu après le point', this._current(), { hint: 'Ex: variable.champ' }));
         this._synchronize(TokenType.ASSIGN, TokenType.SEMICOLON);
@@ -174,3 +170,4 @@ const assignmentStatementMethods = {
 };
 
 export default assignmentStatementMethods;
+

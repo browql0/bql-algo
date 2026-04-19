@@ -1,4 +1,4 @@
-import TokenType from '../../../lexer/tokenTypes.js';
+﻿import TokenType from '../../../lexer/tokenTypes.js';
 import {
   ProgramNode, BlockNode, VarDeclNode, ArrayDeclNode, ConstDeclNode,
   NumberNode, StringNode, CharNode, BooleanNode, IdentifierNode,
@@ -24,7 +24,7 @@ const constantDeclarationMethods = {
           expected: 'déclaration de constante'
         }
       ));
-      this._advance(); // consommer et récupérer
+      this._advance(); // consommer et récupèrer
     }
     this._skipSemicolons();
 
@@ -82,8 +82,8 @@ const constantDeclarationMethods = {
       if (this._check(TokenType.NUMBER)) {
         const raw = this._advance().value;
         const isInt = Number.isInteger(raw);
-        valueNode    = isInt ? { type: 'NUMBER', value: raw } : { type: 'NUMBER', value: raw };
-        inferredType = isInt ? 'entier' : 'reel';
+        valueNode    = isInt ?{ type: 'NUMBER', value: raw } : { type: 'NUMBER', value: raw };
+        inferredType = isInt ?'entier' : 'reel';
       } else if (this._check(TokenType.STRING)) {
         valueNode    = { type: 'STRING', value: this._advance().value };
         inferredType = 'chaine';
@@ -108,7 +108,7 @@ const constantDeclarationMethods = {
         const raw = this._advance().value;
         const negVal = -raw;
         valueNode    = { type: 'NUMBER', value: negVal };
-        inferredType = Number.isInteger(negVal) ? 'entier' : 'reel';
+        inferredType = Number.isInteger(negVal) ?'entier' : 'reel';
       } else {
         this._addError(this._makeError(
           `Valeur invalide pour la constante '${constName}'`,
@@ -141,7 +141,7 @@ const constantDeclarationMethods = {
         continue;
       }
 
-      // Vérification sémantique type–valeur
+      // Vérification sémantique type/valeur
       // (REEL est compatible avec des valeurs entières ex: 3 : REEL est OK)
       const typeCompatible = (
         (constType === 'entier'  && inferredType === 'entier') ||
@@ -155,7 +155,6 @@ const constantDeclarationMethods = {
           `Type incompatible avec la valeur pour la constante '${constName}'`,
           valueTok,
           {
-            hint: `La valeur est de type ${typeLabels[inferredType] ?? inferredType}, mais le type déclaré est ${typeLabels[constType] ?? constType}.`,
             expected: typeLabels[inferredType] ?? inferredType
           }
         ));
@@ -166,7 +165,7 @@ const constantDeclarationMethods = {
       consts.push(new ConstDeclNode(constName, valueNode, constType, nameTok));
     }
 
-    // ── Validation 1 : au moins une déclaration ─────────────────────────────
+    // -- Validation 1 : au moins une déclaration -----------------------------
     if (consts.length === 0) {
       this._addError(this._makeError(
         `Aucune déclaration après ${keywordValue}`,
@@ -177,7 +176,7 @@ const constantDeclarationMethods = {
         }
       ));
     } else {
-      // ── Validation 2 : CONSTANTE (sing.) vs CONSTANTES (plur.) ────────────
+      // -- Validation 2 : CONSTANTE (sing.) vs CONSTANTES (plur.) ------------
       if (isPlural && consts.length === 1) {
         this._addError(this._makeError(
           `Utiliser CONSTANTE pour une seule constante`,
@@ -217,3 +216,4 @@ const constantDeclarationMethods = {
 };
 
 export default constantDeclarationMethods;
+

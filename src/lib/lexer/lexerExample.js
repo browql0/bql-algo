@@ -1,28 +1,28 @@
-/**
+﻿/**
  * lexerExample.js
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  * Exemple complet illustrant la syntaxe mise à jour :
  *
- *   ✔  ALGORITHME + nom collé ou avec _     →  ALGORITHMECALCULMOYENNE;
- *                                           →  ALGORITHME_CALCULMOYENNE;
- *   ✔  1 variable  → VARIABLE  nom : type;
- *      Plusieurs   → VARIABLES  nom : type; nom2 : type2;
+ *   ✔  ALGORITHME + nom collé ou avec _     ->  ALGORITHMECALCULMOYENNE;
+ *                                           ->  ALGORITHME_CALCULMOYENNE;
+ *   ✔  1 variable  -> VARIABLE  nom : type;
+ *      Plusieurs   ? VARIABLES  nom : type; nom2 : type2;
  *   ✔  Mots-clés insensibles à la casse
  *   ✔  Semicolons ; obligatoires en fin d'instruction / affectation
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  */
 
 import Lexer from './Lexer.js';
 
-// ── Code source de démonstration ──────────────────────────────────────────────
+// -- Code source de démonstration ----------------------------------------------
 export const SAMPLE_CODE = `
 ALGORITHME_CALCULMOYENNE;
 
-// Une seule variable → VARIABLE
+// Une seule variable ? VARIABLE
 VARIABLE
   n : entier;
 
-// Plusieurs variables → VARIABLES
+// Plusieurs variables ? VARIABLES
 VARIABLES
   note     : entier;
   somme    : entier;
@@ -33,13 +33,13 @@ VARIABLES
 
 DEBUT
 
-  ecrire("Combien de notes ? ");
+  ecrire("Combien de notes ?");
   lire(n);
 
   somme    <- 0;
   compteur <- 1;
 
-  // Boucle REPETER … JUSQUA
+  // Boucle REPETER ? JUSQUA
   REPETER
     ecrire("Note ", compteur, " : ");
     lire(note);
@@ -70,18 +70,18 @@ DEBUT
 FIN
 `;
 
-// ── Exécution et affichage ─────────────────────────────────────────────────────
+// -- Exécution et affichage -----------------------------------------------------
 export function runLexerExample() {
-  console.log('═══════════════════════════════════════════════════════════');
-  console.log('   LEXER — Pseudo-algorithme marocain (syntaxe finale)');
-  console.log('═══════════════════════════════════════════════════════════\n');
+  console.log('===========================================================');
+  console.log('   LEXER ? Pseudo-algorithme marocain (syntaxe finale)');
+  console.log('===========================================================\n');
 
   const lexer = new Lexer(SAMPLE_CODE);
   const { tokens, errors } = lexer.tokenize();
 
-  console.log(`📋  ${tokens.length} token(s) produit(s) :\n`);
+  console.log(`Liste  ${tokens.length} token(s) produit(s) :\n`);
   console.log('Index  Type                   Value                  L:C');
-  console.log('─'.repeat(65));
+  console.log('-'.repeat(65));
 
   tokens.forEach((tok, i) => {
     const idx  = String(i).padEnd(5);
@@ -97,7 +97,7 @@ export function runLexerExample() {
   } else {
     console.log('\n✅  Aucune erreur lexicale.');
   }
-  console.log('\n═══════════════════════════════════════════════════════════\n');
+  console.log('\n===========================================================\n');
   return { tokens, errors };
 }
 
@@ -108,3 +108,4 @@ if (typeof process !== 'undefined') {
     runLexerExample();
   }
 }
+

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+﻿import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Shield, ArrowLeft, Database, Lock, Eye, Trash2, Mail, Globe, Scale } from 'lucide-react';
 import './Legal.css';
@@ -6,7 +6,7 @@ import './Legal.css';
 const PrivacyPolicy = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
-    document.title = "Politique de confidentialité – BQL Algo";
+    document.title = "Politique de confidentialité ? BQL Algo";
   }, []);
 
   return (
@@ -29,9 +29,9 @@ const PrivacyPolicy = () => {
 
       <div className="legal-container">
 
-        {/* ── Résumé ── */}
+        {/* -- Résumé -- */}
         <div className="legal-summary privacy-summary">
-          <h2>🔒 En résumé</h2>
+          <h2> En résumé</h2>
           <div className="summary-grid">
             <div className="summary-item">
               <Database size={18} />
@@ -52,7 +52,7 @@ const PrivacyPolicy = () => {
           </div>
         </div>
 
-        {/* ── Article 1 ── */}
+        {/* -- Article 1 -- */}
         <section className="legal-section">
           <div className="legal-section-header">
             <span className="legal-section-number privacy-number">01</span>
@@ -96,7 +96,7 @@ const PrivacyPolicy = () => {
           </div>
         </section>
 
-        {/* ── Article 2 ── */}
+        {/* -- Article 2 -- */}
         <section className="legal-section">
           <div className="legal-section-header">
             <span className="legal-section-number privacy-number">02</span>
@@ -109,14 +109,14 @@ const PrivacyPolicy = () => {
             <li><strong>Suivi de progression</strong> : calcul et affichage de votre XP, de vos niveaux et de vos trophées.</li>
             <li><strong>Amélioration de la plateforme</strong> : analyse des taux de réussite et des points de blocage pour améliorer le contenu des cours (données agrégées et anonymisées).</li>
             <li><strong>Sécurité et intégrité</strong> : détection et prévention des usages abusifs ou frauduleux.</li>
-            <li><strong>Statistiques internes</strong> : suivi du nombre d'utilisateurs actifs et de l'efficacité globale des cours.</li>
+            <li><strong>Statistiques internes</strong> : suivi du nombre d'utilisateurs actifs et de l'efficacit? globale des cours.</li>
           </ul>
           <p>
             Nous ne vous enverrons pas d'emails marketing sans votre consentement explicite. Les seules communications que vous pourrez recevoir sont liées au bon fonctionnement de votre compte (réinitialisation de mot de passe, modifications importantes des conditions, etc.).
           </p>
         </section>
 
-        {/* ── Article 3 ── */}
+        {/* -- Article 3 -- */}
         <section className="legal-section">
           <div className="legal-section-header">
             <span className="legal-section-number privacy-number">03</span>
@@ -126,14 +126,14 @@ const PrivacyPolicy = () => {
             Vos données sont stockées et gérées via <strong>Supabase</strong>, une plateforme de base de données cloud qui offre un haut niveau de sécurité. Supabase utilise PostgreSQL avec le chiffrement des données au repos et en transit (TLS/SSL).
           </p>
           <p>
-            Les données peuvent être hébergées sur des serveurs situés dans différentes régions (Europe, États-Unis), dans le respect des réglementations applicables à la protection des données.
+            Les données peuvent être hébergées sur des serveurs situés dans différentes régions (Europe, États-Unis), dans le respect des règlementations applicables à la protection des données.
           </p>
           <p>
             Vos données sont conservées tant que votre compte est actif. En cas de suppression de votre compte, vos données personnelles seront supprimées dans un délai maximum de <strong>30 jours</strong>, à l'exception des données que nous sommes légalement tenus de conserver plus longtemps.
           </p>
         </section>
 
-        {/* ── Article 4 ── */}
+        {/* -- Article 4 -- */}
         <section className="legal-section">
           <div className="legal-section-header">
             <span className="legal-section-number privacy-number">04</span>
@@ -154,7 +154,7 @@ const PrivacyPolicy = () => {
           </p>
         </section>
 
-        {/* ── Article 5 ── */}
+        {/* -- Article 5 -- */}
         <section className="legal-section">
           <div className="legal-section-header">
             <span className="legal-section-number privacy-number">05</span>
@@ -177,7 +177,7 @@ const PrivacyPolicy = () => {
           </p>
         </section>
 
-        {/* ── Article 6 ── */}
+        {/* -- Article 6 -- */}
         <section className="legal-section">
           <div className="legal-section-header">
             <span className="legal-section-number privacy-number">06</span>
@@ -196,7 +196,7 @@ const PrivacyPolicy = () => {
           </p>
         </section>
 
-        {/* ── Article 7 ── */}
+        {/* -- Article 7 -- */}
         <section className="legal-section">
           <div className="legal-section-header">
             <span className="legal-section-number privacy-number">07</span>
@@ -256,21 +256,21 @@ const PrivacyPolicy = () => {
           </p>
         </section>
 
-        {/* ── Article 8 ── */}
+        {/* -- Article 8 -- */}
         <section className="legal-section">
           <div className="legal-section-header">
             <span className="legal-section-number privacy-number">08</span>
             <h2>Modifications de la politique</h2>
           </div>
           <p>
-            Nous nous réservons le droit de mettre à jour la présente Politique de confidentialité pour refléter des changements dans nos pratiques ou dans la réglementation applicable. En cas de modification substantielle, vous en serez informé par email ou par une notification visible sur la Plateforme.
+            Nous nous réservons le droit de mettre à jour la présente Politique de confidentialité pour refléter des changements dans nos pratiques ou dans la règlementation applicable. En cas de modification substantielle, vous en serez informé par email ou par une notification visible sur la Plateforme.
           </p>
           <p>
             La date de la dernière mise à jour est toujours indiquée en haut de cette page. Nous vous encourageons à la consulter régulièrement.
           </p>
         </section>
 
-        {/* ── Contact ── */}
+        {/* -- Contact -- */}
         <div className="legal-contact-card privacy-contact">
           <h3>Un droit à exercer ? Une question ?</h3>
           <p>Notre équipe est disponible pour répondre à toutes vos questions relatives à la protection de vos données personnelles.</p>
@@ -294,3 +294,4 @@ const PrivacyPolicy = () => {
 };
 
 export default PrivacyPolicy;
+

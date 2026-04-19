@@ -1,4 +1,4 @@
-import TokenType from '../../../../lexer/tokenTypes.js';
+﻿import TokenType from '../../../../lexer/tokenTypes.js';
 import {
   ProgramNode, BlockNode, VarDeclNode, ArrayDeclNode, ConstDeclNode,
   NumberNode, StringNode, CharNode, BooleanNode, IdentifierNode,
@@ -73,9 +73,8 @@ const loopStatementMethods = {
 
   _parseFor() {
     const tok = this._advance(); // consommer POUR
-    const v = tok.value ?? 'POUR';
 
-    // ── 1. Variable de boucle (identifiant valide) ────────────────────────────
+    // -- 1. Variable de boucle (identifiant valide) ----------------------------
     if (!this._check(TokenType.IDENTIFIER)) {
       this._addError(this._makeError(
         'Variable de boucle manquante après POUR',
@@ -88,12 +87,12 @@ const loopStatementMethods = {
     const varTok = this._advance(); // consommer IDENTIFIER
     const varName = varTok.value;
 
-    // ── 2. ALLANT DE obligatoire ──────────────────────────────────────────────
+    // -- 2. ALLANT DE obligatoire ----------------------------------------------
     if (this._check(TokenType.ALLANT_DE)) {
-      // Forme correcte : "ALLANT DE" tokenisé en un seul token composé
+      // Forme correcte : "ALLANT DE" tokenis? en un seul token compos?
       this._advance(); // consommer ALLANT_DE
     } else if (this._isSoftKeyword('DE')) {
-      // "DE" seul sans "ALLANT" → erreur, "ALLANT" manquant
+      // "DE" seul sans "ALLANT" ? erreur, "ALLANT" manquant
       this._addError(this._makeError(
         `"ALLANT" manquant avant "DE" dans la boucle POUR`,
         this._current(),
@@ -101,7 +100,7 @@ const loopStatementMethods = {
       ));
       this._advance(); // consommer DE quand même pour continuer le parsing
     } else if (this._check(TokenType.ALLANT)) {
-      // "ALLANT" seul sans "DE" → erreur, "DE" manquant
+      // "ALLANT" seul sans "DE" ? erreur, "DE" manquant
       this._addError(this._makeError(
         `"DE" manquant après "ALLANT" dans la boucle POUR`,
         this._current(),
@@ -109,13 +108,13 @@ const loopStatementMethods = {
       ));
       this._advance(); // consommer ALLANT
     } else {
-      // Ni "ALLANT DE", ni "DE", ni "ALLANT" → structure complètement incorrecte
+      // Ni "ALLANT DE", ni "DE", ni "ALLANT" ? structure complètement incorrecte
       this._addError(this._makeError(
         `"ALLANT DE" manquant dans la boucle POUR`,
         this._current(),
         { hint: `Écrivez : POUR ${varName} ALLANT DE debut A fin FAIRE` }
       ));
-      // Chercher A ou FAIRE pour récupérer partiellement
+      // Chercher A ou FAIRE pour récupèrer partiellement
       // A est un soft-keyword : IDENTIFIER avec valeur 'A'
       while (
         !this._isAtEnd() &&
@@ -128,7 +127,7 @@ const loopStatementMethods = {
       }
     }
 
-    // ── 3. Borne de départ ───────────────────────────────────────────────────
+    // -- 3. Borne de départ ---------------------------------------------------
     // A et PAS sont des soft-keywords : IDENTIFIER avec valeur 'A' / 'PAS'
     if (
       this._isSoftKeyword('A') ||
@@ -144,7 +143,7 @@ const loopStatementMethods = {
     }
     const from = this._parseExpression();
 
-    // ── 4. A obligatoire ─────────────────────────────────────────────────────
+    // -- 4. A obligatoire -----------------------------------------------------
     // A est un soft-keyword : IDENTIFIER avec valeur 'A'
     if (!this._isSoftKeyword('A')) {
       this._addError(this._makeError(
@@ -156,7 +155,7 @@ const loopStatementMethods = {
       this._advance(); // consommer A
     }
 
-    // ── 5. Borne de fin ──────────────────────────────────────────────────────
+    // -- 5. Borne de fin ------------------------------------------------------
     // PAS est un soft-keyword : IDENTIFIER avec valeur 'PAS'
     let to = new NumberNode(0, this._current()); // valeur par défaut en cas d'erreur
     if (
@@ -174,10 +173,10 @@ const loopStatementMethods = {
       to = this._parseExpression();
     }
 
-    // ── 6. PAS (optionnel) ───────────────────────────────────────────────────
-    //   • Absent    → step = null (pas implicite = 1 à l'exécution)
-    //   • PAS 0     → ERREUR : interdit (boucle infinie)
-    //   • PAS n≠0   → valide (PAS 1 explicite est accepté mais redondant)
+    // -- 6. PAS (optionnel) ---------------------------------------------------
+    //   ? Absent    ? step = null (pas implicite = 1 à l'exécution)
+    //   ? PAS 0     ? ERREUR : interdit (boucle infinie)
+    //   ? PAS n≠ 0   ? valide (PAS 1 explicite est accept? mais redondant)
     let step = null; // null = PAS absent = pas implicite 1 à l'exécution
 
     // PAS est un soft-keyword : IDENTIFIER avec valeur 'PAS'
@@ -200,9 +199,9 @@ const loopStatementMethods = {
         // Analyser la valeur du pas (peut être négatif : PAS -1)
         const stepExpr = this._parseExpression();
 
-        // ── Validation statique du pas (seulement si c'est un nombre littéral) ──
+        // -- Validation statique du pas (seulement si c'est un nombre littéral) --
         //    Pour les variables ou expressions dynamiques on ne peut pas valider
-        //    statiquement → on laissera l'interpréteur vérifier à l'exécution.
+        //    statiquement ? on laissera l'interprêteur vérifier à l'exécution.
         const isNumberLiteral = stepExpr.type === 'NUMBER';
         const isNegLiteral = (
           stepExpr.type === 'UNARY_OP' &&
@@ -212,7 +211,7 @@ const loopStatementMethods = {
 
         if (isNumberLiteral || isNegLiteral) {
           const rawVal = isNegLiteral
-            ? -(stepExpr.operand.value)
+            ?-(stepExpr.operand.value)
             : stepExpr.value;
 
           if (rawVal === 0) {
@@ -222,21 +221,21 @@ const loopStatementMethods = {
               { hint: `Utilisez un pas non nul, ex : PAS 2 ou PAS -1` }
             ));
           } else {
-            // PAS valide (PAS 1 explicite est redondant mais accepté)
+            // PAS valide (PAS 1 explicite est redondant mais accept?)
             step = stepExpr;
           }
         } else {
           // Pas dynamique (variable ou expression) : on l'accepte pour l'AST,
-          // l'interpréteur sera responsable de la validation à l'exécution.
+          // l'interprêteur sera responsable de la validation à l'exécution.
           step = stepExpr;
         }
       }
     }
 
-    // ── 7. FAIRE obligatoire ─────────────────────────────────────────────────
+    // -- 7. FAIRE obligatoire -------------------------------------------------
     if (!this._check(TokenType.FAIRE)) {
       this._addError(this._makeError(
-        `"FAIRE" manquant dans la boucle POUR (après la borne de fin${step !== null ? ' et le pas' : ''})`,
+        `"FAIRE" manquant dans la boucle POUR (après la borne de fin${step !== null ?' et le pas' : ''})`,
         this._current(),
         { hint: `Écrivez : POUR ${varName} ALLANT DE debut A fin FAIRE` }
       ));
@@ -245,10 +244,10 @@ const loopStatementMethods = {
     }
     this._skipSemicolons();
 
-    // ── 8. Corps de la boucle ────────────────────────────────────────────────
+    // -- 8. Corps de la boucle ------------------------------------------------
     const body = this._parseBlock([TokenType.FINPOUR]);
 
-    // ── 9. FINPOUR obligatoire ───────────────────────────────────────────────
+    // -- 9. FINPOUR obligatoire -----------------------------------------------
     if (!this._check(TokenType.FINPOUR)) {
       this._addError(this._makeError(
         `La boucle POUR doit se terminer par FINPOUR`,
@@ -320,3 +319,4 @@ const loopStatementMethods = {
 };
 
 export default loopStatementMethods;
+

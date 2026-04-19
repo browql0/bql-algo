@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Mail, MapPin, Clock, Send, CheckCircle2, AlertCircle } from 'lucide-react';
 import './Contact.css';
 
@@ -50,7 +50,7 @@ const Contact = () => {
         <div className="contact-header">
           <span className="contact-badge">Contact</span>
           <h2 className="contact-heading">
-            Une question ? <span className="text-gradient">Parlons-en.</span>
+            Une question ?<span className="text-gradient">Parlons-en.</span>
           </h2>
           <p className="contact-intro">
             Notre équipe répond dans les 24&nbsp;h. Remplissez le formulaire ou écrivez-nous directement.
@@ -60,11 +60,11 @@ const Contact = () => {
         {/* Main card */}
         <div className="contact-card">
 
-          {/* Left — info panel */}
+          {/* Left ? info panel */}
           <div className="contact-info-pane">
             <div className="info-pane-inner">
               <p className="info-tagline">
-                Que vous ayez besoin d'aide, d'un retour, ou juste envie de dire bonjour — nous sommes là.
+                Que vous ayez besoin d'aide, d'un retour, ou juste envie de dire bonjour ? nous sommes là .
               </p>
 
               <ul className="contact-detail-list">
@@ -74,7 +74,7 @@ const Contact = () => {
                     <div className="detail-text">
                       <span className="detail-label">{item.label}</span>
                       {item.href
-                        ? <a href={item.href} className="detail-value link">{item.value}</a>
+                        ?<a href={item.href} className="detail-value link">{item.value}</a>
                         : <span className="detail-value">{item.value}</span>
                       }
                     </div>
@@ -100,12 +100,12 @@ const Contact = () => {
             <div className="info-blob blob-2"></div>
           </div>
 
-          {/* Right — form panel */}
+          {/* Right ? form panel */}
           <div className="contact-form-pane">
-            {status === 'success' ? (
+            {status === 'success' ?(
               <div className="form-success">
                 <CheckCircle2 size={48} className="success-icon" />
-                <h3>Message envoyé !</h3>
+                <h3>Message envoy? !</h3>
                 <p>Merci pour votre message. Nous vous répondrons dans les prochaines 24&nbsp;h.</p>
                 <button className="btn-secondary reset-btn" onClick={() => setStatus(null)}>
                   Envoyer un autre message
@@ -188,3 +188,4 @@ const Contact = () => {
 };
 
 export default Contact;
+

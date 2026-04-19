@@ -1,6 +1,6 @@
-/**
+﻿/**
  * Lexer.js
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  * Analyseur lexical (tokenizer) pour le pseudo-langage algorithmique marocain.
  *
  * Entrée  : chaîne de caractères (code source)
@@ -12,12 +12,12 @@
  *  - Chaînes de caractères entre guillemets doubles
  *  - Caractères entre guillemets simples
  *  - Commentaires sur une ligne (//)
- *  - Opérateur d'affectation <- et ←
+ *  - Opérateur d'affectation <- et ?
  *  - Tous les opérateurs arithmétiques, logiques et de comparaison
  *  - Gestion des retours à la ligne (NEWLINE)
  *  - Position exacte (ligne, colonne) pour chaque token
  *  - Collecte d'erreurs lexicales sans arrêter l'analyse
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  */
 
 import Token from './Token.js';
@@ -28,7 +28,7 @@ import literalMethods from './parts/literals.js';
 import identifierMethods from './parts/identifiers.js';
 import operatorMethods from './parts/operators.js';
 
-// ── Classe principale ──────────────────────────────────────────────────────────
+// -- Classe principale ----------------------------------------------------------
 class Lexer {
   /**
    * @param {string} source - Code source complet à analyser
@@ -42,7 +42,7 @@ class Lexer {
     /** @type {LexicalError[]}  */ this.errors  = [];
   }
 
-  // ── API publique ─────────────────────────────────────────────────────────────
+  // -- API publique -------------------------------------------------------------
 
   /**
    * Lance l'analyse et retourne les tokens produits.
@@ -56,7 +56,7 @@ class Lexer {
     return { tokens: this.tokens, errors: this.errors };
   }
 
-  // ── Navigation dans la source ─────────────────────────────────────────────────
+  // -- Navigation dans la source -------------------------------------------------
 
   /** Caractère courant sans avancer. */
   _current() {
@@ -66,7 +66,7 @@ class Lexer {
   /** Caractère suivant sans avancer (look-ahead de 1). */
   _peek(offset = 1) {
     const idx = this.pos + offset;
-    return idx < this.source.length ? this.source[idx] : '\0';
+    return idx < this.source.length ?this.source[idx] : '\0';
   }
 
   /** Avance d'un caractère et met à jour ligne/colonne. */
@@ -93,14 +93,14 @@ class Lexer {
     return this.pos >= this.source.length;
   }
 
-  // ── Helpers de classification ──────────────────────────────────────────────────
+  // -- Helpers de classification --------------------------------------------------
 
   _isDigit(ch)     { return ch >= '0' && ch <= '9'; }
   _isAlpha(ch)     { return /[a-zA-ZÀ-ÿ_]/.test(ch); }
   _isAlphaNum(ch)  { return this._isAlpha(ch) || this._isDigit(ch); }
   _isWhitespace(ch){ return ch === ' ' || ch === '\t' || ch === '\r'; }
 
-  // ── Gestion des erreurs ───────────────────────────────────────────────────────
+  // -- Gestion des erreurs -------------------------------------------------------
 
   /**
    * Enregistre une erreur lexicale sans interrompre l'analyse.
@@ -125,3 +125,4 @@ Object.assign(
 );
 
 export default Lexer;
+

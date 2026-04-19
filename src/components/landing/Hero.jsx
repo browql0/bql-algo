@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { ChevronRight, Code2 } from 'lucide-react';
 import './Hero.css';
 
@@ -9,8 +9,7 @@ const Hero = ({ onStart }) => {
         <div className="hero-content">
           <div className="hero-badge">
             <span className="pulse-dot"></span>
-            Nouveau : BQL Algo Beta 1.0 est là
-          </div>
+            Nouveau : BQL Algo Beta 1.0 est là </div>
           <h1 className="hero-title">
             Maîtrisez l'Algorithmique. 
             <span className="text-gradient"> Simplement.</span>
@@ -74,4 +73,5 @@ const Hero = ({ onStart }) => {
 };
 
 export default Hero;
+
 

@@ -1,88 +1,96 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import LandingPage from './components/landing/LandingPage';
-import EditorLayout from './components/editor/EditorLayout';
 import AuthLayout from './components/auth/AuthLayout';
 import Login from './components/auth/Login';
 import SignUp from './components/auth/SignUp';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import PublicRoute from './components/auth/PublicRoute';
-import CoursePage from './components/cours/CoursePage';
 import AdminRoute from './components/auth/AdminRoute';
-import AdminLayout from './components/admin/AdminLayout';
-import AdminDashboard from './components/admin/pages/AdminDashboard';
-import AdminUsers from './components/admin/pages/AdminUsers';
-import AdminAnalytics from './components/admin/pages/AdminAnalytics';
-import TermsOfService from './components/legal/TermsOfService';
-import PrivacyPolicy from './components/legal/PrivacyPolicy';
+
+const EditorLayout = lazy(() => import('./components/editor/EditorLayout'));
+const CoursePage = lazy(() => import('./components/cours/CoursePage'));
+const AdminLayout = lazy(() => import('./components/admin/AdminLayout'));
+const AdminDashboard = lazy(() => import('./components/admin/pages/AdminDashboard'));
+const AdminUsers = lazy(() => import('./components/admin/pages/AdminUsers'));
+const AdminAnalytics = lazy(() => import('./components/admin/pages/AdminAnalytics'));
+const AdminCourses = lazy(() => import('./components/admin/pages/AdminCourses'));
+const AdminActivity = lazy(() => import('./components/admin/pages/AdminActivity'));
+const TermsOfService = lazy(() => import('./components/legal/TermsOfService'));
+const PrivacyPolicy = lazy(() => import('./components/legal/PrivacyPolicy'));
+
+const RouteFallback = () => (
+  <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#050816', color: '#e5e7eb' }}>
+    Chargement...
+  </div>
+);
+
 const App = () => {
   const navigate = useNavigate();
 
   return (
-    <Routes>
-      {/* ── Routes publiques ─────────────────────────────────────────── */}
-      <Route path="/" element={<LandingPage onStart={() => navigate('/editor')} />} />
-      <Route path="/terms" element={<TermsOfService />} />
-      <Route path="/privacy" element={<PrivacyPolicy />} />
+    <Suspense fallback={<RouteFallback />}>
+      <Routes>
+        <Route path="/" element={<LandingPage onStart={() => navigate('/editor')} />} />
+        <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
 
-      {/* Login & SignUp : si l'user est déjà connecté, redirige vers /editor */}
-      <Route element={<AuthLayout />}>
+        <Route element={<AuthLayout />}>
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/signup"
+            element={
+              <PublicRoute>
+                <SignUp />
+              </PublicRoute>
+            }
+          />
+        </Route>
+
         <Route
-          path="/login"
+          path="/editor"
           element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
+            <ProtectedRoute>
+              <EditorLayout />
+            </ProtectedRoute>
           }
         />
+
         <Route
-          path="/signup"
+          path="/cours"
           element={
-            <PublicRoute>
-              <SignUp />
-            </PublicRoute>
+            <ProtectedRoute>
+              <CoursePage />
+            </ProtectedRoute>
           }
         />
-      </Route>
 
-      {/* ── Routes privées ────────────────────────────────────────────── */}
-      {/* L'éditeur est totalement protégé — accès impossible sans session */}
-      <Route
-        path="/editor"
-        element={
-          <ProtectedRoute>
-            <EditorLayout />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminLayout />
+            </AdminRoute>
+          }
+        >
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="courses" element={<AdminCourses />} />
+          <Route path="analytics" element={<AdminAnalytics />} />
+          <Route path="activity" element={<AdminActivity />} />
+        </Route>
 
-      <Route
-        path="/cours"
-        element={
-          <ProtectedRoute>
-            <CoursePage />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* ── Routes Administrateur ───────────────────────────────────────── */}
-      <Route
-        path="/admin"
-        element={
-          <AdminRoute>
-            <AdminLayout />
-          </AdminRoute>
-        }
-      >
-        <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<AdminDashboard />} />
-        <Route path="users" element={<AdminUsers />} />
-        <Route path="analytics" element={<AdminAnalytics />} />
-      </Route>
-
-      {/* ── Fallback : toute URL inconnue → accueil ─────────────────── */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   );
 };
 

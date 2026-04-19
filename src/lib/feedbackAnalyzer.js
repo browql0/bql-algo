@@ -1,33 +1,33 @@
-/**
+﻿/**
  * feedbackAnalyzer.js
- * ──────────────────────────────────────────────────────────────────────────
+ * --------------------------------------------------------------------------
  * Moteur d'analyse pédagogique pour les exercices BQL.
  * Reçoit le code source, les cas de tests exécutés, et le contexte de l'exercice.
  * Retourne un FeedbackReport structuré utilisable par ValidationOverlay.
- * ──────────────────────────────────────────────────────────────────────────
+ * --------------------------------------------------------------------------
  */
 
-// ─── Types d'erreurs ────────────────────────────────────────────────────────
+// --- Types d'erreurs --------------------------------------------------------
 export const ERROR_TYPES = {
   SYNTAX_ERROR:     'SYNTAX_ERROR',     // Erreur de syntaxe stricte (BQL struct)
   SEMANTIC_ERROR:   'SEMANTIC_ERROR',   // Erreur sémantique stricte (variables, indices, etc)
   CALC_ERROR:       'CALC_ERROR',       // Formule de calcul incorrecte
-  OUTPUT_FORMAT:    'OUTPUT_FORMAT',    // Texte affiché mal formaté
-  MISSING_ELEMENT:  'MISSING_ELEMENT',  // Mot-clé ou variable manquant
+  OUTPUT_FORMAT:    'OUTPUT_FORMAT',    // Texte affich? mal format?
+  MISSING_ELEMENT:  'MISSING_ELEMENT',  // Mot-cl? ou variable manquant
   LOGIC_ERROR:      'LOGIC_ERROR',      // Erreur de logique générale
   RUNTIME_ERROR:    'RUNTIME_ERROR',    // Le code plante à l'exécution
-  VALIDATOR_INTERNAL_ERROR:   'VALIDATOR_INTERNAL_ERROR',   // Le validateur a crashé (bug système)
-  INTERPRETER_INTERNAL_ERROR: 'INTERPRETER_INTERNAL_ERROR', // L'interpréteur a crashé violemment
+  VALIDATOR_INTERNAL_ERROR:   'VALIDATOR_INTERNAL_ERROR',   // Le validateur a crash? (bug système)
+  INTERPRETER_INTERNAL_ERROR: 'INTERPRETER_INTERNAL_ERROR', // L'interprêteur a crash? violemment
 };
 
 import { normalizeString } from './outputUtils.js';
 
-// ─── Mots-clés BQL structuraux importants ──────────────────────────────────
+// --- Mots-clés BQL structuraux importants ----------------------------------
 const STRUCTURAL_KEYWORDS = ['DEBUT', 'FIN', 'ALGORITHME', 'VARIABLE', 'VARIABLES'];
 const IO_KEYWORDS         = ['LIRE', 'ECRIRE', 'AFFICHER'];
 const LOGIC_KEYWORDS      = ['SI', 'SINON', 'POUR', 'TANTQUE', 'TANT QUE', 'REPETER'];
 
-// ─── Patterns d'erreurs fréquentes ─────────────────────────────────────────
+// --- Patterns d'erreurs fréquentes -----------------------------------------
 const COMMON_MISTAKES = [
   {
     id: 'minus_instead_of_plus',
@@ -39,7 +39,7 @@ const COMMON_MISTAKES = [
         return regex.test(src);
       });
     },
-    message: "Un opérateur `-` est utilisé là où `+` ou `*` est probablement attendu.",
+    message: "Un opérateur `-` est utilis? là où `+` ou `*` est probablement attendu.",
   },
   {
     id: 'wrong_operator_order',
@@ -82,7 +82,7 @@ const COMMON_MISTAKES = [
         return c.got.includes(c.expected) && c.got !== c.expected;
       });
     },
-    message: "Le texte affiché contient la bonne valeur mais avec du contenu supplémentaire.",
+    message: "Le texte affich? contient la bonne valeur mais avec du contenu supplémentaire.",
   },
   {
     id: 'matrix_brackets',
@@ -90,11 +90,11 @@ const COMMON_MISTAKES = [
       // Détecte M[i][j]
       return /\[.+\]\s*\[.+\]/.test(src);
     },
-    message: "💡 En BQL, on utilise T[i, j] pour accéder aux matrices (au lieu de T[i][j]).",
+    message: "Astuce En BQL, on utilise T[i, j] pour accèder aux matrices (au lieu de T[i][j]).",
   },
 ];
 
-// ─── Utilitaires ────────────────────────────────────────────────────────────
+// --- Utilitaires ------------------------------------------------------------
 
 /**
  * Extrait les noms de variables déclarées dans le code BQL
@@ -135,8 +135,8 @@ function hasKeyword(source, keyword) {
 
 /**
  * Calcule un score de proximité numérique entre les résultats obtenus et attendus.
- * Pour les valeurs numériques : |got - expected| / expected <= 10% → "proche"
- * Retourne un pourcentage 0–100.
+ * Pour les valeurs numériques : |got - expected| / expected <= 10% ? "proche"
+ * Retourne un pourcentage 0?100.
  */
 function computeCloseness(cases) {
   if (!cases || cases.length === 0) return 0;
@@ -149,13 +149,13 @@ function computeCloseness(cases) {
     if (!isNaN(gotNum) && !isNaN(expNum) && expNum !== 0) {
       numericPairs++;
       const ratio = Math.abs(gotNum - expNum) / Math.abs(expNum);
-      if (ratio <= 0.5) close++; // 50% de marge → "proche"
+      if (ratio <= 0.5) close++; // 50% de marge ? "proche"
     } else if (tc.passed) {
       close++;
     }
   }
 
-  const total = numericPairs > 0 ? numericPairs : cases.length;
+  const total = numericPairs > 0 ?numericPairs : cases.length;
   const passedCount = cases.filter(c => c.passed).length;
   const closenessScore = Math.round(
     ((passedCount + close * 0.4) / total) * 100
@@ -168,7 +168,7 @@ function computeCloseness(cases) {
  * Heuristique : la structure est correcte (LIRE + ECRIRE présents, variables OK)
  * mais les sorties numériques divergent.
  */
-function detectCalcError(source, cases, declaredVars) {
+function detectCalcError(source, cases) {
   const hasLire   = IO_KEYWORDS.some(kw => hasKeyword(source, kw));
   const hasEcrire = /ECRIRE|AFFICHER/i.test(source);
   if (!hasLire || !hasEcrire) return false;
@@ -215,7 +215,6 @@ function detectOutputFormatError(cases) {
  */
 function buildCorrectPoints(source, declaredVars, lessonContext) {
   const points = [];
-  const upperSrc = source.toUpperCase();
 
   // Structure de base
   if (hasKeyword(source, 'ALGORITHME') || hasKeyword(source, 'DEBUT')) {
@@ -257,20 +256,18 @@ function buildErrorPointsAndHint(errorType, source, cases, declaredVars, lessonC
   const failedCases = cases.filter(c => !c.passed);
 
   // Cherche les variables de calcul dans les cas échoués et le code
+  const codeBody = source.match(/DEBUT[\s\S]*/i)?.[0] || '';
   const calcVarNames = declaredVars.filter(v =>
     !/lire|ecrire|afficher/i.test(v) &&
     !['debut','fin','si','sinon','pour','tantque'].includes(v) &&
-    failedCases.some(c => {
-      const regex = new RegExp(v, 'i');
-      return regex.test(source.match(/DEBUT[\s\S]*/i)?.[0] || '');
-    })
+    new RegExp(v, 'i').test(codeBody)
   );
 
   switch (errorType) {
     case ERROR_TYPES.SYNTAX_ERROR: {
       const firstError = astErrors?.syntaxErrors?.[0] || astErrors?.lexicalErrors?.[0];
       if (firstError) {
-         errorPoints.push(`Le validateur a rejeté votre algorithme (Ligne ${firstError.line}).`);
+         errorPoints.push(`Le validateur a rejet? votre algorithme (Ligne ${firstError.line}).`);
          errorPoints.push(firstError.message);
       } else {
          errorPoints.push("Structure incorrecte détectée dans votre algorithme.");
@@ -285,7 +282,7 @@ function buildErrorPointsAndHint(errorType, source, cases, declaredVars, lessonC
          errorPoints.push(`Utilisation incorrecte détectée (Ligne ${firstError.line}):`);
          errorPoints.push(firstError.message);
       } else {
-         errorPoints.push("Une variable, matrice ou élément algorithmique a été utilisé(e) sans respecter ses contraintes.");
+         errorPoints.push("Une variable, matrice ou élément algorithmique a été utilis?(e) sans respecter ses contraintes.");
       }
       hint = "Lisez attentivement l'erreur affichée ci-dessus. Cela indique par exemple un oubli d'indices pour un tableau.";
       break;
@@ -305,7 +302,7 @@ function buildErrorPointsAndHint(errorType, source, cases, declaredVars, lessonC
         hint = "Vérifie la formule de calcul : assure-toi que les bons opérateurs (+, -, *, /) sont utilisés et dans le bon ordre.";
       }
 
-      // Ajout d'une explication chiffrée pour le premier cas échoué
+      // Ajout d'une explication chiffrée pour le premier cas ?chou?
       const firstFail = failedCases[0];
       if (firstFail) {
         const exp = parseFloat(String(firstFail.expected).replace(',', '.'));
@@ -314,7 +311,7 @@ function buildErrorPointsAndHint(errorType, source, cases, declaredVars, lessonC
           if (got < exp) {
             errorPoints.push(`Le résultat obtenu (${got}) est trop faible (attendu : ${exp}).`);
           } else {
-            errorPoints.push(`Le résultat obtenu (${got}) est trop élevé (attendu : ${exp}).`);
+            errorPoints.push(`Le résultat obtenu (${got}) est trop ?lev? (attendu : ${exp}).`);
           }
         }
       }
@@ -333,13 +330,13 @@ function buildErrorPointsAndHint(errorType, source, cases, declaredVars, lessonC
         const visuallySame = got.replace(/\s/g, '') === exp.replace(/\s/g, '');
         
         if (visuallySame && got !== exp) {
-          errorPoints.push(`Obtenu : "${got}" (${got.length} ch.) — Attendu : "${exp}" (${exp.length} ch.)`);
-          errorPoints.push("💡 Une différence invisible (espace insécable, tabulation ou retour à la ligne) a été détectée.");
+          errorPoints.push(`Obtenu : "${got}" (${got.length} ch.) ? Attendu : "${exp}" (${exp.length} ch.)`);
+          errorPoints.push("Astuce Une différence invisible (espace insécable, tabulation ou retour à la ligne) a été détectée.");
         } else {
-          errorPoints.push(`Obtenu : "${got}" — Attendu : "${exp}"`);
+          errorPoints.push(`Obtenu : "${got}" ? Attendu : "${exp}"`);
         }
       }
-      hint = "Vérifie le texte affiché avec ECRIRE : la phrase, les espaces, et la ponctuation doivent correspondre exactement au format demandé.";
+      hint = "Vérifie le texte affich? avec ECRIRE : la phrase, les espaces, et la ponctuation doivent correspondre exactement au format demand?.";
       break;
     }
 
@@ -368,9 +365,9 @@ function buildErrorPointsAndHint(errorType, source, cases, declaredVars, lessonC
     default: { // LOGIC_ERROR
       errorPoints.push("La logique de l'algorithme ne produit pas le résultat attendu.");
       if (description) {
-        errorPoints.push(`Rappel de l'objectif : ${description.substring(0, 120)}${description.length > 120 ? '…' : ''}`);
+        errorPoints.push(`Rappel de l'objectif : ${description.substring(0, 120)}${description.length > 120 ?'?' : ''}`);
       }
-      hint = "Relis l'énoncé attentivement et retrace l'algorithme étape par étape avec un exemple simple.";
+      hint = "Relis l'?nonc? attentivement et retrace l'algorithme étape par étape avec un exemple simple.";
       break;
     }
   }
@@ -388,19 +385,19 @@ function detectCommonMistakes(source, declaredVars, cases) {
       if (mistake.test(source, declaredVars, cases)) {
         detected.push(mistake.message);
       }
-    } catch (_) { /* ignore */ }
+    } catch { /* ignore */ }
   }
   return detected;
 }
 
-// ─── Fonction principale ─────────────────────────────────────────────────────
+// --- Fonction principale -----------------------------------------------------
 
 /**
  * Analyse les résultats d'une validation échouée et retourne un rapport pédagogique.
  *
  * @param {string} source - Le code BQL de l'utilisateur
  * @param {Array}  evaluatedCases - Tableau de { input, expected, got, passed, reason }
- * @param {Object} lessonContext - { required_keywords?, description?, title?, exercise_text? }
+ * @param {Object} lessonContext - { required_keywords?, description?, title?, exercise_text?}
  * @param {Object} astErrors - { lexicalErrors, syntaxErrors, semanticErrors, runtimeErrors } récupérés via un dryRun
  * @returns {Object} FeedbackReport
  */
@@ -409,7 +406,7 @@ export function analyzeFeedback(source, evaluatedCases, lessonContext = {}, astE
     const cases = evaluatedCases || [];
     const src   = source || '';
 
-    // ── 1. Extraction du code ────────────────────────────────────────────────
+    // -- 1. Extraction du code ------------------------------------------------
     let declaredVars = [];
     try {
       declaredVars = extractDeclaredVars(src);
@@ -417,7 +414,7 @@ export function analyzeFeedback(source, evaluatedCases, lessonContext = {}, astE
       console.error("[Validator] Error in extractDeclaredVars:", e);
     }
 
-    // ── 2. Détection du type d'erreur ────────────────────────────────────────
+    // -- 2. Détection du type d'erreur ----------------------------------------
     
     // Check if there's a strict interpreter crash
     const hasInterpreterCrash = cases.some(c => c._interpreter_crash === true);
@@ -446,7 +443,7 @@ export function analyzeFeedback(source, evaluatedCases, lessonContext = {}, astE
       errorType = ERROR_TYPES.RUNTIME_ERROR;
     } else if (hasMissingElements) {
       errorType = ERROR_TYPES.MISSING_ELEMENT;
-    } else if (detectCalcError(src, cases, declaredVars)) {
+    } else if (detectCalcError(src, cases)) {
       errorType = ERROR_TYPES.CALC_ERROR;
     } else if (detectOutputFormatError(cases)) {
       errorType = ERROR_TYPES.OUTPUT_FORMAT;
@@ -455,7 +452,7 @@ export function analyzeFeedback(source, evaluatedCases, lessonContext = {}, astE
     if (errorType === ERROR_TYPES.INTERPRETER_INTERNAL_ERROR) {
       return {
         title: "Validation impossible",
-        subtitle: "L'interpréteur a rencontré une erreur interne grave lors de l'exécution de votre code.",
+        subtitle: "L'interprêteur a rencontré une erreur interne grave lors de l'exécution de votre code.",
         errorType,
         closeness: 0,
         correctPoints: ["Le code a été soumis au système."],
@@ -467,13 +464,13 @@ export function analyzeFeedback(source, evaluatedCases, lessonContext = {}, astE
       };
     }
 
-    // ── 3. Construction du rapport ───────────────────────────────────────────
+    // -- 3. Construction du rapport -------------------------------------------
     const correctPoints = buildCorrectPoints(src, declaredVars, lessonContext);
     const { errorPoints, hint } = buildErrorPointsAndHint(errorType, src, cases, declaredVars, lessonContext, astErrors);
     const commonMistakes = detectCommonMistakes(src, declaredVars, cases);
     const closeness = computeCloseness(cases);
 
-    // ── 4. Titre adapté ──────────────────────────────────────────────────────
+    // -- 4. Titre adapt? ------------------------------------------------------
     let title = "Presque !";
     if (errorType === ERROR_TYPES.SYNTAX_ERROR) title = "Erreur de syntaxe";
     else if (errorType === ERROR_TYPES.SEMANTIC_ERROR) title = "Erreur sémantique";
@@ -482,7 +479,7 @@ export function analyzeFeedback(source, evaluatedCases, lessonContext = {}, astE
     else if (errorType === ERROR_TYPES.RUNTIME_ERROR) title = "Une erreur s'est produite";
     else if (errorType === ERROR_TYPES.MISSING_ELEMENT) title = "Il manque quelque chose";
 
-    // ── 5. Sous-titre adapté ─────────────────────────────────────────────────
+    // -- 5. Sous-titre adapt? -------------------------------------------------
     const subtitleMap = {
       [ERROR_TYPES.SYNTAX_ERROR]:    "Le compilateur n'arrive pas à comprendre le code car sa syntaxe / structure est invalide.",
       [ERROR_TYPES.SEMANTIC_ERROR]:  "Le code contient une utilisation invalide de variables, de tableaux ou de fonctions BQL.",
@@ -501,8 +498,8 @@ export function analyzeFeedback(source, evaluatedCases, lessonContext = {}, astE
       subtitle,
       errorType,
       closeness,
-      correctPoints:  correctPoints.length > 0 ? correctPoints : ["L'algorithme a bien été soumis."],
-      errorPoints:    errorPoints.length > 0   ? errorPoints   : ["Le résultat obtenu ne correspond pas à ce qui est attendu."],
+      correctPoints:  correctPoints.length > 0 ?correctPoints : ["L'algorithme a bien été soumis."],
+      errorPoints:    errorPoints.length > 0   ?errorPoints   : ["Le résultat obtenu ne correspond pas à ce qui est attendu."],
       hint,
       commonMistakes,
       failedCases,
@@ -532,3 +529,4 @@ export function analyzeFeedback(source, evaluatedCases, lessonContext = {}, astE
     };
   }
 }
+

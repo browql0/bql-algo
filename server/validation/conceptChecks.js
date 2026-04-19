@@ -36,10 +36,10 @@ export function analyzeAst(ast) {
     inputCount: 0,
     outputCount: 0,
     assignmentCount: 0,
-    constantCount: Array.isArray(ast?.constants) ? ast.constants.length : 0,
+    constantCount: Array.isArray(ast?.constants) ?ast.constants.length : 0,
     inputTargets: [],
     outputArgs: [],
-    constants: Array.isArray(ast?.constants) ? ast.constants.map((item) => item.name) : [],
+    constants: Array.isArray(ast?.constants) ?ast.constants.map((item) => item.name) : [],
     identifiers: new Set(),
     numericLiterals: [],
   };
@@ -116,7 +116,7 @@ function checkRequiredConcept(concept, context) {
 function checkForbiddenPattern(pattern, source) {
   const matched =
     pattern.type === "keyword"
-      ? hasKeyword(source, pattern.value)
+      ?hasKeyword(source, pattern.value)
       : regexMatches(source, pattern.value || pattern.pattern);
 
   return {

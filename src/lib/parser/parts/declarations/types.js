@@ -1,4 +1,4 @@
-import TokenType from '../../../lexer/tokenTypes.js';
+﻿import TokenType from '../../../lexer/tokenTypes.js';
 import {
   ProgramNode, BlockNode, VarDeclNode, ArrayDeclNode, ConstDeclNode,
   NumberNode, StringNode, CharNode, BooleanNode, IdentifierNode,
@@ -40,7 +40,7 @@ const typeDeclarationMethods = {
       ));
     }
     
-    // Spec BQL : aucun ';' ne doit apparaître immédiatement après ENREGISTREMENT.
+    // Spec BQL : aucun ';' ne doit apparaêtre immédiatement après ENREGISTREMENT.
     if (this._check(TokenType.SEMICOLON)) {
       this._addError(this._makeError(
         'Point-virgule interdit juste après ENREGISTREMENT',
@@ -123,3 +123,4 @@ const typeDeclarationMethods = {
 };
 
 export default typeDeclarationMethods;
+

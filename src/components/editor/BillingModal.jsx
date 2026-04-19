@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { X, CreditCard, Zap, CheckCircle2, Star, Download, Clock, Receipt, Check } from 'lucide-react';
 import './BillingModal.css';
 
@@ -23,10 +23,10 @@ const BillingModal = ({ isOpen, onClose }) => {
 
         <div className="billing-tabs-nav-container">
           <div className="billing-tabs-nav">
-            <button className={`billing-tab-btn ${activeTab === 'offres' ? 'active' : ''}`} onClick={() => setActiveTab('offres')}>
+            <button className={`billing-tab-btn ${activeTab === 'offres' ?'active' : ''}`} onClick={() => setActiveTab('offres')}>
               <Star size={16}/> Offres
             </button>
-            <button className={`billing-tab-btn ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>
+            <button className={`billing-tab-btn ${activeTab === 'history' ?'active' : ''}`} onClick={() => setActiveTab('history')}>
               <Receipt size={16}/> Historique
             </button>
           </div>
@@ -34,7 +34,7 @@ const BillingModal = ({ isOpen, onClose }) => {
         
         <div className="modal-body billing-body">
           
-          {activeTab === 'offres' ? (
+          {activeTab === 'offres' ?(
             <div className="pricing-grid">
               
               {/* PLAN GRATUIT */}
@@ -62,7 +62,7 @@ const BillingModal = ({ isOpen, onClose }) => {
                 
                 <div className="plan-header">
                   <div className="pro-badge"><Star size={12}/> RECOMMANDÉ</div>
-                  <span className="plan-label pro-label">Plan Avancé</span>
+                  <span className="plan-label pro-label">Plan Avanc?</span>
                   <h4>BQL Pro</h4>
                   <div className="price">9€<span>/mois</span></div>
                   <p className="plan-desc">Débloquez 100% de la plateforme, pour devenir un expert compétitif.</p>
@@ -90,7 +90,7 @@ const BillingModal = ({ isOpen, onClose }) => {
                 <div className="pm-info">
                   <CreditCard size={24} className="pm-icon" />
                   <div>
-                    <h5>Carte se terminant par •••• 4242</h5>
+                    <h5>Carte se terminant par ∅? 4242</h5>
                     <p>Expire le 12/28</p>
                   </div>
                 </div>
@@ -113,28 +113,28 @@ const BillingModal = ({ isOpen, onClose }) => {
                       <td>12 Mars 2026</td>
                       <td>BQL Pro - 1 Mois</td>
                       <td className="amount">9,00 €</td>
-                      <td><span className="status-badge paid">Payé</span></td>
+                      <td><span className="status-badge paid">Pay?</span></td>
                       <td><button className="download-invoice-btn" title="Télécharger PDF"><Download size={16}/></button></td>
                     </tr>
                     <tr>
                       <td>12 Fév. 2026</td>
                       <td>BQL Pro - 1 Mois</td>
                       <td className="amount">9,00 €</td>
-                      <td><span className="status-badge paid">Payé</span></td>
+                      <td><span className="status-badge paid">Pay?</span></td>
                       <td><button className="download-invoice-btn" title="Télécharger PDF"><Download size={16}/></button></td>
                     </tr>
                     <tr>
                       <td>12 Jan. 2026</td>
                       <td>BQL Pro - 1 Mois</td>
                       <td className="amount">9,00 €</td>
-                      <td><span className="status-badge paid">Payé</span></td>
+                      <td><span className="status-badge paid">Pay?</span></td>
                       <td><button className="download-invoice-btn" title="Télécharger PDF"><Download size={16}/></button></td>
                     </tr>
                   </tbody>
                 </table>
               </div>
               <div className="history-footer">
-                <Clock size={16} className="clock-icon" /> Prochain paiement estimé au 12 Avril 2026
+                <Clock size={16} className="clock-icon" /> Prochain paiement estim? au 12 Avril 2026
               </div>
             </div>
           )}
@@ -146,3 +146,4 @@ const BillingModal = ({ isOpen, onClose }) => {
 };
 
 export default BillingModal;
+

@@ -1,11 +1,11 @@
-/**
+﻿/**
  * BaseError.js
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  * Classe d'erreur de base pour le pseudo-langage algorithmique marocain.
  *
  * Toutes les erreurs du système héritent de cette classe.
  * Elle centralise les métadonnées nécessaires à un affichage pédagogique.
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  */
 
 class BaseError extends Error {
@@ -15,7 +15,7 @@ class BaseError extends Error {
    * @param {string}      params.message  - Message principal (court et clair)
    * @param {number}      [params.line]   - Numéro de ligne dans le code source
    * @param {number}      [params.column] - Numéro de colonne
-   * @param {string}      [params.value]  - Valeur / token ayant causé l'erreur
+   * @param {string}      [params.value]  - Valeur / token ayant caus? l'erreur
    * @param {string}      [params.hint]   - Suggestion ou correction possible
    * @param {string}      [params.codeLine] - La ligne complète du code source
    */
@@ -36,7 +36,7 @@ class BaseError extends Error {
    * @returns {string}
    */
   toString() {
-    return `[${this.name}:${this.type}] L${this.line}:C${this.column} — ${this.message}`;
+    return `[${this.name}:${this.type}] L${this.line}:C${this.column} ? ${this.message}`;
   }
 
   /**
@@ -58,3 +58,4 @@ class BaseError extends Error {
 }
 
 export default BaseError;
+

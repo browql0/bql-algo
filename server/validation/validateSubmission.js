@@ -12,15 +12,15 @@ function publicConstraints(constraints) {
       passed: check.passed,
       actual: check.actual,
       expected: check.expected,
-      message: check.passed ? null : check.message,
-      hint: check.passed ? null : check.hint,
+      message: check.passed ?null : check.message,
+      hint: check.passed ?null : check.hint,
     })),
     forbidden: constraints.forbidden.map((check) => ({
       id: check.id,
       label: check.label,
       passed: check.passed,
-      message: check.passed ? null : check.message,
-      hint: check.passed ? null : check.hint,
+      message: check.passed ?null : check.message,
+      hint: check.passed ?null : check.hint,
     })),
   };
 }
@@ -31,7 +31,7 @@ function messageFromResult(strictResult, diagnosis) {
   }
 
   const primary = diagnosis.diagnostics[0];
-  return primary?.message || strictResult.message || "Validation echouee.";
+  return primary?.message || strictResult.message || "Validation échouée.";
 }
 
 export async function validateSubmission({
@@ -56,7 +56,7 @@ export async function validateSubmission({
     passed: strictResult.passed,
     total: strictResult.total,
     message: messageFromResult(strictResult, diagnosis),
-    errorCode: strictResult.success ? null : strictResult.errorCode,
+    errorCode: strictResult.success ?null : strictResult.errorCode,
     validationMode: exercise.validationMode,
     exerciseId: exercise.id,
     cases: strictResult.publicCases,
@@ -65,9 +65,9 @@ export async function validateSubmission({
     feedbackReport: diagnosis.feedbackReport,
     httpStatus:
       strictResult.errorCode === "TESTS_MISSING"
-        ? 500
+        ?500
         : strictResult.success
-          ? 200
+          ?200
           : 400,
   };
 }

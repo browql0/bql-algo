@@ -1,4 +1,4 @@
-import AlgoRuntimeError from '../../errors/RuntimeError.js';
+﻿import AlgoRuntimeError from '../../errors/RuntimeError.js';
 import { NodeType } from '../../parser/AST/nodes.js';
 
 const executionMethods = {
@@ -15,7 +15,7 @@ const executionMethods = {
     if (this._onStep) this._onStep(node.line);
     if (this._onSnapshot) this._onSnapshot(this.env.getAllVariables());
     
-    // Pause Pas-à-pas (Lot 3)
+    // Pause Pas-à -pas (Lot 3)
     if (this._waitStepFn) {
       await this._waitStepFn();
     }
@@ -35,7 +35,7 @@ const executionMethods = {
       default:
         throw new AlgoRuntimeError({
           message: `Instruction inconnue : '${node.type}'`,
-          hint: 'Ce type de nœud n\'est pas pris en charge par l\'interpréteur.',
+          hint: 'Ce type de nœud n\'est pas pris en charge par l\'interprêteur.',
           line: node.line,
         });
     }
@@ -43,3 +43,4 @@ const executionMethods = {
 };
 
 export default executionMethods;
+

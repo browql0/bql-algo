@@ -1,15 +1,15 @@
-/**
+﻿/**
  * executeCode.js
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  * Pipeline complet d'exécution du pseudo-langage algorithmique marocain.
  *
  * Stratégie NON-BLOQUANTE (comportement de compilateur réel) :
  *
  *   sourceCode
- *     → Lexer              → lexicalErrors[]
- *     → Parser             → syntaxErrors[]  + ast (partiel si erreurs)
- *     → SemanticAnalyzer   → semanticErrors[] (si ast existe, même partiel)
- *     → Interpreter        → runtimeErrors[]  (SEULEMENT si 0 erreur bloquante)
+ *     → Lexer              ? lexicalErrors[]
+ *     ? Parser             ? syntaxErrors[]  + ast (partiel si erreurs)
+ *     ? SemanticAnalyzer   ? semanticErrors[] (si ast existe, même partiel)
+ *     ? Interpreter        ? runtimeErrors[]  (SEULEMENT si 0 erreur bloquante)
  *
  * Tous les types d'erreurs sont collectés en un seul passage.
  * Aucun return prématuré ne bloque les étapes suivantes.
@@ -35,7 +35,7 @@
  *   // Version texte formatée (pour terminal ou logs)
  *   formattedErrors: string,
  * }
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  */
 
 import Lexer            from './lexer/Lexer.js';
@@ -45,9 +45,9 @@ import Interpreter      from './interpreter/Interpreter.js';
 import BaseError        from './errors/BaseError.js';
 import { formatErrors, formatErrorReact } from './errors/formatError.js';
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // API publique
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 /**
  * Exécute du code source BQL et retourne un résultat complet et structuré.
@@ -66,7 +66,7 @@ export async function executeCode(
   { inputs = [], output = null, input = null, maxSteps = 100_000, onArrayUpdate = null, terminalSpeed = 'instant', onStep = null, onSnapshot = null, waitStep = null } = {}
 ) {
 
-  // ── Collecte par catégorie ─────────────────────────────────────────────────
+  // -- Collecte par catégorie -------------------------------------------------
   let tokens         = [];
   let ast            = null;
   let symbols        = new Map();
@@ -78,13 +78,13 @@ export async function executeCode(
   let semanticErrors = [];
   let runtimeErrors  = [];
 
-  // ── Étape 1 : Analyse lexicale ────────────────────────────────────────────
+  // -- Étape 1 : Analyse lexicale --------------------------------------------
   // Toujours exécutée. Les erreurs lexicales sont collectées mais
   // n'empêchent PAS de tenter les étapes suivantes si des tokens valides existent.
   try {
     const lexer  = new Lexer(sourceCode);
     const result = lexer.tokenize();
-    tokens       = result.tokens  ?? [];
+    tokens       = result.tokens ?? [];
     lexicalErrors = (result.errors ?? []).map(e => _normalizeError(e, 'lexical'));
   } catch (err) {
     lexicalErrors = [_wrapUnexpected(err, 'lexical')];
@@ -96,7 +96,7 @@ export async function executeCode(
     });
   }
 
-  // Arrêt anticipé uniquement si le lexer n'a pas produit le moindre token utilisable
+  // Arrêt anticip? uniquement si le lexer n'a pas produit le moindre token utilisable
   if (tokens.length === 0) {
     return _buildResult({
       tokens, ast, symbols, output: outLines, memory,
@@ -105,7 +105,7 @@ export async function executeCode(
     });
   }
 
-  // ── Étape 2 : Analyse syntaxique ──────────────────────────────────────────
+  // -- Étape 2 : Analyse syntaxique ------------------------------------------
   // Toujours exécutée (même s'il y a des erreurs lexicales non fatales).
   // Le parser retourne { ast, errors } sans jamais lever d'exception.
   try {
@@ -118,21 +118,20 @@ export async function executeCode(
     syntaxErrors = [_wrapUnexpected(err, 'syntax')];
   }
 
-  // ── Étape 3 : Analyse sémantique ─────────────────────────────────────────
+  // -- Étape 3 : Analyse sémantique -----------------------------------------
   // Exécutée si un AST (même partiel) est disponible.
   // Les erreurs syntaxiques ne bloquent plus l'analyse sémantique.
   if (ast) {
     try {
       const analyzer = new SemanticAnalyzer(sourceCode);
       const result   = analyzer.analyze(ast);
-      semanticErrors = (result.errors  ?? []).map(e => _normalizeError(e, 'semantic'));
       symbols        = result.symbols   ?? new Map();
     } catch (err) {
       semanticErrors = [_wrapUnexpected(err, 'semantic')];
     }
   }
 
-  // ── Étape 4 : Interprétation (async) ─────────────────────────────────────
+  // -- Étape 4 : Interprêtation (async) -------------------------------------
   // Exécutée SEULEMENT si aucune erreur bloquante dans les étapes précédentes.
   // Erreurs bloquantes = toute erreur lex, syntax ou semantic.
   const blockingErrors = [
@@ -145,8 +144,8 @@ export async function executeCode(
     try {
       const interpreter = new Interpreter({
         inputs,
-        output,   // callback streaming pour ECRIRE (→ terminal React temps réel)
-        input,    // callback async pour LIRE (→ attend saisie utilisateur)
+        output,   // callback streaming pour ECRIRE (? terminal React temps réel)
+        input,    // callback async pour LIRE (? attend saisie utilisateur)
         onArrayUpdate, // callback d'animation tableau
         maxSteps,
         terminalSpeed,
@@ -161,7 +160,7 @@ export async function executeCode(
         memory[name] = { type: entry.type, value: entry.value };
       }
     } catch (err) {
-      runtimeErrors = [err instanceof BaseError ? err : _wrapUnexpected(err, 'runtime')];
+      runtimeErrors = [err instanceof BaseError ?err : _wrapUnexpected(err, 'runtime')];
     }
   }
 
@@ -173,9 +172,9 @@ export async function executeCode(
 }
 
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // Helpers publics
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 /**
  * Convertit un tableau d'erreurs brutes en objets structurés React.
@@ -190,12 +189,12 @@ export function getStructuredErrors(errors, sourceCode, options = {}) {
   return errors.map(err => formatErrorReact(err, sourceCode, options));
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // Helpers privés
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 /**
- * Construit l'objet de résultat final standardisé.
+ * Construit l'objet de résultat final standardis?.
  * Fusionne, déduplique et trie toutes les erreurs par ligne puis colonne.
  */
 function _buildResult({
@@ -285,3 +284,4 @@ function _wrapUnexpected(err, type) {
 }
 
 export default executeCode;
+

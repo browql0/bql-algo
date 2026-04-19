@@ -1,9 +1,9 @@
-/**
+﻿/**
  * useAutocomplete.js
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  * Custom Hook React qui gère tout l'état de l'auto-complétion :
  * l'affichage du menu, la liste filtrée, l'index de navigation, etc.
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  */
 
 import { useState, useCallback } from 'react';
@@ -67,7 +67,7 @@ export function useAutocomplete(code, onChange, textareaRef) {
     const lastNewline = textBeforeWord.lastIndexOf('\n');
     const currentLine = textBeforeWord.substring(lastNewline + 1);
     const indentMatch = currentLine.match(/^\s*/);
-    const currentIndent = indentMatch ? indentMatch[0] : '';
+    const currentIndent = indentMatch ?indentMatch[0] : '';
 
     let textToInsert = suggestion.insertText;
     const originalLength = textToInsert.length;
@@ -88,15 +88,13 @@ export function useAutocomplete(code, onChange, textareaRef) {
     setIsOpen(false);
 
     setTimeout(() => {
-      let offset = typeof suggestion.cursorOffset === 'number' ? suggestion.cursorOffset : 0;
+      let offset = typeof suggestion.cursorOffset === 'number' ?suggestion.cursorOffset : 0;
       
       // Si on a ajouté de l'indentation APRÈS la position cible du curseur, 
-      // le décalage négatif par rapport à la fin (cursorOffset) doit être ajusté 
+      // le décalage négatif par rapport à la fin (cursorOffset) doit être ajust? 
       // pour rester fixe par rapport au début.
-      const addedChars = textToInsert.length - originalLength;
       
       // La plupart des snippets ont le curseur sur la première ligne.
-      // Dans ce cas, 'addedChars' ne doit pas impacter la position.
       // On recalcule une position absolue par rapport au début de l'insertion.
       const originalTargetFromStart = originalLength + offset; 
       const newPos = currentWordState.start + originalTargetFromStart;
@@ -148,3 +146,4 @@ export function useAutocomplete(code, onChange, textareaRef) {
     setSelectedIndex
   };
 }
+

@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { isE2EMode } from "../e2eFixtures";
 
 const SUBMISSION_ENDPOINT =
   import.meta.env.VITE_SUBMISSION_API_URL || "/api/submit";
@@ -15,10 +16,12 @@ function normalizeResult(result, httpStatus = 0) {
     details: result?.details || null,
     validationMode: result?.validationMode || null,
     exerciseId: result?.exerciseId || null,
-    cases: Array.isArray(result?.cases) ? result.cases : [],
+    cases: Array.isArray(result?.cases) ?result.cases : [],
     constraints: result?.constraints || null,
-    diagnostics: Array.isArray(result?.diagnostics) ? result.diagnostics : [],
+    diagnostics: Array.isArray(result?.diagnostics) ?result.diagnostics : [],
     feedbackReport: result?.feedbackReport || null,
+    xpAwarded: Number(result?.xpAwarded || 0),
+    progress: result?.progress || null,
     httpStatus,
   };
 }
@@ -38,6 +41,39 @@ function nonJsonMessage(status, contentType, bodyText) {
 }
 
 export async function submitLessonSolution({ lessonId, code }) {
+  if (isE2EMode) {
+    const success = lessonId === "lesson-foundations-challenge-e2e"
+      && /ECRIRE\s*\(\s*"BQL est genial"\s*\)/i.test(code || "");
+
+    return normalizeResult({
+      success,
+      passed: success ?1 : 0,
+      total: 1,
+      message: success
+        ? "Solution valide. Elle est acceptée par le validateur de test."
+        : "Le programme s'exécute, mais la sortie attendue n'est pas encore correcte.",
+      validationMode: "result_only",
+      exerciseId: "e2e_affichage_simple",
+      cases: [{
+        name: "Test E2E",
+        passed: success,
+        input: "",
+        expected: "BQL est genial",
+        actual: success ? "BQL est genial" : "",
+      }],
+      diagnostics: success ? [] : [{
+        type: "output",
+        title: "Sortie incorrecte",
+        message: "Affiche exactement BQL est genial.",
+      }],
+      feedbackReport: {
+        progress: success ? ["Syntaxe correcte", "Programme exécuté", "1/1 test validé"] : ["Syntaxe correcte", "Programme exécuté"],
+        remainingIssue: success ? null : "La sortie affichée ne correspond pas au texte attendu.",
+        nextAction: success ? "Tu peux passer à la suite." : "Vérifie le texte dans ECRIRE.",
+      },
+    }, 200);
+  }
+
   const {
     data: { session },
   } = await supabase.auth.getSession();

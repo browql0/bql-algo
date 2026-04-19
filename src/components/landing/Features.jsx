@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { TerminalSquare, FolderTree, MoonStar, Keyboard, GraduationCap, Save } from 'lucide-react';
 import './Features.css';
 
@@ -7,7 +7,7 @@ const Features = () => {
     {
       icon: <TerminalSquare size={22} className="feat-icon" />,
       title: 'Console Interactive',
-      description: 'Une véritable expérience CLI intégrée. Visualisez vos sorties, gérez les erreurs et déboguez votre logique en temps réel lors de l\'exécution.'
+      description: 'Une véritable expérience CLI intégrée. Visualisez vos sorties, gèrez les erreurs et déboguez votre logique en temps réel lors de l\'exécution.'
     },
     {
       icon: <FolderTree size={22} className="feat-icon" />,
@@ -17,11 +17,11 @@ const Features = () => {
     {
       icon: <MoonStar size={22} className="feat-icon" />,
       title: 'Mode Sombre Natif',
-      description: 'Conçu avec une approche « Dark Mode First ». Reposez vos yeux lors de vos longues sessions de codage tardives grâce à un contraste optimisé.'
+      description: 'Conçu avec une approche " Dark Mode First ". Reposez vos yeux lors de vos longues sessions de codage tardives grâce à un contraste optimisé.'
     },
     {
       icon: <Keyboard size={22} className="feat-icon" />,
-      title: 'Raccourcis Productivité',
+      title: 'Raccourcis Productivit?',
       description: 'Naviguez, exécutez et formatez sans quitter votre clavier. La plateforme respecte les standards des IDE modernes (VS Code, IntelliJ).'
     },
     {
@@ -64,3 +64,4 @@ const Features = () => {
 };
 
 export default Features;
+

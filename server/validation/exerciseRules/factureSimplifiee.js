@@ -114,7 +114,7 @@ export function buildFactureSimplifieeExercise({ lesson, rules = {} } = {}) {
     title: lesson?.title || "Defi Final : Facture Simplifiee",
     goal:
       "Lire un prix hors taxes et une quantite, calculer le total TTC avec 20% de TVA, puis afficher uniquement le montant total.",
-    validationMode: requiresConstant ? "result_plus_constraints" : "result_only",
+    validationMode: requiresConstant ?"result_plus_constraints" : "result_only",
     inputs: [
       {
         name: "prixHT",

@@ -139,7 +139,7 @@ export const globalSuggestions = [
     label: kw,
     detail: 'Mot-clé',
     type: 'keyword',
-    insertText: kw + (['VARIABLES', 'DEBUT', 'FIN'].includes(kw) ? '' : ' ')
+    insertText: kw + (['VARIABLES', 'DEBUT', 'FIN'].includes(kw) ?'' : ' ')
   })),
   // ECRIRE : suggestion mot-clé simple
   {

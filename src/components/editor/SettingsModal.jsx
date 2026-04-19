@@ -1,11 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import { 
   X, Type, AlignLeft, Wand2, Layout, AlertTriangle, 
   Terminal, Palette, Folder, RotateCcw, Check, ChevronDown, Sliders
 } from 'lucide-react';
 import './SettingsModal.css';
 
-// ── Composants d'UI génériques ──────────────────────────────────────────────
+// -- Composants d'UI génériques ----------------------------------------------
 
 const CustomSelect = ({ value, options, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,16 +23,16 @@ const CustomSelect = ({ value, options, onChange }) => {
 
   return (
     <div className="custom-select-container" ref={dropdownRef}>
-      <div className={`custom-select-trigger ${isOpen ? 'open' : ''}`} onClick={() => setIsOpen(!isOpen)}>
+      <div className={`custom-select-trigger ${isOpen ?'open' : ''}`} onClick={() => setIsOpen(!isOpen)}>
         <span>{selectedOpt.label}</span>
-        <ChevronDown size={14} className={`select-icon ${isOpen ? 'rotated' : ''}`} />
+        <ChevronDown size={14} className={`select-icon ${isOpen ?'rotated' : ''}`} />
       </div>
       {isOpen && (
         <div className="custom-select-menu">
           {options.map(opt => (
             <div 
               key={opt.value} 
-              className={`custom-select-option ${value === opt.value ? 'selected' : ''}`}
+              className={`custom-select-option ${value === opt.value ?'selected' : ''}`}
               onClick={() => { onChange(opt.value); setIsOpen(false); }}
             >
               {opt.label}
@@ -68,7 +68,7 @@ const RangeSlider = ({ value, min, max, step, onChange, unit = "" }) => (
   </div>
 );
 
-// ── Configuration des Onglets ────────────────────────────────────────────────
+// -- Configuration des Onglets ------------------------------------------------
 
 const TABS = [
   { id: 'typography', label: 'Typographie', icon: Type },
@@ -105,6 +105,8 @@ const SettingsModal = ({ isOpen, onClose, settings, onSave, defaultSettings }) =
          syncedSettings.show1DVisualizer = syncedSettings.showArrayVisualizer;
       }
       
+      // This modal keeps an editable draft that is refreshed only when opened.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocalSettings(syncedSettings);
     }
   }, [isOpen, settings]);
@@ -195,7 +197,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSave, defaultSettings }) =
             <div className="setting-row">
               <div className="setting-info">
                 <label>Zoom global de l'éditeur</label>
-                <span className="setting-desc">Ajuste l'échelle d'affichage globale.</span>
+                <span className="setting-desc">Ajuste l'?chelle d'affichage globale.</span>
               </div>
               <RangeSlider value={localSettings.editorZoom} min={80} max={150} step={10} unit="%" onChange={(v) => update('editorZoom', v)} />
             </div>
@@ -343,7 +345,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSave, defaultSettings }) =
 
             <div className="setting-row">
               <div className="setting-info">
-                <label>Mode pas-à-pas (Debug manuel)</label>
+                <label>Mode pas-à -pas (Debug manuel)</label>
                 <span className="setting-desc">Met le programme en pause à chaque instruction.</span>
               </div>
               <ToggleSwitch checked={localSettings.stepByStepExecution} onChange={(v) => update('stepByStepExecution', v)} />
@@ -399,7 +401,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSave, defaultSettings }) =
                 options={[
                   { value: 'simple', label: 'Simple (Uniquement le nom de l\'erreur)' },
                   { value: 'normal', label: 'Normal (Détails et Astuce)' },
-                  { value: 'detailed', label: 'Détail Complet (Mémoire interne etc)' }
+                  { value: 'detailed', label: 'Détail complet (Mémoire interne etc)' }
                 ]} 
               />
             </div>
@@ -437,7 +439,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSave, defaultSettings }) =
                 onChange={(v) => update('terminalTheme', v)}
                 options={[
                   { value: 'hacker', label: 'Hacker (Vert néon)' },
-                  { value: 'ocean', label: 'Océan (Bleu clair)' },
+                  { value: 'ocean', label: 'Ocçan (Bleu clair)' },
                   { value: 'ubuntu', label: 'Ubuntu (Violet/Blanc)' },
                   { value: 'minimal', label: 'Minimaliste (Blanc & Gris)' }
                 ]} 
@@ -485,7 +487,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSave, defaultSettings }) =
                 value={localSettings.terminalSpeed} 
                 onChange={(v) => update('terminalSpeed', v)}
                 options={[
-                  { value: 'instant', label: 'Instantané' },
+                  { value: 'instant', label: 'Instantan?' },
                   { value: 'normal', label: 'Lisible (Standard)' },
                   { value: 'slow', label: 'Lente (Cinématique)' }
                 ]} 
@@ -510,7 +512,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSave, defaultSettings }) =
                 options={[
                   { value: 'dark', label: 'Mode Sombre Automatique' },
                   { value: 'light', label: 'Mode Clair' },
-                  { value: 'auto', label: 'Calqué sur le système (OS)' }
+                  { value: 'auto', label: 'Calqu? sur le système (OS)' }
                 ]} 
               />
             </div>
@@ -542,7 +544,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSave, defaultSettings }) =
 
             <div className="setting-row">
               <div className="setting-info">
-                <label>Densité d'interface</label>
+                <label>Densit? d'interface</label>
                 <span className="setting-desc">Gère les marges entres les blocs pour exploiter de gros écrans ou du mobile.</span>
               </div>
               <CustomSelect 
@@ -580,7 +582,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSave, defaultSettings }) =
 
              <div className="setting-row">
               <div className="setting-info">
-                <label>Confirmation avant réinitilisation complète</label>
+                <label>Confirmation avant réinitialisation complète</label>
                 <span className="setting-desc">Prévient les effacements non voulus du code au clic sur 'Fichier &gt; Nouveau'.</span>
               </div>
               <ToggleSwitch checked={localSettings.confirmBeforeReset} onChange={(v) => update('confirmBeforeReset', v)} />
@@ -608,7 +610,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSave, defaultSettings }) =
                 return (
                   <button 
                     key={tab.id}
-                    className={`settings-tab ${activeTab === tab.id ? 'active' : ''}`}
+                    className={`settings-tab ${activeTab === tab.id ?'active' : ''}`}
                     onClick={() => setActiveTab(tab.id)}
                   >
                     <Icon size={16} className="tab-icon" />
@@ -621,9 +623,9 @@ const SettingsModal = ({ isOpen, onClose, settings, onSave, defaultSettings }) =
         )}
 
         {/* Content Area */}
-        <div className={`settings-content-wrapper ${isMobile ? 'mobile-wrapper' : ''}`}>
+        <div className={`settings-content-wrapper ${isMobile ?'mobile-wrapper' : ''}`}>
           <div className="settings-content-header">
-            {isMobile ? (
+            {isMobile ?(
               <h3 style={{ margin: 0, fontSize: '1.2rem' }}>Paramètres</h3>
             ) : (
               <div className="settings-breadcrumb">
@@ -633,22 +635,22 @@ const SettingsModal = ({ isOpen, onClose, settings, onSave, defaultSettings }) =
             <button className="close-btn" onClick={onClose}><X size={20} /></button>
           </div>
 
-          <div className={`settings-content-body ${isMobile ? 'mobile-accordion' : ''}`}>
-            {isMobile ? (
+          <div className={`settings-content-body ${isMobile ?'mobile-accordion' : ''}`}>
+            {isMobile ?(
               TABS.map(tab => {
                 const Icon = tab.icon;
                 const isOpen = activeTab === tab.id;
                 return (
                   <div key={tab.id} className="accordion-item">
                     <div 
-                      className={`accordion-trigger ${isOpen ? 'open' : ''}`} 
-                      onClick={() => setActiveTab(isOpen ? null : tab.id)}
+                      className={`accordion-trigger ${isOpen ?'open' : ''}`} 
+                      onClick={() => setActiveTab(isOpen ?null : tab.id)}
                     >
                       <div className="accordion-trigger-left">
                         <Icon size={18} className="tab-icon" />
                         <span>{tab.label}</span>
                       </div>
-                      <ChevronDown size={16} className={`accordion-chevron ${isOpen ? 'rotated' : ''}`} />
+                      <ChevronDown size={16} className={`accordion-chevron ${isOpen ?'rotated' : ''}`} />
                     </div>
                     {isOpen && (
                       <div className="accordion-content">
@@ -681,3 +683,4 @@ const SettingsModal = ({ isOpen, onClose, settings, onSave, defaultSettings }) =
 };
 
 export default SettingsModal;
+

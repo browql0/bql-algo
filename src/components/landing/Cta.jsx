@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { ArrowRight, TerminalSquare } from 'lucide-react';
 import './Cta.css';
 
@@ -33,3 +33,4 @@ const Cta = ({ onStart }) => {
 };
 
 export default Cta;
+

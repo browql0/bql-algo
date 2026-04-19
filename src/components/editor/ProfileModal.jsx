@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, User, Mail, Camera, Shield, Key } from 'lucide-react';
 import './ProfileModal.css';
 
-const ProfileModal = ({ isOpen, onClose, user, displayName, displayEmail, userInitials }) => {
+const ProfileModal = ({ isOpen, onClose, displayName, displayEmail, userInitials }) => {
   const [name, setName] = useState(displayName);
 
   if (!isOpen) return null;

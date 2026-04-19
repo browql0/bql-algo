@@ -43,7 +43,7 @@ export default function AutocompleteMenu({
           return (
             <li
               key={`${sug.type}-${sug.label}-${i}`}
-              className={`ac-item ${isActive ? 'ac-item--active' : ''}`}
+              className={`ac-item ${isActive ?'ac-item--active' : ''}`}
               onMouseEnter={() => setSelectedIndex(i)}
               onClick={() => onSelect(sug)}
             >

@@ -34,12 +34,16 @@ const ioExecutionMethods = {
       varNameForUI = targetNode.name;
       try { 
         typeForUI = this.env.getEntry(targetNode.name, targetNode.line).type; 
-      } catch (e) {}
+      } catch {
+        typeForUI = 'inconnu';
+      }
     } else if (targetNode.type === NodeType.ARRAY_ACCESS) {
       varNameForUI = targetNode.name + "[...]";
       try { 
         typeForUI = this.env.getEntry(targetNode.name, targetNode.line).type.replace(/\[\]/g, ''); 
-      } catch (e) {}
+      } catch {
+        typeForUI = 'inconnu';
+      }
     } else if (targetNode.type === NodeType.MEMBER_ACCESS) {
       varNameForUI = targetNode.property;
       try {
@@ -52,7 +56,9 @@ const ioExecutionMethods = {
              typeForUI = obj.__type;
            }
         }
-      } catch (e) {}
+      } catch {
+        typeForUI = 'inconnu';
+      }
     }
 
     let raw;

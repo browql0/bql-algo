@@ -1,31 +1,114 @@
-/* global process */
 import { createClient } from "@supabase/supabase-js";
 import { submitLessonSolution } from "./services/submissionService.js";
+
+const NODE_ENV = process.env.NODE_ENV || "development";
+const DEFAULT_DEV_ORIGINS = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:3000",
+];
+
+const RATE_LIMIT_WINDOW_MS = Number(process.env.SUBMISSION_RATE_WINDOW_MS || 60_000);
+const RATE_LIMIT_MAX = Number(process.env.SUBMISSION_RATE_LIMIT || 60);
+const RATE_BUCKETS = new Map();
+
+const LOG_LEVEL = process.env.SUBMISSION_LOG_LEVEL || (NODE_ENV === "production" ? "warn" : "info");
+const LOG_LEVELS = { error: 0, warn: 1, info: 2, debug: 3 };
 
 const JSON_HEADERS = {
   "Content-Type": "application/json; charset=utf-8",
 };
 
-function log(event, payload = {}) {
-  console.log(`[submitHandler] ${event}`, payload);
+function log(level, event, payload = {}) {
+  const threshold = LOG_LEVELS[LOG_LEVEL] ?? LOG_LEVELS.info;
+  const severity = LOG_LEVELS[level] ?? LOG_LEVELS.info;
+  if (severity > threshold) return;
+
+  const logger = level === "error" ? console.error : level === "warn" ? console.warn : console.log;
+  logger(`[submitHandler] ${event}`, payload);
 }
 
-function corsHeaders(origin = "") {
+function getAllowedOrigins() {
   const configured = (process.env.SUBMISSION_ALLOWED_ORIGINS || "")
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
 
-  const allowOrigin =
-    configured.length === 0 || configured.includes(origin) ? origin || "*" : configured[0];
+  if (configured.length > 0) return configured;
+  if (NODE_ENV === "production") {
+    throw new Error("SUBMISSION_ALLOWED_ORIGINS is required in production.");
+  }
+
+  return DEFAULT_DEV_ORIGINS;
+}
+
+function resolveOrigin(origin = "") {
+  const allowedOrigins = getAllowedOrigins();
+  if (!origin) {
+    return { allowed: true, allowOrigin: "" };
+  }
 
   return {
-    "Access-Control-Allow-Origin": allowOrigin,
+    allowed: allowedOrigins.includes(origin),
+    allowOrigin: origin,
+  };
+}
+
+function corsHeaders(origin = "") {
+  const { allowed, allowOrigin } = resolveOrigin(origin);
+  const headers = {
     "Access-Control-Allow-Methods": "POST,OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
   };
+
+  if (allowed && allowOrigin) {
+    headers["Access-Control-Allow-Origin"] = allowOrigin;
+  }
+
+  return { allowed, headers };
+}
+
+function extractIp(headers = {}) {
+  const forwarded = headers["x-forwarded-for"] || headers["X-Forwarded-For"];
+  if (typeof forwarded === "string" && forwarded.trim()) {
+    return forwarded.split(",")[0].trim();
+  }
+
+  const realIp = headers["x-real-ip"] || headers["X-Real-IP"];
+  if (typeof realIp === "string" && realIp.trim()) {
+    return realIp.trim();
+  }
+
+  return "unknown";
+}
+
+function pruneRateBuckets(now) {
+  for (const [key, bucket] of RATE_BUCKETS.entries()) {
+    if (bucket.resetAt <= now) {
+      RATE_BUCKETS.delete(key);
+    }
+  }
+}
+
+function checkRateLimit(key) {
+  const now = Date.now();
+  pruneRateBuckets(now);
+
+  const existing = RATE_BUCKETS.get(key);
+  if (!existing || existing.resetAt <= now) {
+    const resetAt = now + RATE_LIMIT_WINDOW_MS;
+    RATE_BUCKETS.set(key, { count: 1, resetAt });
+    return { allowed: true, remaining: RATE_LIMIT_MAX - 1, resetAt };
+  }
+
+  existing.count += 1;
+  if (existing.count > RATE_LIMIT_MAX) {
+    return { allowed: false, remaining: 0, resetAt: existing.resetAt };
+  }
+
+  return { allowed: true, remaining: RATE_LIMIT_MAX - existing.count, resetAt: existing.resetAt };
 }
 
 function json(status, body, headers = {}) {
@@ -41,9 +124,9 @@ function json(status, body, headers = {}) {
       details: body?.details || null,
       validationMode: body?.validationMode || null,
       exerciseId: body?.exerciseId || null,
-      cases: Array.isArray(body?.cases) ? body.cases : [],
+      cases: Array.isArray(body?.cases) ?body.cases : [],
       constraints: body?.constraints || null,
-      diagnostics: Array.isArray(body?.diagnostics) ? body.diagnostics : [],
+      diagnostics: Array.isArray(body?.diagnostics) ?body.diagnostics : [],
       feedbackReport: body?.feedbackReport || null,
       xpAwarded: Number(body?.xpAwarded || 0),
       progress: body?.progress || null,
@@ -56,7 +139,7 @@ function createSupabaseAdmin() {
   const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseServiceRoleKey) {
-    log("supabase config missing", {
+    log("warn", "supabase config missing", {
       hasUrl: Boolean(supabaseUrl),
       hasServiceRoleKey: Boolean(supabaseServiceRoleKey),
     });
@@ -74,13 +157,9 @@ function createSupabaseAdmin() {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    log("supabase admin client created", {
-      hasUrl: true,
-      hasServiceRoleKey: true,
-    });
     return { client };
   } catch (error) {
-    log("supabase admin client creation failed", {
+    log("error", "supabase admin client creation failed", {
       message: error?.message,
     });
     return {
@@ -96,7 +175,7 @@ function createSupabaseAdmin() {
 function extractToken(headers = {}) {
   const authorization = headers.authorization || headers.Authorization || "";
   if (typeof authorization !== "string") return null;
-  return authorization.startsWith("Bearer ") ? authorization.slice("Bearer ".length).trim() : null;
+  return authorization.startsWith("Bearer ") ?authorization.slice("Bearer ".length).trim() : null;
 }
 
 async function parseBody(body) {
@@ -113,16 +192,42 @@ async function parseBody(body) {
 
 export async function handleSubmitRequest({ method, headers = {}, body }) {
   const startedAt = Date.now();
-  const responseHeaders = corsHeaders(headers.origin || headers.Origin || "");
+  const origin = headers.origin || headers.Origin || "";
+  let responseHeaders = {};
+  let corsAllowed = false;
+
+  try {
+    const cors = corsHeaders(origin);
+    responseHeaders = cors.headers;
+    corsAllowed = cors.allowed;
+  } catch (error) {
+    log("error", "cors configuration invalid", { message: error?.message });
+    return json(
+      500,
+      {
+        success: false,
+        errorCode: "CORS_NOT_CONFIGURED",
+        message: "Configuration CORS manquante. Configurez SUBMISSION_ALLOWED_ORIGINS.",
+        details: error?.message || null,
+      },
+      responseHeaders,
+    );
+  }
   const requestMethod = String(method || "").toUpperCase();
 
   try {
-    const bodyPreview = typeof body === "object" && body !== null ? body : {};
-    log("request received", {
-      method: requestMethod,
-      lessonId: bodyPreview.lessonId || bodyPreview.challengeId || null,
-      authHeaderPresent: Boolean(headers.authorization || headers.Authorization),
-    });
+    if (!corsAllowed) {
+      log("warn", "cors origin rejected", { origin });
+      return json(
+        403,
+        {
+          success: false,
+          errorCode: "CORS_ORIGIN_DENIED",
+          message: "Origine non autorisee.",
+        },
+        responseHeaders,
+      );
+    }
 
     if (requestMethod === "OPTIONS") {
       return json(200, { success: true, message: "OK" }, responseHeaders);
@@ -140,6 +245,22 @@ export async function handleSubmitRequest({ method, headers = {}, body }) {
       );
     }
 
+    const rateKey = `ip:${extractIp(headers)}`;
+    const rateResult = checkRateLimit(rateKey);
+    if (!rateResult.allowed) {
+      const retryAfter = Math.max(1, Math.ceil((rateResult.resetAt - Date.now()) / 1000));
+      return json(
+        429,
+        {
+          success: false,
+          errorCode: "RATE_LIMITED",
+          message: "Trop de requetes. Veuillez reessayer bientot.",
+          details: `Limite: ${RATE_LIMIT_MAX} requetes par minute.`,
+        },
+        { ...responseHeaders, "Retry-After": String(retryAfter) },
+      );
+    }
+
     const { client: supabaseAdmin, error: configError } = createSupabaseAdmin();
     if (configError) {
       return json(500, { success: false, passed: 0, total: 0, ...configError }, responseHeaders);
@@ -147,7 +268,7 @@ export async function handleSubmitRequest({ method, headers = {}, body }) {
 
     const parsedBody = await parseBody(body);
     if (parsedBody === null) {
-      log("malformed json body");
+      log("warn", "malformed json body");
       return json(
         400,
         {
@@ -159,14 +280,9 @@ export async function handleSubmitRequest({ method, headers = {}, body }) {
       );
     }
 
-    log("body parsed", {
-      lessonId: parsedBody.lessonId || parsedBody.challengeId || null,
-      hasCode: typeof parsedBody.code === "string" && parsedBody.code.trim() !== "",
-    });
-
     const token = extractToken(headers);
     if (!token) {
-      log("auth token missing");
+      log("warn", "auth token missing");
       return json(
         401,
         {
@@ -182,7 +298,7 @@ export async function handleSubmitRequest({ method, headers = {}, body }) {
     try {
       authResult = await supabaseAdmin.auth.getUser(token);
     } catch (error) {
-      log("supabase auth request crashed", {
+      log("error", "supabase auth request crashed", {
         message: error?.message,
       });
       return json(
@@ -201,12 +317,6 @@ export async function handleSubmitRequest({ method, headers = {}, body }) {
       data: { user } = {},
       error: authError,
     } = authResult || {};
-
-    log("supabase auth checked", {
-      success: Boolean(user && !authError),
-      userId: user?.id || null,
-      error: authError?.message || null,
-    });
 
     if (authError || !user) {
       return json(
@@ -228,17 +338,18 @@ export async function handleSubmitRequest({ method, headers = {}, body }) {
       code: parsedBody.code,
     });
 
-    log("validation completed", {
+    log("info", "validation completed", {
       success: Boolean(result.success),
       errorCode: result.errorCode || null,
       passed: result.passed || 0,
       total: result.total || 0,
+      userId: user?.id || null,
       durationMs: Date.now() - startedAt,
     });
 
-    return json(result.httpStatus || (result.success ? 200 : 400), result, responseHeaders);
+    return json(result.httpStatus || (result.success ?200 : 400), result, responseHeaders);
   } catch (error) {
-    log("uncaught handler exception", {
+    log("error", "uncaught handler exception", {
       message: error?.message,
       stack: error?.stack,
       durationMs: Date.now() - startedAt,

@@ -1,9 +1,9 @@
-/**
+﻿/**
  * getContext.js
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  * Logique métier pour détecter les variables déclarées et extraire
  * le mot courant à autocompléter à partir du texte.
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  */
 
 export function getCurrentWord(code, cursorPos) {
@@ -55,3 +55,4 @@ export function parseVariables(code) {
 
   return vars;
 }
+

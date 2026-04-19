@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { TerminalSquare, ArrowRight, BookOpen, Shuffle, RefreshCcw, Layers, Zap, Box, Code, Trophy, Lock, ChevronRight, Star, Target } from 'lucide-react';
 import CourseViewer from './CourseViewer';
@@ -10,13 +10,11 @@ const LEVEL_COLORS = [
   { bg: '#4f8ff0', glow: 'rgba(79,143,240,0.2)', label: 'Débutant' },
   { bg: '#a78bfa', glow: 'rgba(167,139,250,0.2)', label: 'Élémentaire' },
   { bg: '#34d399', glow: 'rgba(52,211,153,0.2)', label: 'Intermédiaire' },
-  { bg: '#facc15', glow: 'rgba(250,204,21,0.2)', label: 'Avancé' },
+  { bg: '#facc15', glow: 'rgba(250,204,21,0.2)', label: 'Avanc?' },
   { bg: '#fb7185', glow: 'rgba(251,113,133,0.2)', label: 'Expert' },
-  { bg: '#c084fc', glow: 'rgba(192,132,252,0.2)', label: 'Maître' },
+  { bg: '#c084fc', glow: 'rgba(192,132,252,0.2)', label: 'Maêtre' },
   { bg: '#22c55e', glow: 'rgba(34,197,94,0.18)', label: 'Projet' },
 ];
-
-const LESSON_COUNTS = { 1: 12, 2: 11, 3: 12, 4: 14, 5: 12, 6: 10, 7: 5 };
 
 // Mapping strings to components for dynamic Icons
 const ICONS = {
@@ -51,10 +49,10 @@ const CoursePage = () => {
   };
 
   // Stats globales
-  const totalLessons = courses.reduce((acc, c) => acc + (LESSON_COUNTS[c.level] || 0), 0);
+  const totalLessons = courses.reduce((acc, c) => acc + Number(c.lesson_count || 0), 0);
   const completedCourses = courses.filter(c => c.progress === 100).length;
   const globalProgress = courses.length > 0
-    ? Math.round(courses.reduce((acc, c) => acc + c.progress, 0) / courses.length)
+    ?Math.round(courses.reduce((acc, c) => acc + c.progress, 0) / courses.length)
     : 0;
 
   return (
@@ -71,8 +69,8 @@ const CoursePage = () => {
         </div>
       </header>
 
-      {activeCourse ? (
-        <CourseViewer course={activeCourse} onBack={handleBackToGrid} />
+      {activeCourse ?(
+        <CourseViewer key={activeCourse.id} course={activeCourse} onBack={handleBackToGrid} />
       ) : (
         <div className="course-scroll-area">
           <section className="course-hero">
@@ -107,7 +105,7 @@ const CoursePage = () => {
           </section>
 
           <section className="bento-grid">
-            {loading ? renderSkeletons() : error ? (
+            {loading ?renderSkeletons() : error ?(
               <div style={{ color: '#ef4444', textAlign: 'center', gridColumn: '1/-1', padding: '2rem' }}>
                 Impossible de charger les cours : {error}
               </div>
@@ -115,29 +113,29 @@ const CoursePage = () => {
               courses.map((course, index) => {
                 const Icon = ICONS[course.icon_name] || BookOpen;
                 const lvl = LEVEL_COLORS[(course.level - 1) % LEVEL_COLORS.length];
-                const lessonCount = LESSON_COUNTS[course.level] || 0;
+                const lessonCount = Number(course.lesson_count || 0);
                 const isCompleted = course.progress === 100;
                 const isLocked = index > 0 && courses[index - 1]?.progress < 50;
 
                 return (
                   <div
                     key={course.id}
-                    className={`bento-card ${index === 0 || index === 3 ? 'bento-card-large' : ''} ${isLocked ? 'bento-card-locked' : ''}`}
+                    className={`bento-card ${index === 0 || index === 3 ?'bento-card-large' : ''} ${isLocked ?'bento-card-locked' : ''}`}
                     onClick={() => !isLocked && handleCategorySelect(course)}
                     style={{ '--lvl-color': lvl.bg, '--lvl-glow': lvl.glow }}
                   >
                     {/* Level badge */}
                     <div className="bento-level-badge" style={{ background: `${lvl.bg}22`, color: lvl.bg, border: `1px solid ${lvl.bg}44` }}>
                       <Star size={10} />
-                      Niveau {course.level} — {lvl.label}
+                      Niveau {course.level} ? {lvl.label}
                     </div>
 
                     <div className="bento-card-top">
                       <div className="bento-icon-wrapper" style={{ background: `${lvl.bg}18`, color: lvl.bg }}>
-                        {isLocked ? <Lock size={22} /> : isCompleted ? <Trophy size={22} /> : <Icon size={22} strokeWidth={2.5} />}
+                        {isLocked ?<Lock size={22} /> : isCompleted ?<Trophy size={22} /> : <Icon size={22} strokeWidth={2.5} />}
                       </div>
                       {isCompleted && (
-                        <div className="bento-completed-badge">✓ Complété</div>
+                        <div className="bento-completed-badge">? Complété</div>
                       )}
                     </div>
 
@@ -153,10 +151,10 @@ const CoursePage = () => {
                       <div className="bento-progress-bar">
                         <div
                           className="bento-progress-fill"
-                          style={{ width: `${course.progress}%`, background: isCompleted ? '#34d399' : `linear-gradient(90deg, ${lvl.bg}, ${lvl.bg}cc)` }}
+                          style={{ width: `${course.progress}%`, background: isCompleted ?'#34d399' : `linear-gradient(90deg, ${lvl.bg}, ${lvl.bg}cc)` }}
                         />
                       </div>
-                      <span style={{ color: isCompleted ? '#34d399' : lvl.bg }}>{course.progress}%</span>
+                      <span style={{ color: isCompleted ?'#34d399' : lvl.bg }}>{course.progress}%</span>
                     </div>
                   </div>
                 );
@@ -170,3 +168,4 @@ const CoursePage = () => {
 };
 
 export default CoursePage;
+

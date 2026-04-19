@@ -1,6 +1,6 @@
-/**
+﻿/**
  * Parser.js
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  * Parser récursif descendant STRICT pour le pseudo-langage algorithmique
  * marocain, avec collecte de plusieurs erreurs et récupération après erreur.
  *
@@ -8,12 +8,12 @@
  * Sortie  : { ast: ProgramNode | null, errors: AlgoSyntaxError[] }
  *
  * Précédence des opérateurs (du plus faible au plus fort) :
- *   OU  →  ET  →  NON  →  Comparaison  →  +/-  →  /%  →  ^  →  Unaire  →  Primaire
+ *   OU  ?  ET  ?  NON  ?  Comparaison  ?  +/-  ?  /%  ?  ^  ?  Unaire  ?  Primaire
  *
  * Structure stricte imposée :
- *   ALGORITHMENom;       ← valide (collé)
- *   ALGORITHME_Nom;      ← valide (underscore séparateur)
- *   ALGORITHME Nom;      ← INVALIDE (espace interdit)
+ *   ALGORITHMENom;       ? valide (collé)
+ *   ALGORITHME_Nom;      ? valide (underscore séparateur)
+ *   ALGORITHME Nom;      ? INVALIDE (espace interdit)
  *   VARIABLE  nom : type ;    (exactement 1 symbole)
  *   VARIABLES nom : type ;    (2+ symboles)
  *   DEBUT
@@ -23,7 +23,7 @@
  *
  * Règles de validation :
  *  - Présence ALGORITHME + nom collé (séparateur : rien ou underscore) + ;
- *  - Bloc VARIABLE(S) optionnel mais strictement validé si présent
+ *  - Bloc VARIABLE(S) optionnel mais strictement valid? si présent
  *    (le ':' après VARIABLE/VARIABLES est INTERDIT)
  *  - DEBUT obligatoire avant le corps
  *  - FIN obligatoire en fin de programme
@@ -31,7 +31,7 @@
  *  - ; interdit/inutile après DEBUT, FIN et fermetures de blocs (FINSI, FINPOUR, ...)
  *  - Stack de blocs pour valider SI/FINSI, TANTQUE/FINTANTQUE, POUR/FINPOUR, REPETER/JUSQUA
  *  - Détection d'instructions hors bloc principal
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  */
 
 import TokenType from '../lexer/tokenTypes.js';
@@ -41,7 +41,7 @@ import declarationMethods from './parts/declarations.js';
 import statementMethods from './parts/statements.js';
 import expressionMethods from './parts/expressions.js';
 
-// ── Parser ────────────────────────────────────────────────────────────────────
+// -- Parser --------------------------------------------------------------------
 class Parser {
   /**
    * @param {import('../lexer/Token.js').default[]} tokens   - Tokens du lexer
@@ -62,7 +62,7 @@ class Parser {
 
     /**
      * Limite maximale d'erreurs collectées par passage.
-     * Au-delà, le parser s'arrête pour éviter un flood d'erreurs en cascade.
+     * Au-delà , le parser s'arrête pour éviter un flood d'erreurs en cascade.
      */
     this.MAX_ERRORS = 20;
 
@@ -74,11 +74,11 @@ class Parser {
     this._errorKeys = new Set();
   }
 
-  // ── API publique ─────────────────────────────────────────────────────────────
+  // -- API publique -------------------------------------------------------------
 
   /**
    * Point d'entrée principal.
-   * Ne lève JAMAIS d'exception — collecte toutes les erreurs.
+   * Ne lève JAMAIS d'exception ? collecte toutes les erreurs.
    * @returns {{ ast: ProgramNode|null, errors: AlgoSyntaxError[] }}
    */
   parse() {
@@ -122,7 +122,7 @@ class Parser {
     return this.errors.length >= this.MAX_ERRORS;
   }
 
-  // ── Helpers de navigation ────────────────────────────────────────────────────
+  // -- Helpers de navigation ----------------------------------------------------
 
   _current()             { return this.tokens[this.pos] ?? this.tokens[this.tokens.length - 1]; }
   _peek(offset = 1)      { return this.tokens[this.pos + offset] ?? this.tokens[this.tokens.length - 1]; }
@@ -132,11 +132,11 @@ class Parser {
 
   /**
    * Retourne le dernier token CONSOMMÉ (position pos - 1).
-   * Utilisé pour pointer à la fin d'un token lors des erreurs "manquant".
+   * Utilis? pour pointer à la fin d'un token lors des erreurs "manquant".
    * @returns {import('../lexer/Token.js').default|null}
    */
   _previousToken() {
-    return this.pos > 0 ? this.tokens[this.pos - 1] : null;
+    return this.pos > 0 ?this.tokens[this.pos - 1] : null;
   }
 
   _advance() {
@@ -152,7 +152,7 @@ class Parser {
     return false;
   }
 
-  // ── Helpers de ponctuation ───────────────────────────────────────────────────
+  // -- Helpers de ponctuation ---------------------------------------------------
 
   /** Saute tous les SEMICOLON consécutifs. */
   _skipSemicolons() {
@@ -171,12 +171,12 @@ class Parser {
       this._skipSemicolons();
       return true;
     }
-    // Pointer à la fin du dernier token consommé (pas au début du suivant)
+    // Pointer à la fin du dernier token consomm? (pas au début du suivant)
     const prev    = this._previousToken();
-    const errLine = prev?.line   ?? this._current().line;
     const prevVal = String(prev?.value ?? '');
+    const errLine = prev?.line ?? this._current().line;
     const errCol  = prev
-      ? (prev.column + prevVal.length)   // juste après le dernier token
+      ?(prev.column + prevVal.length)   // juste après le dernier token
       : this._current().column;
 
     this._addError(this._makeError(
@@ -187,7 +187,7 @@ class Parser {
     return false;
   }
 
-  // ── Fabrique et accumulation d'erreurs ──────────────────────────────────────
+  // -- Fabrique et accumulation d'erreurs --------------------------------------
 
   /**
    * Enregistre une erreur dans la liste, en appliquant :
@@ -198,14 +198,14 @@ class Parser {
    * @returns {boolean} true si l'erreur a été ajoutée, false si rejetée
    */
   _addError(error) {
-    // ── Flood protection : arrêt à MAX_ERRORS ────────────────────────────────
+    // -- Flood protection : arrêt à MAX_ERRORS --------------------------------
     if (this.errors.length >= this.MAX_ERRORS) {
       // Ajouter un avertissement unique de saturation si pas déjà présent
       const satKey = 'SATURATED';
       if (!this._errorKeys.has(satKey)) {
         this._errorKeys.add(satKey);
         this.errors.push(this._makeError(
-          `Limite de ${this.MAX_ERRORS} erreurs atteinte — analyse stoppée`,
+          `Limite de ${this.MAX_ERRORS} erreurs atteinte ? analyse stoppée`,
           this._current(),
           { hint: 'Corrigez les erreurs signalées avant de continuer.' }
         ));
@@ -213,7 +213,7 @@ class Parser {
       return false;
     }
 
-    // ── Déduplication (ligne:colonne:message) ─────────────────────────────────
+    // -- Déduplication (ligne:colonne:message) ---------------------------------
     const key = `${error.line}:${error.column}:${error.message}`;
     if (this._errorKeys.has(key)) return false;
     this._errorKeys.add(key);
@@ -231,7 +231,7 @@ class Parser {
    * @param {string} [opts.expected]     - Ce qui était attendu
    * @param {string} [opts.hint]         - Suggestion pédagogique
    * @param {number} [opts.columnOverride] - Remplace tok.column pour la flèche ^
-   */
+  */
   _makeError(message, tok, { expected = null, hint = null, columnOverride = null } = {}) {
     const line     = tok?.line   ?? 0;
     const column   = columnOverride !== null ? columnOverride : (tok?.column ?? 0);
@@ -241,7 +241,7 @@ class Parser {
       : null;
 
     const fullMsg = expected
-      ? `${message} — Attendu : "${expected}"`
+      ?`${message} ? Attendu : "${expected}"`
       : message;
 
     return new AlgoSyntaxError({
@@ -256,7 +256,7 @@ class Parser {
   }
 
   /**
-   * Exige un token d'un type donné.
+   * Exige un token d'un type donn?.
    * Si absent : enregistre l'erreur et retourne null (récupération douce).
    */
   _expect(type, friendlyName, hintMessage = null) {
@@ -274,9 +274,9 @@ class Parser {
   }
 
   /**
-   * Exige un token d'un type donné.
+   * Exige un token d'un type donn?.
    * Si absent : lève une exception (erreur non récupérable = arrêt du parsing).
-   * Utilisé UNIQUEMENT quand ALGORITHME est absent (premier token du fichier).
+   * Utilis? UNIQUEMENT quand ALGORITHME est absent (premier token du fichier).
    */
   _expectFatal(type, friendlyName, hintMessage = null) {
     if (this._check(type)) return this._advance();
@@ -291,16 +291,16 @@ class Parser {
     );
   }
 
-  // ── Récupération d'erreur ────────────────────────────────────────────────────
+  // -- Récupération d'erreur ----------------------------------------------------
 
   /**
    * Avance jusqu'au prochain point de synchronisation :
-   *   - prochain SEMICOLON (consommé)
+   *   - prochain SEMICOLON (consomm?)
    *   - ou prochain mot-clé de structure stable
    *
-   * C'est le cœur de la stratégie de récupération (error recovery).
+   * C'est le cÅ“ur de la stratégie de récupération (error recovery).
    * Après chaque erreur, on synchronise pour continuer l'analyse
-   * sans générer une cascade d'erreurs parasites.
+   * sans génèrer une cascade d'erreurs parasites.
    *
    * Points d'arrêt fixes :
    *   ;  SI  POUR  TANTQUE  REPETER  ECRIRE  LIRE
@@ -333,3 +333,4 @@ Object.assign(
 );
 
 export default Parser;
+

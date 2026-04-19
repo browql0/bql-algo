@@ -17,7 +17,7 @@ function firstEngineError(result) {
 function inputsFromTestCase(testCase) {
   const rawInput = String(testCase.input ?? "");
   return rawInput.length === 0
-    ? []
+    ?[]
     : rawInput.split("\n").map((value) => value.trim());
 }
 
@@ -32,7 +32,7 @@ function sanitizeCase(testCase) {
 
 export async function strictValidate({ code, exercise }) {
   const source = String(code || "");
-  const strictTests = Array.isArray(exercise.strictTests) ? exercise.strictTests : [];
+  const strictTests = Array.isArray(exercise.strictTests) ?exercise.strictTests : [];
 
   if (strictTests.length === 0) {
     return {
@@ -74,7 +74,6 @@ export async function strictValidate({ code, exercise }) {
       firstFailure ||= error?.message || "Le code BQL ne s'execute pas correctement.";
       cases.push({
         id: testCase.id || `case-${index + 1}`,
-        input: testCase.input ?? "",
         expected: testCase.output ?? testCase.expected ?? "",
         actual: "",
         passed: false,
@@ -112,7 +111,7 @@ export async function strictValidate({ code, exercise }) {
 
   const constraints =
     firstExecution?.ast && firstExecution.errors.length === 0
-      ? checkConcepts({
+      ?checkConcepts({
           source,
           ast: firstExecution.ast,
           requiredConcepts: exercise.requiredConcepts,
@@ -126,16 +125,16 @@ export async function strictValidate({ code, exercise }) {
   }
 
   const testsPassed = passed === strictTests.length;
-  const constraintsPassed = constraints ? constraints.passed : !engineError;
+  const constraintsPassed = constraints ?constraints.passed : !engineError;
   const success = testsPassed && constraintsPassed;
 
   return {
     success,
     passed,
     total: strictTests.length,
-    errorCode: success ? null : firstErrorCode || "VALIDATION_FAILED",
+    errorCode: success ?null : firstErrorCode || "VALIDATION_FAILED",
     message: success
-      ? "Validation reussie."
+      ?"Validation réussie."
       : firstFailure || "Certains tests serveur ont echoue.",
     cases,
     publicCases: cases.map(sanitizeCase),

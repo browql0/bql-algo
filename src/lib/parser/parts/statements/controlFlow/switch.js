@@ -1,4 +1,4 @@
-import TokenType from '../../../../lexer/tokenTypes.js';
+﻿import TokenType from '../../../../lexer/tokenTypes.js';
 import {
   ProgramNode, BlockNode, VarDeclNode, ArrayDeclNode, ConstDeclNode,
   NumberNode, StringNode, CharNode, BooleanNode, IdentifierNode,
@@ -70,7 +70,7 @@ const switchStatementMethods = {
              if (!validLiteral) {
                  this._addError(this._makeError('La valeur d\'un CAS doit être un littéral (nombre, chaîne, caractère, booléen)', this._current(), { hint: 'Utilisez une valeur directe comme 1, "test", VRAI.' }));
              }
-         } catch(e) {
+         } catch {
              value = new StringNode('?', this._current());
          }
       }
@@ -101,7 +101,7 @@ const switchStatementMethods = {
       if (this._check(TokenType.CAS)) {
          this._addError(this._makeError('CAS interdit après AUTRE', this._current(), { hint: 'Le bloc AUTRE doit être le dernier bloc d\'un SELON.' }));
          while(this._check(TokenType.CAS) || this._check(TokenType.AUTRE)) {
-             this._addError(this._makeError('Bloc invalide ignoré', this._advance()));
+             this._addError(this._makeError('Bloc invalide ignor?', this._advance()));
              this._skipSemicolons();
              this._parseBlock([TokenType.FINSELON]);
          }
@@ -109,7 +109,7 @@ const switchStatementMethods = {
     }
 
     if (!this._check(TokenType.FINSELON)) {
-      this._addError(this._makeError('FINSELON manquant : Le bloc SELON doit être fermé', this._current(), { hint: 'Ajoutez "FINSELON" à la fin de la structure.' }));
+      this._addError(this._makeError('FINSELON manquant : Le bloc SELON doit être ferm?', this._current(), { hint: 'Ajoutez "FINSELON" à la fin de la structure.' }));
       this._synchronize();
     } else {
       this._advance(); // consommer FINSELON
@@ -121,3 +121,4 @@ const switchStatementMethods = {
 };
 
 export default switchStatementMethods;
+

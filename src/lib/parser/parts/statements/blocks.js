@@ -7,6 +7,7 @@ import {
   AssignNode, ArrayAssignNode, IfNode, WhileNode, ForNode, DoWhileNode,
   PrintNode, InputNode, SwitchNode, CaseNode, ArrayAllocationNode
 } from '../../AST/nodes.js';
+import AlgoSyntaxError from '../../../errors/SyntaxError.js';
 
 const blockStatementMethods = {
   _parseBlock(stopTypes) {
@@ -44,7 +45,7 @@ const blockStatementMethods = {
     return new BlockNode(statements);
   },
 
-  _parseStatement(stopTypes = []) {
+  _parseStatement(_stopTypes = []) {
     const tok = this._current();
 
     switch (tok.type) {

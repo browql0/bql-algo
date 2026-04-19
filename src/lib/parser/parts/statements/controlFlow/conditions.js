@@ -1,4 +1,4 @@
-import TokenType from '../../../../lexer/tokenTypes.js';
+﻿import TokenType from '../../../../lexer/tokenTypes.js';
 import {
   ProgramNode, BlockNode, VarDeclNode, ArrayDeclNode, ConstDeclNode,
   NumberNode, StringNode, CharNode, BooleanNode, IdentifierNode,
@@ -115,7 +115,7 @@ const conditionStatementMethods = {
 
     if (!this._check(TokenType.FINSI)) {
       this._addError(this._makeError(
-        'FINSI manquant : Le bloc SI doit être fermé',
+        'FINSI manquant : Le bloc SI doit être ferm?',
         this._current(),
         { hint: 'Ajoutez "FINSI" à la fin de la structure conditionnelle.' }
       ));
@@ -129,3 +129,4 @@ const conditionStatementMethods = {
 };
 
 export default conditionStatementMethods;
+

@@ -1,4 +1,4 @@
-import Token from '../Token.js';
+﻿import Token from '../Token.js';
 import TokenType from '../tokenTypes.js';
 
 const operatorMethods = {
@@ -6,7 +6,7 @@ const operatorMethods = {
     const ch = this._advance();
 
     switch (ch) {
-      // ── Affectation ou inférieur ──────────────────────────────────────────
+      // -- Affectation ou inférieur ------------------------------------------
       case '<':
         if (this._match('-')) {
           this.tokens.push(new Token(TokenType.ASSIGN, '<-', line, col));
@@ -19,7 +19,7 @@ const operatorMethods = {
         }
         break;
 
-      // ── Supérieur ─────────────────────────────────────────────────────────
+      // -- Supérieur ---------------------------------------------------------
       case '>':
         if (this._match('=')) {
           this.tokens.push(new Token(TokenType.GTE, '>=', line, col));
@@ -28,20 +28,20 @@ const operatorMethods = {
         }
         break;
 
-      // ── Inégalité <> (syntaxe BQL) ──
+      // -- Inégalit? <> (syntaxe BQL) --
       // Le cas '<' est déjà géré ci-dessus, mais '<>' est consommé plus tôt.
-      // Voir le case '<' modifié ci-dessous.
+      // Voir le case '<' modifi? ci-dessous.
 
-      // ── Égalité ───────────────────────────────────────────────────────────
+      // -- Égalit? -----------------------------------------------------------
       case '=':
         this.tokens.push(new Token(TokenType.EQ, '=', line, col));
         break;
 
-      // ── Arithmétique ──────────────────────────────────────────────────────
+      // -- Arithmétique ------------------------------------------------------
       case '+': this.tokens.push(new Token(TokenType.PLUS,     '+', line, col)); break;
       case '-':
         if (this._match('>')) {
-          this._addError(`Opérateur "->" non supporté`, line, col, '->');
+          this._addError(`Opérateur "->" non support?`, line, col, '->');
           this.tokens.push(new Token(TokenType.UNKNOWN, '->', line, col));
         } else {
           this.tokens.push(new Token(TokenType.MINUS, '-', line, col));
@@ -52,7 +52,7 @@ const operatorMethods = {
       case '%': this.tokens.push(new Token(TokenType.MOD,      '%', line, col)); break;
       case '^': this.tokens.push(new Token(TokenType.POWER,    '^', line, col)); break;
 
-      // ── Ponctuation ───────────────────────────────────────────────────────
+      // -- Ponctuation -------------------------------------------------------
       case '(': this.tokens.push(new Token(TokenType.LPAREN,    '(', line, col)); break;
       case ')': this.tokens.push(new Token(TokenType.RPAREN,    ')', line, col)); break;
       case '[': this.tokens.push(new Token(TokenType.LBRACKET,  '[', line, col)); break;
@@ -62,7 +62,7 @@ const operatorMethods = {
       case ';': this.tokens.push(new Token(TokenType.SEMICOLON, ';', line, col)); break;
       case '.': this.tokens.push(new Token(TokenType.DOT,       '.', line, col)); break;
 
-      // ── Caractère inconnu ─────────────────────────────────────────────────
+      // -- Caractère inconnu -------------------------------------------------
       default:
         this._addError(`Caractère inattendu`, line, col, ch);
         this.tokens.push(new Token(TokenType.UNKNOWN, ch, line, col));
@@ -71,3 +71,4 @@ const operatorMethods = {
 };
 
 export default operatorMethods;
+

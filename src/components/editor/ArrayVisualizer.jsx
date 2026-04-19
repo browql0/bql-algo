@@ -1,31 +1,31 @@
-/**
+﻿/**
  * ArrayVisualizer.jsx
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  * Panneau pédagogique de visualisation des tableaux 1D pour débutants.
  *
  * Props :
  *   arrays   : Map<string, { values: any[], highlight: { index, type } | null }>
- *              Données actuelles des tableaux (nom → {values, highlight})
+ *              Données actuelles des tableaux (nom ? {values, highlight})
  *   lastAction : { text: string } | null
  *              Dernier message pédagogique (ex: "Modification de T[2]")
  *   settings : object
  *              Réglages utilisateur (advancedArrayView, compactRecordView)
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { ChevronRight, Search, List, ArrowRight } from 'lucide-react';
 import './ArrayVisualizer.css';
 
-// ── Formateur de contenu de case (Label Intelligent) ─────────────────────────
+// -- Formateur de contenu de case (Label Intelligent) -------------------------
 const formatCellContent = (v) => {
-  if (v === undefined || v === null) return '—';
-  if (typeof v === 'boolean') return v ? 'VRAI' : 'FAUX';
+  if (v === undefined || v === null) return '?';
+  if (typeof v === 'boolean') return v ?'VRAI' : 'FAUX';
   if (Array.isArray(v)) return '[...]';
   
   if (typeof v === 'object') {
     const safeString = (val) => {
       if (val === null || val === undefined) return '';
-      if (typeof val === 'object') return Array.isArray(val) ? '[...]' : '{...}';
+      if (typeof val === 'object') return Array.isArray(val) ?'[...]' : '{...}';
       return String(val);
     };
 
@@ -69,7 +69,7 @@ const formatCellContent = (v) => {
   return String(v);
 };
 
-// ── Détermination de la classe de type ───────────────────────────────────────
+// -- Détermination de la classe de type ---------------------------------------
 const getTypeClass = (v) => {
   if (v === null || v === undefined) return 'av-type-null';
   if (typeof v === 'string') return 'av-type-string';
@@ -79,14 +79,14 @@ const getTypeClass = (v) => {
   return '';
 };
 
-// ── Inspecteur d'objet (Vue Détaillée Table-like) ──────────────────────────────────
+// -- Inspecteur d'objet (Vue Détaillée Table-like) ----------------------------------
 const ObjectInspector = ({ data, depth = 0, highlightedField = null, rootName = null }) => {
   if (data === null || data === undefined) return <span className="av-val-null">vide</span>;
   if (typeof data !== 'object' || Array.isArray(data)) {
     const isString = typeof data === 'string';
     return (
-      <span className={isString ? 'av-val-string' : 'av-val-num'}>
-        {isString ? `"${data}"` : String(data)}
+      <span className={isString ?'av-val-string' : 'av-val-num'}>
+        {isString ?`"${data}"` : String(data)}
       </span>
     );
   }
@@ -99,7 +99,7 @@ const ObjectInspector = ({ data, depth = 0, highlightedField = null, rootName = 
            <div className="av-obj-root-divider"></div>
         </div>
       )}
-      <div style={{ marginLeft: depth > 0 ? '16px' : '0' }}>
+      <div style={{ marginLeft: depth > 0 ?'16px' : '0' }}>
       {Object.entries(data).map(([key, val]) => {
         // Ignorer les propriétés privées comme __type
         if (key === '__type') return null;
@@ -108,8 +108,8 @@ const ObjectInspector = ({ data, depth = 0, highlightedField = null, rootName = 
         const isComplex = typeof val === 'object' && val !== null;
 
         return (
-          <div key={key} className={`av-obj-line ${isHighlighted ? 'av-line-highlight' : ''}`}>
-            {isComplex ? (
+          <div key={key} className={`av-obj-line ${isHighlighted ?'av-line-highlight' : ''}`}>
+            {isComplex ?(
               <div className="av-obj-complex-group">
                 <span className="av-obj-key-title">{key}</span>
                 <ObjectInspector data={val} depth={depth + 1} />
@@ -117,7 +117,7 @@ const ObjectInspector = ({ data, depth = 0, highlightedField = null, rootName = 
             ) : (
               <div className="av-obj-row">
                 <span className="av-obj-key">{key}</span>
-                <span className="av-obj-arrow">→</span>
+                <span className="av-obj-arrow">?</span>
                 <span className="av-obj-val"><ObjectInspector data={val} /></span>
               </div>
             )}
@@ -129,27 +129,18 @@ const ObjectInspector = ({ data, depth = 0, highlightedField = null, rootName = 
   );
 };
 
-// ── Composant d'une case unique ───────────────────────────────────────────────
-const ArrayCell = ({ value, index, highlight, type, isSelected, onSelect, compactMode }) => {
-  const [animClass, setAnimClass] = useState('');
-
+// -- Composant d'une case unique -----------------------------------------------
+const ArrayCell = ({ value, index, highlight, isSelected, onSelect, compactMode }) => {
   const isObject = typeof value === 'object' && value !== null && !Array.isArray(value);
-
-  useEffect(() => {
-    if (highlight && highlight.type) {
-      setAnimClass(highlight.type === 'write' ? 'cell-write' : 'cell-read');
-      const t = setTimeout(() => setAnimClass(''), 700);
-      return () => clearTimeout(t);
-    }
-  }, [highlight]);
+  const animClass = highlight?.type === 'write' ?'cell-write' : highlight?.type ?'cell-read' : '';
 
   return (
     <div className="av-cell-wrapper">
       <div
         className={`av-cell ${animClass} 
-          ${isObject ? 'av-cell-object' : ''} 
-          ${isSelected ? 'av-selected' : ''} 
-          ${compactMode && isObject ? 'av-compact' : ''}
+          ${isObject ?'av-cell-object' : ''} 
+          ${isSelected ?'av-selected' : ''} 
+          ${compactMode && isObject ?'av-compact' : ''}
           ${getTypeClass(value)}`}
         onClick={() => onSelect(index)}
       >
@@ -169,7 +160,7 @@ const ArrayCell = ({ value, index, highlight, type, isSelected, onSelect, compac
   );
 };
 
-// ── Composant d'une ligne de matrice ───────────────────────────────────────────
+// -- Composant d'une ligne de matrice -------------------------------------------
 const MatrixRow = ({ rowIndex, cols, highlight, selectedIndex, onSelect, compactRecordMode }) => {
   return (
     <div className="av-matrix-row">
@@ -184,7 +175,7 @@ const MatrixRow = ({ rowIndex, cols, highlight, selectedIndex, onSelect, compact
             key={colIndex}
             value={val}
             index={`${rowIndex},${colIndex}`}
-            highlight={isLit ? highlight : null}
+            highlight={isLit ?highlight : null}
             isSelected={isSel}
             onSelect={() => onSelect([rowIndex, colIndex])}
             compactMode={compactRecordMode}
@@ -195,7 +186,7 @@ const MatrixRow = ({ rowIndex, cols, highlight, selectedIndex, onSelect, compact
   );
 };
 
-// ── Composant d'un tableau complet (Grille ou Strip) ──────────────────────────
+// -- Composant d'un tableau complet (Grille ou Strip) --------------------------
 const ArrayRow = ({ name, values, highlight, selectedIndex, onSelect, compactRecordMode }) => {
   const isEmpty = values.length === 0;
   const is2D = !isEmpty && Array.isArray(values[0]);
@@ -208,19 +199,19 @@ const ArrayRow = ({ name, values, highlight, selectedIndex, onSelect, compactRec
         </div>
         <div className="av-array-meta">
           {is2D
-            ? `${values.length} × ${values[0]?.length || 0}`
+            ?`${values.length} × ${values[0]?.length || 0}`
             : `${values.length}`
           }
           <span style={{ opacity: 0.5, marginLeft: '4px', fontSize: '0.55rem' }}>
-            {is2D ? 'MATRICE' : 'CASES'}
+            {is2D ?'MATRICE' : 'CASES'}
           </span>
         </div>
       </div>
 
       <div className="av-array-content-wrapper">
-        {isEmpty ? (
+        {isEmpty ?(
           <span className="av-empty-msg">tableau vide</span>
-        ) : is2D ? (
+        ) : is2D ?(
           <div className="av-matrix-container">
             {/* Colonnes Indices (Header) */}
             <div className="av-matrix-header-cols">
@@ -249,7 +240,7 @@ const ArrayRow = ({ name, values, highlight, selectedIndex, onSelect, compactRec
                 key={i}
                 value={val}
                 index={i}
-                highlight={highlight && highlight.index && (Array.isArray(highlight.index) ? highlight.index[0] : highlight.index) === i ? highlight : null}
+                highlight={highlight && highlight.index && (Array.isArray(highlight.index) ?highlight.index[0] : highlight.index) === i ?highlight : null}
                 isSelected={selectedIndex && selectedIndex[0] === i}
                 onSelect={() => onSelect([i])}
                 compactMode={compactRecordMode}
@@ -270,17 +261,6 @@ const ArrayVisualizer = ({ arrays, records, lastAction, visible, settings, isMob
   const advancedView = settings?.advancedArrayView !== false;
   const compactRecordMode = settings?.compactRecordView !== false;
 
-  // Sync automatique de la sélection lors d'une modification de TABLEAU
-  useEffect(() => {
-    if (!arrays) return;
-    for (const [name, data] of arrays.entries()) {
-      if (data.highlight && data.highlight.type === 'write') {
-        setSelectedCell({ arrayName: name, index: data.highlight.index, isArray: true });
-        if (isMobile) setShowMobileDetails(true);
-      }
-    }
-  }, [arrays, isMobile]);
-
   // Si on sélectionne manuellement une case, on ouvre le volet sur mobile
   const handleCellSelect = (idx, name) => {
     setSelectedCell({ arrayName: name, index: idx, isArray: true });
@@ -289,35 +269,39 @@ const ArrayVisualizer = ({ arrays, records, lastAction, visible, settings, isMob
 
   if (!visible) return null;
 
-  const arrayEntries = arrays ? [...arrays.entries()] : [];
-  const recordEntries = records ? [...records.entries()] : [];
+  const arrayEntries = arrays ?[...arrays.entries()] : [];
+  const recordEntries = records ?[...records.entries()] : [];
+  const highlightedEntry = arrayEntries.find(([, data]) => data.highlight?.type === 'write');
+  const effectiveSelectedCell = selectedCell || (highlightedEntry
+    ?{ arrayName: highlightedEntry[0], index: highlightedEntry[1].highlight.index, isArray: true }
+    : null);
   const hasArrays = arrayEntries.length > 0;
   const hasRecords = recordEntries.length > 0;
 
   // Données de l'inspection active (si une case de tableau est cliquée)
   let activeArraySelection = null;
-  if (selectedCell && selectedCell.isArray && arrays.has(selectedCell.arrayName)) {
-    const arr = arrays.get(selectedCell.arrayName).values;
-    const idx = selectedCell.index;
-    const value = idx.length === 2 ? arr[idx[0]][idx[1]] : arr[idx[0]];
-    const highlight = arrays.get(selectedCell.arrayName).highlight;
+  if (effectiveSelectedCell && effectiveSelectedCell.isArray && arrays.has(effectiveSelectedCell.arrayName)) {
+    const arr = arrays.get(effectiveSelectedCell.arrayName).values;
+    const idx = effectiveSelectedCell.index;
+    const value = idx.length === 2 ?arr[idx[0]][idx[1]] : arr[idx[0]];
+    const highlight = arrays.get(effectiveSelectedCell.arrayName).highlight;
     const isLit = highlight && JSON.stringify(highlight.index) === JSON.stringify(idx);
 
     activeArraySelection = {
-      name: `${selectedCell.arrayName}[${idx.join(',')}]`,
+      name: `${effectiveSelectedCell.arrayName}[${idx.join(',')}]`,
       value,
       type: value?.__type || 'Élément',
-      highlightedField: isLit ? highlight.field : null
+      highlightedField: isLit ?highlight.field : null
     };
   }
 
-  const isBottomSheetOpen = isMobile ? showMobileDetails : (activeArraySelection !== null || hasRecords);
+  const isBottomSheetOpen = isMobile ?showMobileDetails : (activeArraySelection !== null || hasRecords);
 
   return (
-    <div className={`av-panel ${advancedView ? 'av-panel-advanced' : ''}`} ref={panelRef}>
+    <div className={`av-panel ${advancedView ?'av-panel-advanced' : ''}`} ref={panelRef}>
       <div className="av-panel-header">
         <div className="av-panel-title">
-          <span className="av-panel-icon">⊞</span>
+          <span className="av-panel-icon">?</span>
           Visualisation des Structures
         </div>
         {lastAction && (
@@ -334,7 +318,7 @@ const ArrayVisualizer = ({ arrays, records, lastAction, visible, settings, isMob
           <div className="av-section-header">
             <List size={14} /> Tableaux & Matrices
           </div>
-          {!hasArrays ? (
+          {!hasArrays ?(
             <div className="av-no-arrays">
               <div className="av-no-arrays-icon">
                 <Search size={28} />
@@ -351,7 +335,7 @@ const ArrayVisualizer = ({ arrays, records, lastAction, visible, settings, isMob
                 name={name}
                 values={values}
                 highlight={highlight}
-                selectedIndex={selectedCell?.isArray && selectedCell?.arrayName === name ? selectedCell.index : null}
+                selectedIndex={selectedCell?.isArray && selectedCell?.arrayName === name ?selectedCell.index : null}
                 onSelect={(idx) => handleCellSelect(idx, name)}
                 compactRecordMode={compactRecordMode}
               />
@@ -370,7 +354,7 @@ const ArrayVisualizer = ({ arrays, records, lastAction, visible, settings, isMob
         </div>
 
         {/* Colonne DROITE : Enregistrements Simples + Inspection (Bottom Sheet sur Mobile) */}
-        <div className={`av-body-right ${isBottomSheetOpen ? 'is-open' : ''}`}>
+        <div className={`av-body-right ${isBottomSheetOpen ?'is-open' : ''}`}>
           <div className="av-section-header mobile-sheet-header">
             <span><ChevronRight size={14} /> Enregistrements & Détails</span>
             {isBottomSheetOpen && (
@@ -428,3 +412,5 @@ const ArrayVisualizer = ({ arrays, records, lastAction, visible, settings, isMob
 };
 
 export default ArrayVisualizer;
+
+

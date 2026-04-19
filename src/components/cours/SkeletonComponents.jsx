@@ -22,7 +22,7 @@ export const SkeletonText = ({ lines = 3, widths = ['100%', '85%', '60%'], style
 /* ─── Bento Grid Skeleton (CoursePage) ──────────────────────────────────── */
 
 export const SkeletonBentoCard = ({ large = false }) => (
-  <div className={`bento-card fade-in-content ${large ? 'bento-card-large' : ''}`} style={{ cursor: 'default', pointerEvents: 'none' }}>
+  <div className={`bento-card fade-in-content ${large ?'bento-card-large' : ''}`} style={{ cursor: 'default', pointerEvents: 'none' }}>
     {/* level badge mockup */}
     <div style={{ display: 'flex', marginBottom: '1.5rem', alignItems: 'center' }}>
       <SkeletonBlock width="40px" height="40px" borderRadius="10px" />
@@ -68,8 +68,8 @@ export const SkeletonSidebar = ({ isMobile }) => {
   );
 
   return (
-    <div className={`course-sidebar fade-in-content ${isMobile ? 'mobile-skeleton' : ''}`}
-         style={isMobile ? { position: 'fixed', top: 0, left: 0, bottom: 0, width: '82vw', maxWidth: '320px', zIndex: 201, transform: 'translateX(0)' } : {}}>
+    <div className={`course-sidebar fade-in-content ${isMobile ?'mobile-skeleton' : ''}`}
+         style={isMobile ?{ position: 'fixed', top: 0, left: 0, bottom: 0, width: '82vw', maxWidth: '320px', zIndex: 201, transform: 'translateX(0)' } : {}}>
       {content}
     </div>
   );

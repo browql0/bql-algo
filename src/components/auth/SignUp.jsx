@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { AlertCircle, User, Mail, Lock } from 'lucide-react';
@@ -30,7 +30,7 @@ const SignUp = () => {
     setLoading(true);
     setError(null);
 
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -57,7 +57,7 @@ const SignUp = () => {
         <span className="prompt">&gt;</span> Rejoignez BQL Algo aujourd'hui<span className="cursor"></span>
       </p>
 
-      {/* Social Login ── */}
+      {/* Social Login -- */}
       <div className="social-login-grid">
         <button type="button" className="social-btn" disabled onClick={() => handleSocialLogin('google')}>
           <svg className="social-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -149,15 +149,16 @@ const SignUp = () => {
         </label>
 
         <button type="submit" className="auth-submit-btn" disabled={loading}>
-          {loading ? 'Création en cours...' : 'Créer mon compte'}
+          {loading ?'Création en cours...' : 'Créer mon compte'}
         </button>
       </form>
 
       <div className="auth-footer">
-        Déjà un compte ? <Link to="/login" className="auth-link">Connectez-vous</Link>
+        Déjà un compte ?<Link to="/login" className="auth-link">Connectez-vous</Link>
       </div>
     </>
   );
 };
 
 export default SignUp;
+

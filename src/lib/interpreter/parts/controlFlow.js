@@ -71,7 +71,7 @@ const controlFlowExecutionMethods = {
 
     const condition = () => {
       const cur = this._toNumber(this.env.get(node.variable, node.line));
-      return step > 0 ? cur <= to : cur >= to;
+      return step > 0 ?cur <= to : cur >= to;
     };
 
     while (condition()) {

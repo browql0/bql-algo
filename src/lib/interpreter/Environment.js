@@ -1,6 +1,6 @@
-/**
+﻿/**
  * Environment.js
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  * Gestion de la mémoire (portée / scope) des variables durant l'exécution.
  *
  * Chaque variable est stockée sous la forme :
@@ -9,12 +9,12 @@
  *
  * La chaîne de portées (parent) permet de supporter les blocs imbriqués
  * ou futures fonctions sans modifier cette classe.
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  */
 
 import AlgoRuntimeError from '../errors/RuntimeError.js';
 
-// ── Valeurs par défaut selon le type ──────────────────────────────────────────
+// -- Valeurs par défaut selon le type ------------------------------------------
 const DEFAULT_VALUES = {
   entier:    0,
   reel:      0.0,
@@ -23,7 +23,7 @@ const DEFAULT_VALUES = {
   booleen:   false,
 };
 
-// ── Classe Environment ────────────────────────────────────────────────────────
+// -- Classe Environment --------------------------------------------------------
 class Environment {
   /**
    * @param {Environment|null} parent - Portée parente (null pour la portée globale)
@@ -36,7 +36,7 @@ class Environment {
     this.customTypes = new Map();
   }
 
-  // ── Types structurés ──────────────────────────────────────────────────────────
+  // -- Types structurés ----------------------------------------------------------
 
   /**
    * Déclare un type structuré (enregistrement)
@@ -52,7 +52,7 @@ class Environment {
    */
   getDefaultValue(type, line) {
     if (type.endsWith('[]')) return [];
-    if (DEFAULT_VALUES.hasOwnProperty(type)) return DEFAULT_VALUES[type];
+    if (Object.prototype.hasOwnProperty.call(DEFAULT_VALUES, type)) return DEFAULT_VALUES[type];
     
     // Si c'est un type structuré, on instancie un objet contenant chaque champ
     const customTypeStr = this.customTypes.get(type);
@@ -77,7 +77,7 @@ class Environment {
     throw new AlgoRuntimeError({ message: `Type inconnu : '${type}'`, line });
   }
 
-  // ── Déclaration ─────────────────────────────────────────────────────────────
+  // -- Déclaration -------------------------------------------------------------
 
   /**
    * Déclare une nouvelle constante dans cette portée.
@@ -86,7 +86,7 @@ class Environment {
    * @param {*} value
    * @param {number} [line]
    */
-  declareConst(name, type, value, line) {
+  declareConst(name, type, value, _line) {
     this.constantes.set(name, { type, value, immutable: true });
   }
 
@@ -98,11 +98,9 @@ class Environment {
    * @param {number} [line]
    */
   declare(name, type, line) {
-    const isArray = type.endsWith('[]');
-    const baseType = isArray ? type.slice(0, -2) : type;
-
     // S'assurer que le type existe (natif ou custom)
-    const defaultValue = isArray ? [] : this.getDefaultValue(type, line);
+    const isArray = type.endsWith('[]');
+    const defaultValue = isArray ?[] : this.getDefaultValue(type, line);
     
     this.variables.set(name, { 
       type, 
@@ -110,7 +108,7 @@ class Environment {
     });
   }
 
-  // ── Lecture ─────────────────────────────────────────────────────────────────
+  // -- Lecture -----------------------------------------------------------------
 
   /**
    * Lit la valeur d'une variable (cherche dans la chaîne de portées).
@@ -151,7 +149,7 @@ class Environment {
     return env.variables.get(name);
   }
 
-  // ── Écriture ─────────────────────────────────────────────────────────────────
+  // -- Écriture -----------------------------------------------------------------
 
   /**
    * Met à jour la valeur d'une variable déjà déclarée.
@@ -183,7 +181,7 @@ class Environment {
   }
 
   /**
-   * Affecte directement sans chercher dans la chaîne — utile pour la variable
+   * Affecte directement sans chercher dans la chaîne ? utile pour la variable
    * de contrôle d'une boucle POUR déclarée implicitement.
    */
   setLocal(name, type, value) {
@@ -194,12 +192,12 @@ class Environment {
     }
   }
 
-  // ── Existence ────────────────────────────────────────────────────────────────
+  // -- Existence ----------------------------------------------------------------
 
   /** Vrai si `name` existe dans cette portée ou une portée parente. */
   has(name) { return !!this._resolve(name); }
 
-  // ── Helpers ──────────────────────────────────────────────────────────────────
+  // -- Helpers ------------------------------------------------------------------
 
   /** Cherche l'environment qui contient `name`. */
   _resolve(name) {
@@ -213,7 +211,7 @@ class Environment {
    * Utile pour la visualisation en direct (Lot 3).
    */
   getAllVariables() {
-    const all = this.parent ? this.parent.getAllVariables() : {};
+    const all = this.parent ?this.parent.getAllVariables() : {};
     for (const [name, entry] of this.variables) {
       all[name] = { ...entry }; // Copie superficielle
     }
@@ -230,10 +228,10 @@ class Environment {
   _coerce(value, type, name, line) {
     switch (type) {
       case 'entier': {
-        if (typeof value === 'boolean') return value ? 1 : 0;
+        if (typeof value === 'boolean') return value ?1 : 0;
         const int = parseInt(value, 10);
         if (isNaN(int)) throw new AlgoRuntimeError({
-          message: `Impossible d'affecter "${value}" à la variable entière '${name}' — une valeur entière est attendue`,
+          message: `Impossible d'affecter "${value}" à la variable entière '${name}' ? une valeur entière est attendue`,
           value: String(value),
           hint: `Vérifiez que la valeur calculée est bien un nombre entier.`,
           line
@@ -242,10 +240,10 @@ class Environment {
       }
 
       case 'reel': {
-        if (typeof value === 'boolean') return value ? 1.0 : 0.0;
+        if (typeof value === 'boolean') return value ?1.0 : 0.0;
         const float = parseFloat(value);
         if (isNaN(float)) throw new AlgoRuntimeError({
-          message: `Impossible d'affecter "${value}" à la variable réelle '${name}' — un nombre décimal est attendu`,
+          message: `Impossible d'affecter "${value}" à la variable réelle '${name}' ? un nombre décimal est attendu`,
           value: String(value),
           hint: `Vérifiez que la valeur calculée est bien un nombre (ex: 3.14).`,
           line
@@ -256,9 +254,10 @@ class Environment {
       case 'chaine':
         return String(value);
 
-      case 'caractere':
+      case 'caractere': {
         const str = String(value);
-        return str.length > 0 ? str[0] : '';
+        return str.length > 0 ?str[0] : '';
+      }
 
       case 'booleen':
         if (typeof value === 'boolean') return value;
@@ -277,3 +276,4 @@ class Environment {
 }
 
 export default Environment;
+

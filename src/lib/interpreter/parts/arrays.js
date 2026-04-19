@@ -1,4 +1,4 @@
-import AlgoRuntimeError from '../../errors/RuntimeError.js';
+﻿import AlgoRuntimeError from '../../errors/RuntimeError.js';
 
 const arrayExecutionMethods = {
   async _executeArrayDecl(node) {
@@ -153,7 +153,7 @@ const arrayExecutionMethods = {
       }
       if (!Array.isArray(arr[row])) {
          throw new AlgoRuntimeError({
-           message: `Impossible d'accéder à l'élément 2D - le tableau est 1D`,
+           message: `Impossible d'accèder à l'élément 2D - le tableau est 1D`,
            line: node.line
          });
       }
@@ -171,3 +171,4 @@ const arrayExecutionMethods = {
 };
 
 export default arrayExecutionMethods;
+

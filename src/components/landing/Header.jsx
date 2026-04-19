@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X, TerminalSquare } from 'lucide-react';
 import './Header.css';
@@ -17,7 +17,7 @@ const Header = ({ onStart }) => {
 
   // Bloquer le scroll de la page quand le menu mobile est ouvert
   useEffect(() => {
-    document.body.style.overflow = isMobileMenuOpen ? 'hidden' : '';
+    document.body.style.overflow = isMobileMenuOpen ?'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [isMobileMenuOpen]);
 
@@ -25,7 +25,7 @@ const Header = ({ onStart }) => {
 
   return (
     <>
-      <header className={`landing-header ${isScrolled ? 'scrolled' : ''}`}>
+      <header className={`landing-header ${isScrolled ?'scrolled' : ''}`}>
         <div className="landing-container header-container">
           <a href="#" className="header-logo" onClick={closeMenu}>
             <TerminalSquare className="logo-icon" size={28} />
@@ -50,18 +50,18 @@ const Header = ({ onStart }) => {
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="Toggle menu"
           >
-            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            {isMobileMenuOpen ?<X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </header>
 
-      {/* ─── MOBILE MENU (Hors du header pour éviter les conflits z-index / blur) ─── */}
+      {/* --- MOBILE MENU (Hors du header pour éviter les conflits z-index / blur) --- */}
       <div 
-        className={`mobile-menu-overlay ${isMobileMenuOpen ? 'open' : ''}`}
+        className={`mobile-menu-overlay ${isMobileMenuOpen ?'open' : ''}`}
         onClick={closeMenu}
       />
       
-      <nav className={`mobile-nav-panel ${isMobileMenuOpen ? 'open' : ''} ${isScrolled ? 'scrolled-offset' : ''}`}>
+      <nav className={`mobile-nav-panel ${isMobileMenuOpen ?'open' : ''} ${isScrolled ?'scrolled-offset' : ''}`}>
         <a href="#features" onClick={closeMenu}>Fonctionnalités</a>
         <a href="#about" onClick={closeMenu}>À propos</a>
         <a href="#contact" onClick={closeMenu}>Contact</a>
@@ -78,3 +78,4 @@ const Header = ({ onStart }) => {
 };
 
 export default Header;
+

@@ -1,4 +1,4 @@
-import Token from '../Token.js';
+﻿import Token from '../Token.js';
 import TokenType from '../tokenTypes.js';
 
 const scannerMethods = {
@@ -7,13 +7,13 @@ const scannerMethods = {
     const line  = this.line;
     const col   = this.column;
 
-    // ── Espaces et tabulations (ignorés, pas de token) ──────────────────────
+    // -- Espaces et tabulations (ignorés, pas de token) ----------------------
     if (this._isWhitespace(ch)) {
       this._advance();
       return;
     }
 
-    // ── Retour à la ligne ────────────────────────────────────────────────────
+    // -- Retour à la ligne ----------------------------------------------------
     if (ch === '\n') {
       // On ne génère pas de NEWLINE consécutifs
       if (this.tokens.length === 0 ||
@@ -26,36 +26,36 @@ const scannerMethods = {
       return;
     }
 
-    // ── Commentaires sur une ligne (//) ──────────────────────────────────────
+    // -- Commentaires sur une ligne (//) --------------------------------------
     if (ch === '/' && this._peek() === '/') {
       this._skipLineComment();
       return;
     }
 
-    // ── Nombres ──────────────────────────────────────────────────────────────
+    // -- Nombres --------------------------------------------------------------
     if (this._isDigit(ch)) {
       this._readNumber(line, col);
       return;
     }
 
-    // ── Chaînes et caractères ────────────────────────────────────────────────
+    // -- Chaînes et caractères ------------------------------------------------
     if (ch === '"') { this._readString(line, col); return; }
     if (ch === "'") { this._readChar(line, col);   return; }
 
-    // ── Identificateurs et mots-clés ─────────────────────────────────────────
+    // -- Identificateurs et mots-clés -----------------------------------------
     if (this._isAlpha(ch)) {
       this._readIdentifierOrKeyword(line, col);
       return;
     }
 
-    // ── Opérateur d'affectation unicode ← ───────────────────────────────────
-    if (ch === '←') {
+    // -- Opérateur d'affectation unicode ? -----------------------------------
+    if (ch === '?') {
       this._advance();
-      this.tokens.push(new Token(TokenType.ASSIGN, '←', line, col));
+      this.tokens.push(new Token(TokenType.ASSIGN, '?', line, col));
       return;
     }
 
-    // ── Opérateurs et symboles ────────────────────────────────────────────────
+    // -- Opérateurs et symboles ------------------------------------------------
     this._readOperatorOrSymbol(line, col);
   },
 
@@ -68,3 +68,4 @@ const scannerMethods = {
 };
 
 export default scannerMethods;
+

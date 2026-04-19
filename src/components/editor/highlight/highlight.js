@@ -1,4 +1,4 @@
-/**
+﻿/**
  * highlight.js
  * 
  * Mini-lexer purement UI basé sur des expressions régulières pour la 
@@ -18,30 +18,20 @@ const KEYWORDS = [
 ];
 
 const TYPES = ['ENTIER', 'REEL', 'CHAINE', 'CARACTERE', 'BOOLEEN'];
-// 'CHAINE DE CARACTERE' est divisé en plusieurs tokens par la regex par défaut.
+// 'CHAINE DE CARACTERE' est divis? en plusieurs tokens par la regex par défaut.
 // C'est gérable en UI.
 
 const FUNCTIONS = ['ECRIRE', 'LIRE'];
 const BOOLEANS = ['VRAI', 'FAUX'];
-const OPERATORS = ['<-', ' ', '=', '<>', '<', '>', '<=', '>=', '+', '-', '*', '/', '%', '^', 'ET', 'OU', 'NON'];
-
-function escapeRegExp(string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& = whole matched string
-}
-
 const keywordsRegex = new RegExp(`\\b(${KEYWORDS.join('|')})\\b`, 'i');
 const typesRegex = new RegExp(`\\b(${TYPES.join('|')})\\b`, 'i');
 const functionsRegex = new RegExp(`\\b(${FUNCTIONS.join('|')})\\b`, 'i');
 const booleansRegex = new RegExp(`\\b(${BOOLEANS.join('|')})\\b`, 'i');
 
-// Trier les opérateurs du plus long au plus court pour éviter un masquage partiel
-const operatorsSorted = [...OPERATORS].sort((a,b) => b.length - a.length);
-const operatorsRegex = new RegExp(`(${operatorsSorted.map(escapeRegExp).join('|')})`, 'i');
 
 // Le lexer principal : retourne un tableau de tokens { type, value }
 export function tokenizeForHighlight(text) {
   const tokens = [];
-  let currentString = '';
   
   // Utilisation de .matchAll() n'est pas possible si on veut découper séquentiellement,
   // donc boucle de scan sur le texte.
@@ -109,7 +99,7 @@ export function tokenizeForHighlight(text) {
     const symbolMatch = text.slice(i).match(new RegExp(`^(<-| |<=|>=|!=|=|\\+|-|\\*|\\/|%|\\^|<|>|\\(|\\)|\\[|\\]|:|;|,)`));
     if (symbolMatch) {
       const symbol = symbolMatch[1];
-      const type = /[(|)|\[|\]|:|;|,|.]/.test(symbol) ? 'punctuation' : 'operator';
+      const type = /^[()[\]:;,.]$/.test(symbol) ?'punctuation' : 'operator';
       tokens.push({ type, value: symbol });
       i += symbol.length;
       continue;
@@ -177,4 +167,5 @@ export function tokenizeAndMapStructure(text) {
 
   return result;
 }
+
 

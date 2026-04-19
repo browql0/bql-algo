@@ -1,18 +1,18 @@
-/**
+﻿/**
  * suggest.js
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  * Système de suggestion intelligente par distance de Levenshtein.
  *
  * Compare un mot inconnu à la liste des mots-clés du langage et propose
  * la(les) correspondance(s) la(les) plus proche(s).
  *
- * Ex: "ALOR"  → "ALORS"
- *     "FINS"  → "FINSI"
- *     "tantq" → "TANTQUE"
- * ─────────────────────────────────────────────────────────────────────────────
+ * Ex: "ALOR"  ? "ALORS"
+ *     "FINS"  ? "FINSI"
+ *     "tantq" ? "TANTQUE"
+ * -----------------------------------------------------------------------------
  */
 
-// ── Liste complète des mots-clés du langage ─────────────────────────────────
+// -- Liste complète des mots-clés du langage ---------------------------------
 export const ALL_KEYWORDS = [
   'ALGORITHME', 'VARIABLE', 'VARIABLES', 'DEBUT', 'FIN',
   'SI', 'ALORS', 'SINON', 'SINON SI', 'FINSI',
@@ -26,11 +26,11 @@ export const ALL_KEYWORDS = [
   'VRAI', 'FAUX',
 ];
 
-// ── Algorithme de Levenshtein ────────────────────────────────────────────────
+// -- Algorithme de Levenshtein ------------------------------------------------
 
 /**
  * Calcule la distance de Levenshtein entre deux chaînes.
- * Complexité : O(m × n) — très rapide pour des mots courts.
+ * Complexit? : O(m × n) ? très rapide pour des mots courts.
  *
  * @param {string} a
  * @param {string} b
@@ -59,7 +59,7 @@ export function levenshtein(a, b) {
   return dp[m];
 }
 
-// ── Suggestion ───────────────────────────────────────────────────────────────
+// -- Suggestion ---------------------------------------------------------------
 
 /**
  * Retourne les mots-clés les plus proches d'un mot inconnu.
@@ -105,3 +105,4 @@ export function buildHint(word, options) {
   const listed = suggestions.map(s => `"${s}"`).join(', ');
   return `Peut-être : ${listed} ?`;
 }
+

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * outputUtils.js
  * 
  * Utilitaires pour la normalisation et la comparaison robuste des sorties
@@ -45,7 +45,7 @@ export function normalizeString(str) {
  * @param {string} got - Sortie obtenue.
  * @param {string} expected - Sortie attendue.
  * @returns {object} - { passed: boolean, isAmbiguous: boolean }
- *                     isAmbiguous est vrai si l'égalité échoue brutalement 
+ *                     isAmbiguous est vrai si l'égalit? ?choue brutalement 
  *                     mais réussit après normalisation extrême.
  */
 export function compareOutputs(got, expected) {
@@ -66,7 +66,7 @@ export function compareOutputs(got, expected) {
   // 3. Détection d'ambiguïté visuelle
   // Si les chaînes "semblent" identiques mais different par des caractères invisibles 
   // que normalizeString n'a pas géré (cas rares comme des caractères ZWSP)
-  // ou si la différence est juste une question de casse ? (On ne normalise pas la casse par défaut)
+  // ou si la différence est juste une question de casse ?(On ne normalise pas la casse par défaut)
   
   // On considère ambigu si visuellement (sans espaces) c'est très proche
   const superNormGot = normGot.replace(/\s/g, '');
@@ -107,7 +107,7 @@ export function numericMatch(got, expected) {
 
 /**
  * Retourne des informations de base sur les différences entre deux chaînes (comme la longueur).
- * Utilisé pour enrichir les retours d'erreurs d'ambiguïté.
+ * Utilis? pour enrichir les retours d'erreurs d'ambiguïté.
  *
  * @param {string} got
  * @param {string} expected
@@ -119,3 +119,4 @@ export function getStringDiffInfo(got, expected) {
     expectedLength: String(expected || '').length
   };
 }
+

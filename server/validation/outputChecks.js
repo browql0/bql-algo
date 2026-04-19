@@ -12,7 +12,7 @@ function parseStrictNumber(value) {
   const text = normalizeLine(value).replace(",", ".");
   if (!/^-?\d+(?:\.\d+)?$/.test(text)) return null;
   const parsed = Number(text);
-  return Number.isFinite(parsed) ? parsed : null;
+  return Number.isFinite(parsed) ?parsed : null;
 }
 
 function nearlyEqual(a, b, tolerance = 1e-9) {
@@ -34,7 +34,7 @@ function containsExpectedNumber(lines, expectedNumber, tolerance) {
 
 function checkSingleNumber(outputLines, expected, options = {}) {
   const lines = normalizeOutput(outputLines);
-  const expectedNumber = Number(String(expected ?? "").replace(",", "."));
+  const expectedNumber = parseStrictNumber(expected);
   const tolerance = Number(options.numericTolerance ?? 1e-9);
 
   if (lines.length === 0) {
@@ -57,7 +57,7 @@ function checkSingleNumber(outputLines, expected, options = {}) {
     };
   }
 
-  const actualSingleNumber = lines.length === 1 ? parseStrictNumber(lines[0]) : null;
+  const actualSingleNumber = lines.length === 1 ?parseStrictNumber(lines[0]) : null;
   if (
     actualSingleNumber !== null &&
     nearlyEqual(actualSingleNumber, expectedNumber, tolerance)
@@ -95,7 +95,7 @@ function checkFinalOutput(outputLines, expected, options = {}) {
   const lines = normalizeOutput(outputLines);
   const expectedText = normalizeLine(expected);
   const finalOutput = lines.join("\n").trim();
-  const lastLine = lines.length > 0 ? lines[lines.length - 1] : "";
+  const lastLine = lines.length > 0 ?lines[lines.length - 1] : "";
   const strict = options.strict !== false;
 
   if (lines.length === 0) {
@@ -109,7 +109,7 @@ function checkFinalOutput(outputLines, expected, options = {}) {
   }
 
   const compared = strict
-    ? compareOutputs(finalOutput, expectedText)
+    ?compareOutputs(finalOutput, expectedText)
     : compareOutputs(lastLine, expectedText);
 
   if (
@@ -146,7 +146,8 @@ export function checkOutput({ outputLines, expected, expectedOutput = {} }) {
 
 export function outputContainsExpectedNumber(outputLines, expected, options = {}) {
   const lines = normalizeOutput(outputLines);
-  const expectedNumber = Number(String(expected ?? "").replace(",", "."));
+  const expectedNumber = parseStrictNumber(expected);
+  const tolerance = Number(options.numericTolerance ?? 1e-9);
   if (!Number.isFinite(expectedNumber)) return false;
-  return containsExpectedNumber(lines, expectedNumber, options.numericTolerance ?? 1e-9);
+  return containsExpectedNumber(lines, expectedNumber, tolerance);
 }

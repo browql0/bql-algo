@@ -1,18 +1,22 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { e2eUser, isE2EMode } from '../lib/e2eFixtures';
+import { AuthContext } from './AuthContextCore';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// AuthContext — source de vérité unique pour l'état d'authentification
-// ─────────────────────────────────────────────────────────────────────────────
-const AuthContext = createContext(null);
-
+// -----------------------------------------------------------------------------
+// AuthContext ? source de vérité unique pour l'état d'authentification
+// -----------------------------------------------------------------------------
 export const AuthProvider = ({ children }) => {
-  const [user, setUser]       = useState(null);
+  const [user, setUser]       = useState(() => (isE2EMode ?e2eUser : null));
   // `loading` est true jusqu'à ce que Supabase ait répondu au moins une fois.
   // Empêche tout flash de contenu protégé lors d'un refresh.
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !isE2EMode);
 
   useEffect(() => {
+    if (isE2EMode) {
+      return undefined;
+    }
+
     const fetchProfile = async (session) => {
       if (!session?.user) {
         setUser(null);
@@ -61,7 +65,7 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     isAuthenticated: !!user,
-    signOut: () => supabase.auth.signOut(),
+    signOut: () => (isE2EMode ?Promise.resolve() : supabase.auth.signOut()),
   };
 
   return (
@@ -71,11 +75,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// Hook custom — usage : const { user, loading, isAuthenticated } = useAuth();
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth doit être utilisé à l\'intérieur d\'un <AuthProvider>');
-  }
-  return context;
-};
+

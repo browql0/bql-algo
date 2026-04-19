@@ -117,7 +117,7 @@ function buildFeedbackReport({ strictResult, diagnostics }) {
     subtitle: primary?.message || strictResult.message,
     correctPoints: [
       ...(strictResult.passed > 0
-        ? [`${strictResult.passed} test(s) comportemental(aux) passent.`]
+        ?[`${strictResult.passed} test(s) comportemental(aux) passent.`]
         : []),
       ...diagnosticCorrectPoints,
     ],

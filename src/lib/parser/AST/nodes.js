@@ -1,18 +1,18 @@
-/**
+﻿/**
  * nodes.js
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  * Toutes les classes de nœuds de l'AST (Abstract Syntax Tree).
  *
  * Chaque classe est un simple conteneur de données avec :
- *   - un champ `type` (string constant) pour le dispatch dans l'interpréteur
+ *   - un champ `type` (string constant) pour le dispatch dans l'interprêteur
  *   - les champs propres au nœud
  *   - line / column pour les messages d'erreur
  *
  * Convention : NodeType.XXX_NODE correspond à la classe XxxNode.
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  */
 
-// ── Enum des types de nœuds ────────────────────────────────────────────────────
+// -- Enum des types de nœuds ----------------------------------------------------
 export const NodeType = Object.freeze({
   PROGRAM:     'PROGRAM',
   BLOCK:       'BLOCK',
@@ -51,24 +51,24 @@ export const NodeType = Object.freeze({
   CASE:        'CASE',
 });
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+// -- Helpers --------------------------------------------------------------------
 
 /** Positionne facilement line/column sur un nœud depuis un token. */
 function pos(token) {
   return { line: token?.line ?? 0, column: token?.column ?? 0 };
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Nœuds de structure
-// ═══════════════════════════════════════════════════════════════════════════════
+// ===============================================================================
+// NÅ“uds de structure
+// ===============================================================================
 
 /**
  * Racine du programme.
  *
  * Syntaxe de l'en-tête (formes valides) :
- *   ALGORITHMENom;        ← nom collé directement
- *   ALGORITHME_Nom;       ← underscore comme séparateur
- *   ALGORITHME Nom;       ← INVALIDE (espace interdit)
+ *   ALGORITHMENom;        ? nom collé directement
+ *   ALGORITHME_Nom;       ? underscore comme séparateur
+ *   ALGORITHME Nom;       ? INVALIDE (espace interdit)
  *
  * Structure générale :
  *   ALGORITHMENom; CONSTANTE(S) ... VARIABLE(S) ... DEBUT ... FIN
@@ -79,7 +79,7 @@ export class ProgramNode {
    * @param {ConstDeclNode[]} constants  - Déclarations de constantes
    * @param {TypeDeclarationNode[]} customTypes - Déclarations de types
    * @param {VarDeclNode[]} declarations - Déclarations de variables
-   * @param {BlockNode}     body         - Corps DEBUT…FIN
+   * @param {BlockNode}     body         - Corps DEBUT/FIN
    * @param {object}        token        - Token ALGORITHME (pour position)
    */
   constructor(name, constants, customTypes, declarations, body, token) {
@@ -89,13 +89,12 @@ export class ProgramNode {
     this.customTypes  = customTypes;
     this.declarations = declarations;
     this.body         = body;
-    this.line         = token?.line   ?? 0;
     this.column       = token?.column ?? 0;
   }
 }
 
 /**
- * Bloc d'instructions (entre DEBUT/FIN, ALORS/FINSI, FAIRE/FINTANTQUE…).
+ * Bloc d'instructions (entre DEBUT/FIN, ALORS/FINSI, FAIRE/FINTANTQUE?).
  */
 export class BlockNode {
   /** @param {Array} statements - Liste de nœuds d'instruction */
@@ -109,13 +108,13 @@ export class BlockNode {
  * Déclaration de variables.
  *
  * Syntaxe officielle BQL :
- *   VARIABLE  age : ENTIER;          ← exactement 1 symbole déclaré
- *   VARIABLES age : ENTIER;          ← 2+ symboles déclarés
+ *   VARIABLE  age : ENTIER;          ? exactement 1 symbole déclaré
+ *   VARIABLES age : ENTIER;          ? 2+ symboles déclarés
  *   VARIABLES age : ENTIER; nom : CHAINE DE CARACTERE;
  *
  * Important : le ':' est INTERDIT immédiatement après VARIABLE ou VARIABLES.
- *   VARIABLE:  ← INVALIDE
- *   VARIABLES: ← INVALIDE
+ *   VARIABLE:  ? INVALIDE
+ *   VARIABLES: ? INVALIDE
  */
 export class VarDeclNode {
   /**
@@ -195,9 +194,9 @@ export class RecordFieldNode {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Nœuds littéraux
-// ═══════════════════════════════════════════════════════════════════════════════
+// ===============================================================================
+// NÅ“uds littéraux
+// ===============================================================================
 
 /** Nombre entier ou réel. ex: 42, 3.14 */
 export class NumberNode {
@@ -235,9 +234,9 @@ export class BooleanNode {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Nœuds de référence et d'opération
-// ═══════════════════════════════════════════════════════════════════════════════
+// ===============================================================================
+// NÅ“uds de référence et d'opération
+// ===============================================================================
 
 /** Référence à une variable. ex: note, compteur */
 export class IdentifierNode {
@@ -270,13 +269,13 @@ export class MemberAccessNode {
 
 /**
  * Opération binaire.
- * left OP right — ex: a + b, x >= 10, a ET b
+ * left OP right ? ex: a + b, x >= 10, a ET b
  */
 export class BinaryOpNode {
   /**
-   * @param {*}      left     - Nœud gauche
+   * @param {*}      left     - NÅ“ud gauche
    * @param {string} operator - Opérateur (+, -, *, /, %, ^, =, !=, <, <=, >, >=, ET, OU)
-   * @param {*}      right    - Nœud droit
+   * @param {*}      right    - NÅ“ud droit
    * @param {object} token    - Token de l'opérateur (pour position)
    */
   constructor(left, operator, right, token) {
@@ -290,7 +289,7 @@ export class BinaryOpNode {
 
 /**
  * Opération unaire.
- * OP operand — ex: NON condition, - valeur
+ * OP operand ? ex: NON condition, - valeur
  */
 export class UnaryOpNode {
   constructor(operator, operand, token) {
@@ -301,9 +300,9 @@ export class UnaryOpNode {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Nœuds d'instruction
-// ═══════════════════════════════════════════════════════════════════════════════
+// ===============================================================================
+// NÅ“uds d'instruction
+// ===============================================================================
 
 /** Affectation : name <- value ou e1.nom <- value */
 export class AssignNode {
@@ -328,11 +327,11 @@ export class ArrayAssignNode {
 }
 
 /**
- * Condition : SI … ALORS … (SINON SI … ALORS …)* (SINON …)? FINSI
+ * Condition : SI ? ALORS ? (SINON SI ? ALORS ?)* (SINON ?)?FINSI
  */
 export class IfNode {
   /**
-   * @param {*}           condition     - Nœud condition principale
+   * @param {*}           condition     - NÅ“ud condition principale
    * @param {BlockNode}   thenBlock     - Bloc ALORS
    * @param {Array}       elseifClauses - [{ condition, block }]
    * @param {BlockNode|null} elseBlock  - Bloc SINON (ou null)
@@ -348,7 +347,7 @@ export class IfNode {
   }
 }
 
-/** Boucle TANTQUE condition FAIRE … FINTANTQUE */
+/** Boucle TANTQUE condition FAIRE ? FINTANTQUE */
 export class WhileNode {
   constructor(condition, body, token) {
     this.type      = NodeType.WHILE;
@@ -359,20 +358,20 @@ export class WhileNode {
 }
 
 /**
- * Boucle POUR variable ALLANT DE from A to [PAS step] FAIRE … FINPOUR
+ * Boucle POUR variable ALLANT DE from A to [PAS step] FAIRE ? FINPOUR
  *
- * Syntaxe : POUR i ALLANT DE debut A fin [PAS valeur] FAIRE … FINPOUR
+ * Syntaxe : POUR i ALLANT DE debut A fin [PAS valeur] FAIRE ? FINPOUR
  *
  * Règles sur le pas :
- *   - si step est null  → pas implicite de 1 (PAS absent de la source)
- *   - si step est fourni → PAS valeur explicite (valeur != 0 et != 1 obligatoire)
+ *   - si step est null  ? pas implicite de 1 (PAS absent de la source)
+ *   - si step est fourni ? PAS valeur explicite (valeur != 0 et != 1 obligatoire)
  */
 export class ForNode {
   /**
    * @param {string}     variable - Nom de la variable de contrôle
-   * @param {*}          from     - Nœud valeur de départ
-   * @param {*}          to       - Nœud valeur de fin
-   * @param {*|null}     step     - Nœud pas (null = implicite 1, pas de PAS écrit)
+   * @param {*}          from     - NÅ“ud valeur de départ
+   * @param {*}          to       - NÅ“ud valeur de fin
+   * @param {*|null}     step     - NÅ“ud pas (null = implicite 1, pas de PAS ?crit)
    * @param {BlockNode}  body
    * @param {object}     token
    */
@@ -387,7 +386,7 @@ export class ForNode {
   }
 }
 
-/** Boucle REPETER … JUSQUA (condition) */
+/** Boucle REPETER ? JUSQUA (condition) */
 export class DoWhileNode {
   constructor(body, condition, token) {
     this.type      = NodeType.DO_WHILE;
@@ -397,9 +396,9 @@ export class DoWhileNode {
   }
 }
 
-/** Instruction ECRIRE(arg1, arg2, …) */
+/** Instruction ECRIRE(arg1, arg2, ?) */
 export class PrintNode {
-  /** @param {Array} args - Nœuds d'expressions à afficher */
+  /** @param {Array} args - NÅ“uds d'expressions à afficher */
   constructor(args, token) {
     this.type = NodeType.PRINT;
     this.args = args;
@@ -411,15 +410,15 @@ export class PrintNode {
  * Instruction LIRE(cible)
  *
  * La cible peut être :
- *   - un IdentifierNode  → LIRE(x)
- *   - un ArrayAccessNode → LIRE(T[i])
+ *   - un IdentifierNode  ? LIRE(x)
+ *   - un ArrayAccessNode ? LIRE(T[i])
  *
  * Le champ `variable` est conservé pour rétrocompatibilité (string du nom de
  * la variable racine). Le champ `target` est le nœud AST complet.
  */
 export class InputNode {
   /**
-   * @param {IdentifierNode|ArrayAccessNode|string} target  - Nœud cible (ou string legacy)
+   * @param {IdentifierNode|ArrayAccessNode|string} target  - NÅ“ud cible (ou string legacy)
    * @param {object} token
    */
   constructor(target, token) {
@@ -429,7 +428,7 @@ export class InputNode {
       this.variable = target;   // rétrocompatibilité
       this.target   = null;     // pas de nœud dans ce cas
     } else {
-      // Nœud AST : extraire le nom de base pour `variable`
+      // NÅ“ud AST : extraire le nom de base pour `variable`
       this.target   = target;
       this.variable = target?.name ?? '?';
     }
@@ -437,9 +436,9 @@ export class InputNode {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ===============================================================================
 // Structure SELON (Switch / Case)
-// ═══════════════════════════════════════════════════════════════════════════════
+// ===============================================================================
 
 /** Structure conditionnelle à choix multiples (SELON) */
 export class SwitchNode {
@@ -472,3 +471,4 @@ export class CaseNode {
     Object.assign(this, pos(token));
   }
 }
+

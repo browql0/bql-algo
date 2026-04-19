@@ -36,15 +36,15 @@ const TYPE_LABELS = {
  * @param {boolean} [options.color=false] - Ajouter des codes ANSI (pour terminal)
  * @returns {string}
  */
-export function formatError(error, sourceCode = '', { emoji = true, color = false } = {}) {
+export function formatError(error, sourceCode = '', { emoji = true } = {}) {
   const lines = [];
 
   // ── En-tête ─────────────────────────────────────────────────────────────────
   const label    = TYPE_LABELS[error.type] ?? 'Erreur';
   const position = error.line > 0
-    ? ` — ligne ${error.line}, colonne ${error.column}`
+    ?` — ligne ${error.line}, colonne ${error.column}`
     : '';
-  const prefix   = emoji ? '❌ ' : '';
+  const prefix   = emoji ?'❌ ' : '';
 
   lines.push(prefix + label + position);
   lines.push('');
@@ -74,7 +74,7 @@ export function formatError(error, sourceCode = '', { emoji = true, color = fals
 
   // ── Suggestion / hint ────────────────────────────────────────────────────────
   if (error.hint) {
-    const hintPrefix = emoji ? '✔️  ' : '→  ';
+    const hintPrefix = emoji ?'✔️  ' : '→  ';
     lines.push(hintPrefix + error.hint);
   }
 
@@ -115,10 +115,10 @@ export function formatErrorReact(error, sourceCode = '', options = {}) {
   const position = error.line > 0 ? `Ligne ${error.line}${options.simplifiedErrors ? '' : `, colonne ${error.column}`}` : '';
   const codeLine = error.codeLine ?? _extractLine(sourceCode, error.line);
   const arrow    = (codeLine !== null && error.column > 0)
-    ? ' '.repeat(Math.max(0, error.column - 1)) + '^'
+    ?' '.repeat(Math.max(0, error.column - 1)) + '^'
     : null;
   const message  = (error.value !== null && error.value !== undefined)
-    ? `${error.message} : "${error.value}"`
+    ?`${error.message} : "${error.value}"`
     : error.message;
 
   // showCorrectionSuggestions / beginnerMode (Lot 3)

@@ -1,10 +1,10 @@
-/**
+﻿/**
  * Interpreter.js  (version async + LIRE interactif)
- * ─────────────────────────────────────────────────────────────────────────────
- * Interpréteur async en mode "tree-walk" pour le pseudo-langage marocain.
+ * -----------------------------------------------------------------------------
+ * Interprêteur async en mode "tree-walk" pour le pseudo-langage marocain.
  *
- * Nouveauté : LIRE(x) appelle this._inputFn(variable, type) qui retourne
- * une Promise. L'interpréteur await cette promise → le programme se suspend
+ * Nouveaut? : LIRE(x) appelle this._inputFn(variable, type) qui retourne
+ * une Promise. L'interprêteur await cette promise ? le programme se suspend
  * jusqu'à ce que React fournisse la valeur saisie par l'utilisateur.
  *
  * Usage :
@@ -13,7 +13,7 @@
  *     input:  async (varName, type) => { ... retourne la valeur ... }
  *   });
  *   const result = await interp.run(ast);
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  */
 
 import Environment from './Environment.js';
@@ -27,11 +27,11 @@ import ioExecutionMethods from './parts/io.js';
 import expressionEvaluationMethods from './parts/expressions.js';
 
 
-// ── Interpréteur ──────────────────────────────────────────────────────────────
+// -- Interprêteur --------------------------------------------------------------
 class Interpreter {
   /**
    * @param {object}   options
-   * @param {Function} [options.output]   - Callback appelé pour chaque ECRIRE()
+   * @param {Function} [options.output]   - Callback appel? pour chaque ECRIRE()
    *                                        Signature : (line: string) => void
    * @param {Function} [options.input]    - Callback async pour LIRE()
    *                                        Signature : (varName: string, type: string) => Promise<string>
@@ -61,13 +61,13 @@ class Interpreter {
     this._constants = new Map();
 
     // Vitesse du terminal (Lot 2)
-    this._delayMs = terminalSpeed === 'typewriter' ? 150 : (terminalSpeed === 'normal' ? 40 : 0);
+    this._delayMs = terminalSpeed === 'typewriter' ?150 : (terminalSpeed === 'normal' ?40 : 0);
   }
 
-  // ── API publique ────────────────────────────────────────────────────────────
+  // -- API publique ------------------------------------------------------------
 
   /**
-   * Exécute le programme complet (async — supporte LIRE interactif).
+   * Exécute le programme complet (async ? supporte LIRE interactif).
    * @param {import('../parser/AST/nodes.js').ProgramNode} ast
    * @returns {Promise<{ output: string[], env: Environment }>}
    */
@@ -115,3 +115,4 @@ Object.assign(
 );
 
 export default Interpreter;
+

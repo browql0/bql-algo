@@ -5,7 +5,7 @@ const runtimeMethods = {
     if (this._onArrayUpdate) {
       // On envoie une copie (objet ou tableau) et les détails de l'action
       const data = (arr !== null && typeof arr === 'object') 
-        ? (Array.isArray(arr) ? [...arr] : { ...arr }) 
+        ?(Array.isArray(arr) ?[...arr] : { ...arr }) 
         : arr;
       await this._onArrayUpdate(name, action, index, data, field);
     }
@@ -21,8 +21,8 @@ const runtimeMethods = {
   _toNumber(val, line) {
     const n = Number(val);
     if (isNaN(n)) {
-      const typeLabel = typeof val === 'string' ? 'une CHAINE'
-                      : typeof val === 'boolean' ? 'un BOOLEEN'
+      const typeLabel = typeof val === 'string' ?'une CHAINE'
+                      : typeof val === 'boolean' ?'un BOOLEEN'
                       : `'${val}'`;
       throw new AlgoRuntimeError({
         message: `Une valeur numérique est attendue, mais reçu ${typeLabel}`,

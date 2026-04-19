@@ -13,7 +13,7 @@ export function formatCode(code, tabSize = 2) {
   
   const getIndentString = (level) => {
     const safeLevel = Math.max(0, level); // au cas où
-    return (tabSize === 'tab' ? '\t' : ' '.repeat(parseInt(tabSize))).repeat(safeLevel);
+    return (tabSize === 'tab' ?'\t' : ' '.repeat(parseInt(tabSize))).repeat(safeLevel);
   };
 
   for (let i = 0; i < lines.length; i++) {
@@ -34,7 +34,7 @@ export function formatCode(code, tabSize = 2) {
     
     // Identifier le mot-clé principal de la ligne
     const firstWordMatch = line.match(/^([a-zA-Z_]\w*)/);
-    let firstWord = firstWordMatch ? firstWordMatch[1].toUpperCase() : null;
+    let firstWord = firstWordMatch ?firstWordMatch[1].toUpperCase() : null;
     
     // Détecter formes combinées
     if (line.toUpperCase().startsWith('SINON SI')) {

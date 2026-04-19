@@ -1,7 +1,15 @@
 import { validateSubmission } from "./submissionValidator.js";
 
-function log(event, payload = {}) {
-  console.log(`[submissionService] ${event}`, payload);
+const LOG_LEVEL = process.env.SUBMISSION_LOG_LEVEL || "warn";
+const LOG_LEVELS = { error: 0, warn: 1, info: 2, debug: 3 };
+
+function log(level, event, payload = {}) {
+  const threshold = LOG_LEVELS[LOG_LEVEL] ?? LOG_LEVELS.warn;
+  const severity = LOG_LEVELS[level] ?? LOG_LEVELS.warn;
+  if (severity > threshold) return;
+
+  const logger = level === "error" ? console.error : level === "warn" ? console.warn : console.log;
+  logger(`[submissionService] ${event}`, payload);
 }
 
 function sanitizeValidationResult(result) {
@@ -14,13 +22,13 @@ function sanitizeValidationResult(result) {
     details: result.details || null,
     validationMode: result.validationMode || null,
     exerciseId: result.exerciseId || null,
-    cases: Array.isArray(result.cases) ? result.cases : [],
+    cases: Array.isArray(result.cases) ?result.cases : [],
     constraints: result.constraints || null,
-    diagnostics: Array.isArray(result.diagnostics) ? result.diagnostics : [],
+    diagnostics: Array.isArray(result.diagnostics) ?result.diagnostics : [],
     feedbackReport: result.feedbackReport || null,
     xpAwarded: Number(result.xpAwarded || 0),
     progress: result.progress || null,
-    httpStatus: result.httpStatus || (result.success ? 200 : 400),
+    httpStatus: result.httpStatus || (result.success ?200 : 400),
   };
 }
 
@@ -35,7 +43,7 @@ function hasValidationRules(secrets) {
   if (Array.isArray(testCases)) return testCases.length > 0 || hasExpectedOutput;
   if (testCases && typeof testCases === "object") {
     return Array.isArray(testCases.cases)
-      ? testCases.cases.length > 0 || hasExpectedOutput
+      ?testCases.cases.length > 0 || hasExpectedOutput
       : Object.keys(testCases).length > 0 || hasExpectedOutput;
   }
   if (typeof testCases === "string") return testCases.trim() !== "" || hasExpectedOutput;
@@ -44,8 +52,6 @@ function hasValidationRules(secrets) {
 }
 
 async function loadLessonSecrets(supabaseAdmin, lessonId) {
-  log("loading private lesson secrets", { lessonId });
-
   const privateResult = await supabaseAdmin
     .schema("private")
     .from("lesson_secrets")
@@ -54,11 +60,6 @@ async function loadLessonSecrets(supabaseAdmin, lessonId) {
     .maybeSingle();
 
   if (hasValidationRules(privateResult.data)) {
-    log("private lesson secrets loaded", {
-      lessonId,
-      hasExpectedOutput: Boolean(privateResult.data?.expected_output),
-      hasTestCases: Boolean(privateResult.data?.test_cases),
-    });
     return {
       secrets: privateResult.data,
       source: "private.lesson_secrets",
@@ -66,14 +67,9 @@ async function loadLessonSecrets(supabaseAdmin, lessonId) {
     };
   }
 
-  log("private lesson secrets missing", {
+  log("warn", "private lesson secrets missing", {
     lessonId,
     error: privateResult.error?.message || null,
-  });
-
-  log("no validation tests found", {
-    lessonId,
-    privateError: privateResult.error?.message || null,
   });
 
   return {
@@ -91,12 +87,6 @@ export async function submitLessonSolution({
   lessonId,
   code,
 }) {
-  log("submission received", {
-    lessonId,
-    userId: user?.id || null,
-    hasCode: typeof code === "string" && code.trim() !== "",
-  });
-
   if (!lessonId || typeof lessonId !== "string") {
     return {
       success: false,
@@ -126,7 +116,7 @@ export async function submitLessonSolution({
     .maybeSingle();
 
   if (lessonError || !lesson) {
-    log("lesson lookup failed", {
+    log("warn", "lesson lookup failed", {
       lessonId,
       error: lessonError?.message || null,
     });
@@ -140,12 +130,6 @@ export async function submitLessonSolution({
       httpStatus: 404,
     };
   }
-
-  log("lesson loaded", {
-    lessonId,
-    title: lesson.title || null,
-    lessonType: lesson.lesson_type || null,
-  });
 
   const loadedSecrets = await loadLessonSecrets(supabaseAdmin, lessonId);
   if (!loadedSecrets.secrets) {
@@ -169,7 +153,7 @@ export async function submitLessonSolution({
     }),
   );
 
-  log("validation result", {
+  log("info", "validation result", {
     lessonId,
     source: loadedSecrets.source,
     success: validation.success,
@@ -187,7 +171,7 @@ export async function submitLessonSolution({
     lesson_id: lessonId,
     success: validation.success,
     code_submitted: code,
-    error_message: validation.success ? null : validation.message,
+    error_message: validation.success ?null : validation.message,
     passed: validation.passed,
     total: validation.total,
     validation_mode: validation.validationMode,
@@ -201,7 +185,7 @@ export async function submitLessonSolution({
     .single();
 
   if (attemptError) {
-    console.warn("Could not record exercise attempt:", attemptError.message);
+    log("warn", "exercise attempt record failed", { message: attemptError.message });
   }
 
   if (attempt?.id) {
@@ -220,7 +204,7 @@ export async function submitLessonSolution({
     );
 
     if (progressError) {
-      console.warn("Could not record challenge result:", progressError.message);
+      log("warn", "challenge result record failed", { message: progressError.message });
     } else if (progressResult) {
       validation.xpAwarded = Number(progressResult.xpAwarded || 0);
       validation.progress = progressResult;

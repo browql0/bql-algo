@@ -1,19 +1,19 @@
-/**
+﻿/**
  * InteractiveTerminal.jsx
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  * Terminal React interactif pour BQL Algo.
  *
  * Fonctionnement :
  *   1. ECRIRE() → chaque sortie streamée en temps réel via outputCallback()
- *   2. LIRE()   → retourne une Promise; le terminal affiche un champ input
+ *   2. LIRE()   ? retourne une Promise; le terminal affiche un champ input
  *
  * Props :
- *   lines        : string[]   — lignes déjà produites (snapshot)
- *   inputPrompt  : object|null — { varName, type } ou null
+ *   lines        : string[]   ? lignes déjà produites (snapshot)
+ *   inputPrompt  : object|null ? { varName, type } ou null
  *   onSubmitInput: (value) => void
  *   isRunning    : boolean
- *   settings     : object      — préférences (fontSize, fontFamily, terminalTheme…)
- * ─────────────────────────────────────────────────────────────────────────────
+ *   settings     : object      ? préférences (fontSize, fontFamily, terminalTheme?)
+ * -----------------------------------------------------------------------------
  */
 
 import React, { useRef, useEffect, useState } from 'react';
@@ -41,9 +41,9 @@ const InteractiveTerminal = ({
   // Dynamic font style from settings
   const fontStyle = {
     fontSize: `${settings?.terminalFontSize || 14}px`,
-    fontFamily: settings?.fontFamily === 'fira'     ? "'Fira Code', monospace"
-              : settings?.fontFamily === 'consolas' ? "'Consolas', monospace"
-              : settings?.fontFamily === 'ubuntu'   ? "'Ubuntu Mono', monospace"
+    fontFamily: settings?.fontFamily === 'fira'     ?"'Fira Code', monospace"
+              : settings?.fontFamily === 'consolas' ?"'Consolas', monospace"
+              : settings?.fontFamily === 'ubuntu'   ?"'Ubuntu Mono', monospace"
               : "'JetBrains Mono', monospace",
   };
 
@@ -77,9 +77,9 @@ const InteractiveTerminal = ({
 
   // Status badge
   const badge = isRunning
-    ? { label: 'Exécution', cls: 'iterm-badge--running' }
+    ?{ label: 'Exécution', cls: 'iterm-badge--running' }
     : lines.length > 0
-    ? { label: 'Terminé',   cls: 'iterm-badge--done' }
+    ?{ label: 'Terminé',   cls: 'iterm-badge--done' }
     : { label: 'Prêt',      cls: 'iterm-badge--ready' };
 
   const isEmpty = lines.length === 0 && !inputPrompt && !isRunning;
@@ -87,10 +87,10 @@ const InteractiveTerminal = ({
   return (
     <div className={`iterm-container iterm-theme-${theme}`} style={fontStyle}>
 
-      {/* ── Header bar ── */}
+      {/* -- Header bar -- */}
       <div className="iterm-header">
         <div className="iterm-header-left">
-          <span className={`iterm-status-dot${isRunning ? ' running' : ''}`} />
+          <span className={`iterm-status-dot${isRunning ?' running' : ''}`} />
           <span className="iterm-header-title">bql_output</span>
         </div>
         <div className="iterm-header-right">
@@ -98,7 +98,7 @@ const InteractiveTerminal = ({
         </div>
       </div>
 
-      {/* ── Output zone (scrollable) ── */}
+      {/* -- Output zone (scrollable) -- */}
       <div className="iterm-output" ref={scrollRef}>
 
         {/* Premium empty state */}
@@ -123,7 +123,7 @@ const InteractiveTerminal = ({
             <div className="iterm-dot-anim">
               <span /><span /><span />
             </div>
-            Exécution en cours…
+            Exécution en cours?
           </div>
         )}
 
@@ -168,8 +168,8 @@ const InteractiveTerminal = ({
         {/* Type hint */}
         {inputPrompt && (
           <div className="iterm-hint">
-            💡 Variable <code>{inputPrompt.varName}</code> de type <strong>{inputPrompt.type.toUpperCase()}</strong>
-            &nbsp;— {TYPE_HINTS[inputPrompt.type] ?? 'valeur quelconque'}
+            Astuce Variable <code>{inputPrompt.varName}</code> de type <strong>{inputPrompt.type.toUpperCase()}</strong>
+            &nbsp;- {TYPE_HINTS[inputPrompt.type] ?? 'valeur quelconque'}
           </div>
         )}
       </div>
@@ -187,3 +187,4 @@ function _lineClass(line) {
 }
 
 export default InteractiveTerminal;
+

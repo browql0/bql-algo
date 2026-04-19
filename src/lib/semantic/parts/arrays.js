@@ -1,4 +1,4 @@
-import { isValidVariableName } from './utils.js';
+﻿import { isValidVariableName } from './utils.js';
 
 const arrayAnalysisMethods = {
   _analyzeArrayAssign(node) {
@@ -41,7 +41,7 @@ const arrayAnalysisMethods = {
     if (node.indices) {
       if (entry && entry.isArray && entry.dimensions !== node.indices.length) {
         this._addError({
-          message: `Le tableau '${name}' nécessite ${entry.dimensions} indice(s) (utilisé: ${node.indices.length})`,
+          message: `Le tableau '${name}' nécessite ${entry.dimensions} indice(s) (utilis?: ${node.indices.length})`,
           line: node.line,
           column: node.column,
           hint: `Le tableau a été déclaré avec ${entry.dimensions} dimension(s).`,
@@ -106,7 +106,7 @@ const arrayAnalysisMethods = {
       });
     } else if (!entry.isDynamicPlaceholder) {
       this._addError({
-        message: `tableau déjà dimensionné`,
+        message: `tableau déjà dimensionn?`,
         line: node.line,
         column: node.column,
         value: name,
@@ -114,11 +114,11 @@ const arrayAnalysisMethods = {
       });
     } else if (entry.isAllocated) {
       this._addError({
-        message: `tableau déjà dimensionné`,
+        message: `tableau déjà dimensionn?`,
         line: node.line,
         column: node.column,
         value: name,
-        hint: `Le tableau '${name}' a déjà été alloué précédemment. Il ne peut pas être réalloué.`,
+        hint: `Le tableau '${name}' a déjà été alloué précèdemment. Il ne peut pas être rçalloué.`,
       });
     } else {
       if (entry.dimensions !== node.sizes.length) {
@@ -149,3 +149,4 @@ const arrayAnalysisMethods = {
 };
 
 export default arrayAnalysisMethods;
+

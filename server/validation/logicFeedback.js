@@ -2,7 +2,7 @@ function normalizeNumber(value) {
   const match = String(value ?? "").match(/-?\d+(?:[.,]\d+)?/);
   if (!match) return null;
   const parsed = Number(match[0].replace(",", "."));
-  return Number.isFinite(parsed) ? parsed : null;
+  return Number.isFinite(parsed) ?parsed : null;
 }
 
 function numericInputs(testCase) {
@@ -60,7 +60,7 @@ export function createNumericFormulaPattern({
         example,
         testNext,
         confidence,
-        alreadyCorrect: context.partialSuccess ? [context.partialSuccess] : [],
+        alreadyCorrect: context.partialSuccess ?[context.partialSuccess] : [],
       };
     },
   };
@@ -125,17 +125,17 @@ export function genericLogicDiagnostic(strictResult) {
 
   return {
     type: "logic_error",
-    code: partialSuccess ? "PARTIAL_FORMULA" : "OUTPUT_MISMATCH",
+    code: partialSuccess ?"PARTIAL_FORMULA" : "OUTPUT_MISMATCH",
     message: partialSuccess
-      ? "Le programme marche pour certains cas, mais la formule semble incomplete."
+      ?"Le programme marche pour certains cas, mais la formule semble incomplete."
       : "Le programme s'execute, mais le resultat calcule n'est pas encore le bon.",
     hint: partialSuccess
-      ? "Compare un test qui passe et un test qui echoue pour trouver l'entree oubliee."
+      ?"Compare un test qui passe et un test qui echoue pour trouver l'entree oubliee."
       : "Refais le calcul attendu a la main avec un petit exemple, puis compare chaque etape.",
     testNext: partialSuccess
-      ? "Change une seule entree a la fois et verifie si ton resultat change aussi."
+      ?"Change une seule entree a la fois et verifie si ton resultat change aussi."
       : "Teste avec de petites valeurs faciles a verifier a la main.",
     confidence: "low",
-    alreadyCorrect: partialSuccess ? [partialSuccess] : [],
+    alreadyCorrect: partialSuccess ?[partialSuccess] : [],
   };
 }

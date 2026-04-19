@@ -1,4 +1,4 @@
-import TokenType from '../../lexer/tokenTypes.js';
+﻿import TokenType from '../../lexer/tokenTypes.js';
 import {
   ProgramNode, BlockNode, VarDeclNode, ArrayDeclNode, ConstDeclNode,
   NumberNode, StringNode, CharNode, BooleanNode, IdentifierNode,
@@ -83,7 +83,7 @@ const expressionMethods = {
     let base = this._parseUnary();
     if (this._check(TokenType.POWER)) {
       const op  = this._advance();
-      const exp = this._parsePower(); // associativité droite
+      const exp = this._parsePower(); // associativit? droite
       return new BinaryOpNode(base, '^', exp, op);
     }
     return base;
@@ -118,7 +118,7 @@ const expressionMethods = {
       return new BooleanNode(tok.value, tok);
     }
     if (this._check(TokenType.TABLEAU)) {
-      const tableauTok = this._advance(); // consomme TABLEAU
+      this._advance(); // consomme TABLEAU
       
       if (!this._check(TokenType.IDENTIFIER)) {
          this._addError(this._makeError(`Nom du tableau manquant après TABLEAU`, this._current(), {hint: `Ne pas utiliser 'Tableau' pour lire un tableau`}));
@@ -154,7 +154,7 @@ const expressionMethods = {
       const idTok = this._advance();
       let node = new IdentifierNode(idTok.value, idTok);
       
-      // Si on trouve '[', c'est un accès tableau (Stricte Règle: Autorisé sans mot clé pour la lecture)
+      // Si on trouve '[', c'est un accès tableau (Stricte Règle: Autoris? sans mot cl? pour la lecture)
       if (this._match(TokenType.LBRACKET)) {
         const indices = [];
         indices.push(this._parseExpression());
@@ -229,3 +229,4 @@ const expressionMethods = {
 };
 
 export default expressionMethods;
+

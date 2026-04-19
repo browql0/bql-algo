@@ -1,4 +1,4 @@
-import { NodeType } from '../../parser/AST/nodes.js';
+﻿import { NodeType } from '../../parser/AST/nodes.js';
 import { isValidVariableName } from './utils.js';
 
 const declarationAnalysisMethods = {
@@ -21,7 +21,7 @@ const declarationAnalysisMethods = {
         for (const field of typeDecl.fields) {
           if (fields[field.name]) {
             this._addError({
-              message: `Le champ '${field.name}' est dupliqué dans l'enregistrement '${tName}'`,
+              message: `Le champ '${field.name}' est dupliqu? dans l'enregistrement '${tName}'`,
               line: field.line,
               column: field.column,
               value: field.name,
@@ -137,3 +137,4 @@ const declarationAnalysisMethods = {
 };
 
 export default declarationAnalysisMethods;
+

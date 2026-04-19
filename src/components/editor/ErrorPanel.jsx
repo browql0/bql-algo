@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+﻿import React, { useMemo, useState, useEffect, useRef } from 'react';
 import './ErrorPanel.css';
 import { ChevronDown, ChevronRight, AlertCircle, XCircle, BrainCircuit, Zap, Copy, Check } from 'lucide-react';
 
@@ -8,19 +8,13 @@ import { ChevronDown, ChevronRight, AlertCircle, XCircle, BrainCircuit, Zap, Cop
  *
  * @param {{
  *   errors:     object[],
- *   sourceCode: string,
  *   onErrorClick: function,
  *   settings:     object
  * }} props
  */
-const ErrorPanel = ({ errors = [], sourceCode = '', onErrorClick, settings = {} }) => {
+const ErrorPanel = ({ errors = [], onErrorClick, settings = {} }) => {
   const [visibleLimit, setVisibleLimit] = useState(10);
   const bottomRef = useRef(null);
-  
-  // Reset limit when errors change completely
-  useEffect(() => {
-    setVisibleLimit(10);
-  }, [errors]);
 
   // Scroll to bottom when errors list is updated or expanded
   useEffect(() => {
@@ -38,15 +32,6 @@ const ErrorPanel = ({ errors = [], sourceCode = '', onErrorClick, settings = {} 
     }
     return counts;
   }, [errors]);
-
-  if (errors.length === 0) {
-    return (
-      <div className="error-panel error-panel--empty">
-        <div className="error-panel__empty-icon">✅</div>
-        <p>Aucune erreur détectée. Votre programme est correct.</p>
-      </div>
-    );
-  }
 
   // Tri par ligne (croissant)
   const sorted = [...errors].sort(
@@ -75,10 +60,14 @@ const ErrorPanel = ({ errors = [], sourceCode = '', onErrorClick, settings = {} 
 
   const visibleErrors = sorted.slice(0, visibleLimit);
   const hasMore = sorted.length > visibleLimit;
-
-  // Build the unified list but grouped visually
-  let displayedCount = 0;
-  
+  if (errors.length === 0) {
+    return (
+      <div className="error-panel error-panel--empty">
+        <div className="error-panel__empty-icon">OK</div>
+        <p>Aucune erreur détectée. Votre programme est correct.</p>
+      </div>
+    );
+  }  
   const renderGroup = (title, groupErrors, typeIcon, typeColor) => {
     if (groupErrors.length === 0) return null;
     
@@ -95,7 +84,7 @@ const ErrorPanel = ({ errors = [], sourceCode = '', onErrorClick, settings = {} 
           <span className="error-group__count">{groupErrors.length}</span>
         </div>
         <div className="error-group__list">
-          {toShow.map((err, i) => {
+          {toShow.map((err) => {
             const globalIndex = sorted.indexOf(err);
             return (
               <ErrorCard 
@@ -117,7 +106,7 @@ const ErrorPanel = ({ errors = [], sourceCode = '', onErrorClick, settings = {} 
       <div className="error-panel__header">
         <div className="error-panel__header-top">
           <span className="error-panel__count-badge">
-            <XCircle size={14} className="inline-icon" /> {errors.length} erreur{errors.length > 1 ? 's' : ''} détectée{errors.length > 1 ? 's' : ''}
+            <XCircle size={14} className="inline-icon" /> {errors.length} erreur{errors.length > 1 ?'s' : ''} détectée{errors.length > 1 ?'s' : ''}
           </span>
           <span className="error-panel__subtitle">
             Corrigez les erreurs ci-dessous avant d'exécuter.
@@ -133,7 +122,7 @@ const ErrorPanel = ({ errors = [], sourceCode = '', onErrorClick, settings = {} 
       </div>
 
       <div className="error-panel__list-container">
-        {settings.groupSimilarErrors ? (
+        {settings.groupSimilarErrors ?(
           grouped.groupedByMessage.map(([msg, groupErrors]) => 
             renderGroup(msg, groupErrors, <AlertCircle size={14}/>, '#94a3b8')
           )
@@ -164,7 +153,7 @@ const CATEGORY_META = {
   lexical:  { icon: '🔤', label: 'Lexicale'   },
   syntax:   { icon: '📐', label: 'Syntaxique'  },
   semantic: { icon: '🧠', label: 'Sémantique'  },
-  runtime:  { icon: '⚡', label: 'Exécution'   },
+  runtime:  { icon: 'Rapide', label: 'Exécution'   },
 };
 
 const CategoryBadge = ({ type, count }) => {
@@ -200,7 +189,7 @@ const ErrorCard = ({ error, index, onClick, settings = {} }) => {
     <div className={`error-card error-card--${error.type ?? 'unknown'}`}>
       <div
         className="error-card__header"
-        onClick={(e) => {
+        onClick={() => {
           // If clicked natively it expands/collapses. 
           // If the user wants to jump, they click the row.
           // Let's make the whole header jump to line, AND toggle expand if desired.
@@ -213,7 +202,7 @@ const ErrorCard = ({ error, index, onClick, settings = {} }) => {
         title="Cliquer pour voir la ligne"
       >
         <span className="error-card__toggle-chevron">
-          {expanded ? <ChevronDown size={14}/> : <ChevronRight size={14}/>}
+          {expanded ?<ChevronDown size={14}/> : <ChevronRight size={14}/>}
         </span>
         <span className="error-card__icon">{meta.icon}</span>
         <span className="error-card__message-preview">{error.message.split('\n')[0]}</span>
@@ -229,7 +218,7 @@ const ErrorCard = ({ error, index, onClick, settings = {} }) => {
           onClick={handleCopy} 
           title="Copier l'erreur"
         >
-          {copied ? <Check size={14} color="#34d399" /> : <Copy size={14} />}
+          {copied ?<Check size={14} color="#34d399" /> : <Copy size={14} />}
         </button>
       </div>
 
@@ -248,7 +237,7 @@ const ErrorCard = ({ error, index, onClick, settings = {} }) => {
 
           {error.hint && (
             <div className="error-card__hint">
-              <span className="error-card__hint-icon">💡</span>
+              <span className="error-card__hint-icon">Astuce</span>
               <span className="error-card__hint-text">{error.hint}</span>
             </div>
           )}
@@ -259,3 +248,5 @@ const ErrorCard = ({ error, index, onClick, settings = {} }) => {
 };
 
 export default ErrorPanel;
+
+

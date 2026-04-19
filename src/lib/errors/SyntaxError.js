@@ -30,7 +30,7 @@ class AlgoSyntaxError extends BaseError {
   constructor({ message, line, column, value = null, expected = null, hint = null, codeLine = null }) {
     // Enrichit le message avec ce qui était attendu
     const fullMessage = expected
-      ? `${message} — Attendu : "${expected}"`
+      ?`${message} — Attendu : "${expected}"`
       : message;
 
     // Suggestion automatique sur la valeur trouvée

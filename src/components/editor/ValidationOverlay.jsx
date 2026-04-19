@@ -23,15 +23,15 @@ function ScoreSummary({ results }) {
     <div className="validation-score-grid">
       <div className="validation-score-card">
         <span className="score-label">Tests officiels</span>
-        <strong>{hasTests ? `${passed}/${total}` : 'Aucun'}</strong>
+        <strong>{hasTests ?`${passed}/${total}` : 'Aucun'}</strong>
       </div>
       <div className="validation-score-card">
         <span className="score-label">Contraintes</span>
         <strong>
           {constraintsPassed === undefined || constraintsPassed === null
-            ? 'Non requises'
+            ?'Non requises'
             : constraintsPassed
-              ? 'OK'
+              ?'OK'
               : 'A corriger'}
         </strong>
       </div>
@@ -153,6 +153,18 @@ function SuccessContent({ results, onClose, onContinue }) {
           <CheckCircle size={16} />
           <span>Les solutions alternatives correctes sont acceptees.</span>
         </div>
+        {Number(results?.xpAwarded || 0) > 0 && (
+          <div className="result-item">
+            <CheckCircle size={16} />
+            <span>{Number(results.xpAwarded).toLocaleString()} XP ajoutes a ton profil.</span>
+          </div>
+        )}
+        {results?.success && Number(results?.xpAwarded || 0) === 0 && (
+          <div className="result-item">
+            <CheckCircle size={16} />
+            <span>Challenge deja valide auparavant : aucun doublon XP.</span>
+          </div>
+        )}
       </div>
 
       <div className="action-buttons">
@@ -174,7 +186,7 @@ function ErrorContent({ results, onClose }) {
     <div className="validation-content error">
       <div className="error-header">
         <div className={`icon-container error-icon ${feedback.tone}`}>
-          {feedback.tone === 'server' ? <AlertTriangle size={40} /> : <Target size={40} />}
+          {feedback.tone === 'server' ?<AlertTriangle size={40} /> : <Target size={40} />}
         </div>
         <div className="error-header-text">
           <h2 className="error-title">{feedback.title}</h2>

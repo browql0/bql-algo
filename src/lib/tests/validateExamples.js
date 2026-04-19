@@ -80,7 +80,7 @@ function addCandidate(candidates, seen, file, kind, raw, index) {
     index,
     code,
     classification: isFullProgram(code) && !hasPlaceholder(code)
-      ? 'full'
+      ?'full'
       : 'fragment',
   });
 }
@@ -146,7 +146,9 @@ function findSuspiciousPatterns(file, content) {
 
     if (/\bPOUR\s+\w+\s+DE\b/.test(normalized)) add('POUR without ALLANT DE');
     if (/\bSINON\s+SI\b/.test(normalized)) add('SINON SI alias');
-    if (/\w+\[[^\]\n]+\]\[[^\]\n]+\]/.test(normalized)) add('M[i][j] matrix access');
+    if (/\w+\[[^\]\n]+\]\[[^\]\n]+\]/.test(normalized) && looksLikeBql(normalized)) {
+      add('M[i][j] matrix access');
+    }
     if (/\bFINREPETER\b/i.test(normalized)) add('FINREPETER');
     if (/\w+->\w+/.test(normalized) && looksLikeBql(normalized)) add('record arrow operator');
   });
@@ -182,11 +184,10 @@ async function validateCandidate(candidate) {
 
   return {
     ...candidate,
-    status: result.errors.length === 0 ? 'valid' : 'invalid',
+    status: result.errors.length === 0 ?'valid' : 'invalid',
     errors: result.errors.map(error => ({
-      line: error.line ?? 0,
-      column: error.column ?? 0,
       message: error.message ?? String(error),
+      column: error.column ?? 0,
     })),
   };
 }

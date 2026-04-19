@@ -9,11 +9,14 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node src/lib/tests/runAllTests.js && node src/lib/tests/validateExamples.js",
+    "test": "node src/lib/tests/runAllTests.js && node src/lib/tests/validateExamples.js && node server/tests/validationServerTests.js",
     "test:lexer": "node src/lib/tests/lexerTests.js",
     "test:parser": "node src/lib/tests/parserTests.js",
     "test:execution": "node src/lib/tests/executionTests.js",
-    "test:examples": "node src/lib/tests/validateExamples.js"
+    "test:examples": "node src/lib/tests/validateExamples.js",
+    "e2e": "playwright test",
+    "e2e:list": "playwright test --list",
+    "check-all": "npm run lint && npm test && npm run e2e && npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.100.1",
@@ -27,6 +30,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.59.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",

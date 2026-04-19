@@ -1,6 +1,6 @@
-/**
+﻿/**
  * LexicalError.js
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  * Erreur produite par le Lexer quand il rencontre un caractère ou une séquence
  * qu'il ne sait pas tokeniser.
  *
@@ -8,7 +8,7 @@
  *  - Caractère inconnu : @, $, #
  *  - Chaîne non fermée : "Bonjour
  *  - Caractère non terminé : 'ab
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  */
 
 import BaseError    from './BaseError.js';
@@ -43,3 +43,4 @@ class LexicalError extends BaseError {
 }
 
 export default LexicalError;
+

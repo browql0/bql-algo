@@ -84,7 +84,7 @@ const ioAnalysisMethods = {
     }
 
     // ── Fallback legacy (target = string)
-    const name = typeof target === 'string' ? target : target?.name;
+    const name = typeof target === 'string' ?target : target?.name;
     if (!name || !isValidVariableName(name)) return;
 
     const entry = this.symbolTable.variables[name] || this.symbolTable.constantes[name];

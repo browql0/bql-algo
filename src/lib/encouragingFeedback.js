@@ -18,7 +18,7 @@ function addUnique(items, value) {
 }
 
 function primaryDiagnostic(results = {}) {
-  return Array.isArray(results.diagnostics) ? results.diagnostics[0] : null;
+  return Array.isArray(results.diagnostics) ?results.diagnostics[0] : null;
 }
 
 function failedConstraintItems(results = {}) {
@@ -103,7 +103,7 @@ function buildProgressSignals(results = {}, primary = {}) {
     return [
       'Syntaxe correcte.',
       'Ton programme s execute correctement.',
-      hasTests ? `Tous les tests passent (${passed}/${total}).` : 'La validation officielle est acceptee.',
+      hasTests ?`Tous les tests passent (${passed}/${total}).` : 'La validation officielle est acceptee.',
     ];
   }
 

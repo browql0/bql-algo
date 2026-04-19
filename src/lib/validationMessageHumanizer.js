@@ -19,7 +19,7 @@ const CATEGORY_TITLES = {
   constraint: 'Contrainte manquante',
   server: 'Erreur de validation',
   success: 'Solution valide',
-  validation: 'Validation echouee',
+  validation: 'Validation échouée',
 };
 
 function asText(value) {
@@ -269,7 +269,7 @@ function humanizeServerError(input = {}, context = {}) {
     },
     TESTS_MISSING: {
       problem: "Aucun test serveur n'est configure pour cet exercice.",
-      fix: 'Ajoute des tests caches avant de publier ce challenge.',
+      fix: 'Ajoute des tests cachés avant de publier ce challenge.',
     },
   };
 
@@ -334,7 +334,7 @@ function humanizeKnownValidationCode(input = {}, context = {}) {
     },
     MISSING_INPUT: {
       title: CATEGORY_TITLES.logic,
-      problem: 'Tu ne lis pas toutes les donnees demandees.',
+      problem: 'Tu ne lis pas toutes les données demandees.',
       fix: "Ajoute un LIRE(...) pour chaque entree de l'enonce, dans le bon ordre.",
       example: 'LIRE(prixHT);\nLIRE(quantite);',
       tone: 'logic',
@@ -425,7 +425,7 @@ function humanizeByText(input = {}, context = {}) {
       title: CATEGORY_TITLES.constraint,
       problem: text || "Une contrainte obligatoire n'est pas respectee.",
       fix: input.hint || "Ajoute le concept explicitement demande par l'exercice.",
-      example: lower.includes('tva') ? 'CONSTANTE\nTVA = 0.2 : REEL;' : null,
+      example: lower.includes('tva') ?'CONSTANTE\nTVA = 0.2 : REEL;' : null,
       tone: 'constraint',
       debug,
     });
@@ -446,7 +446,7 @@ function humanizeByText(input = {}, context = {}) {
 }
 
 export function humanizeValidationMessage(input = {}, context = {}) {
-  const diagnostic = typeof input === 'string' ? { message: input } : input || {};
+  const diagnostic = typeof input === 'string' ?{ message: input } : input || {};
   const code = diagnostic.code || context.errorCode;
   const type = diagnostic.type || context.type;
 
@@ -454,16 +454,16 @@ export function humanizeValidationMessage(input = {}, context = {}) {
     return buildMessage({
       title:
         type === 'logic_error'
-          ? CATEGORY_TITLES.logic
+          ?CATEGORY_TITLES.logic
           : type === 'output_format'
-            ? CATEGORY_TITLES.output
+            ?CATEGORY_TITLES.output
             : CATEGORY_TITLES.validation,
       problem: diagnostic.problem || diagnostic.message || context.message,
       fix: diagnostic.fix || diagnostic.hint || context.hint || "Relis l'enonce, puis corrige ce point.",
       example: diagnostic.example || null,
       testNext: diagnostic.testNext || null,
       alreadyCorrect: diagnostic.alreadyCorrect || [],
-      tone: type === 'logic_error' ? 'logic' : 'validation',
+      tone: type === 'logic_error' ?'logic' : 'validation',
       debug: debugFrom(diagnostic, context),
     });
   }
@@ -536,13 +536,13 @@ function uniqueHumanized(items) {
 }
 
 export function buildHumanizedValidationFeedback(results = {}) {
-  const diagnostics = Array.isArray(results.diagnostics) ? results.diagnostics : [];
+  const diagnostics = Array.isArray(results.diagnostics) ?results.diagnostics : [];
   const constraints = failedConstraintItems(results);
   const sourceItems =
     diagnostics.length > 0
-      ? diagnostics
+      ?diagnostics
       : constraints.length > 0
-        ? constraints
+        ?constraints
         : [
             {
               code: results.errorCode,

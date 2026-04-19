@@ -1,4 +1,4 @@
-import TokenType from '../../lexer/tokenTypes.js';
+﻿import TokenType from '../../lexer/tokenTypes.js';
 import {
   ProgramNode, BlockNode, VarDeclNode, ArrayDeclNode, ConstDeclNode,
   NumberNode, StringNode, CharNode, BooleanNode, IdentifierNode,
@@ -10,7 +10,7 @@ import {
 
 const programMethods = {
   _parseProgram() {
-    // ── Vérification fatale : ALGORITHME doit être le 1er token ──────────────────
+    // -- Vérification fatale : ALGORITHME doit être le 1er token ------------------
     if (!this._check(TokenType.ALGORITHME)) {
       throw this._makeError(
         'Le programme doit commencer par le mot-clé ALGORITHME',
@@ -19,11 +19,11 @@ const programMethods = {
       );
     }
 
-    // ── En-tête strict : ALGORITHMENom; ou ALGORITHME_Nom; ───────────────
+    // -- En-tête strict : ALGORITHMENom; ou ALGORITHME_Nom; ---------------
     const algoToken = this._current();
     const name = this._validateAlgorithmHeader();
 
-    // ── Bloc CONSTANTE(S) (optionnel, doit précéder VARIABLE(S)) ─────────────
+    // -- Bloc CONSTANTE(S) (optionnel, doit précèder VARIABLE(S)) -------------
     const constants = [];
     while (
       this._check(TokenType.CONSTANTE) ||
@@ -32,24 +32,24 @@ const programMethods = {
       constants.push(...this._parseConstantsSection());
     }
 
-    // ── Bloc TYPES (optionnel) ───────────────────────────────────────────────
+    // -- Bloc TYPES (optionnel) -----------------------------------------------
     const customTypes = [];
     while (this._check(TokenType.TYPE)) {
       customTypes.push(this._parseTypeDeclaration());
     }
 
-    // ── Bloc VARIABLE(S) (optionnel mais strict) ──────────────────────
+    // -- Bloc VARIABLE(S) (optionnel mais strict) ----------------------
     const declarations = [];
 
     // Détection d'ordre invalide : VARIABLE(S) trouvé APRES une section qui
-    // ne serait pas encore arrivée — ici on lui permet de tomber naturellement.
+    // ne serait pas encore arrivée ? ici on lui permet de tomber naturellement.
     while (
       this._check(TokenType.VARIABLE) ||
       this._check(TokenType.VARIABLES)
     ) {
       declarations.push(...this._parseVariablesSection());
 
-      // Après un bloc VARIABLE(S), si on tombe sur CONSTANTE(S) → erreur d'ordre
+      // Après un bloc VARIABLE(S), si on tombe sur CONSTANTE(S) ? erreur d'ordre
       if (this._check(TokenType.CONSTANTE) || this._check(TokenType.CONSTANTES)) {
         this._addError(this._makeError(
           'Les constantes doivent être déclarées avant les variables',
@@ -66,7 +66,7 @@ const programMethods = {
       }
     }
 
-    // ── DEBUT ───────────────────────────────────────────────────────────────
+    // -- DEBUT ---------------------------------------------------------------
     if (!this._check(TokenType.DEBUT)) {
       this._addError(this._makeError(
         'Le mot-clé DEBUT est obligatoire pour commencer un algorithme',
@@ -83,10 +83,10 @@ const programMethods = {
     }
     this._skipSemicolons();
 
-    // ── Corps du programme ───────────────────────────────────────────────────
+    // -- Corps du programme ---------------------------------------------------
     const body = this._parseBlock([TokenType.FIN]);
 
-    // ── FIN ─────────────────────────────────────────────────────────────────
+    // -- FIN -----------------------------------------------------------------
     if (!this._check(TokenType.FIN)) {
       this._addError(this._makeError(
         'Le mot-clé FIN est obligatoire pour terminer le programme',
@@ -108,7 +108,7 @@ const programMethods = {
       this._addError(this._makeError(
         'Instructions ou tokens inattendus en dehors du bloc principal',
         tok,
-        { hint: 'Aucune instruction ne peut apparaître après FIN.' }
+        { hint: 'Aucune instruction ne peut apparaêtre après FIN.' }
       ));
     }
   },
@@ -121,7 +121,7 @@ const programMethods = {
     // Position attendue du premier caractère du nom (collé = juste après les 10 chars)
     let expectedNameCol = algoCol + 10; // 'ALGORITHME' fait exactement 10 caractères
 
-    // ── 1. Vérification de la présence du nom ────────────────────────────────
+    // -- 1. Vérification de la présence du nom --------------------------------
     if (!this._check(TokenType.IDENTIFIER)) {
       // Pas d'identifiant du tout : soit ';', soit un mot-clé, soit EOF
       this._addError(this._makeError(
@@ -140,16 +140,16 @@ const programMethods = {
     const nameTok = this._advance(); // consomme IDENTIFIER
     const name    = nameTok.value;
 
-    // ── 2. Vérification que le nom est collé (pas de séparateur) ─────────────
+    // -- 2. Vérification que le nom est collé (pas de séparateur) -------------
     //
-    // Le lexer place le token IDENTIFIER à la colonne exacte où il a commencé.
+    // Le lexer place le token IDENTIFIER à la colonne exacte où il a commenc?.
     // Si algoCol = 1 et name commence à col 11, le nom est collé (valide).
     // Si name commence à col 12, on vérifie si le 11e char est un underscore.
     //
     const lineText = this.sourceLines[algoLine - 1] ?? '';
     const gapChar  = lineText[algoCol + 9]; // char immédiatement après ALGORITHME
     const isUnderscore = gapChar === '_';
-    expectedNameCol = algoCol + 10 + (isUnderscore ? 1 : 0);
+    expectedNameCol = algoCol + 10 + (isUnderscore ?1 : 0);
 
     if (nameTok.line !== algoLine || nameTok.column !== expectedNameCol) {
       // Déterminer le type de séparateur pour un message précis
@@ -171,7 +171,7 @@ const programMethods = {
       ));
     }
 
-    // ── 3. Vérification du point-virgule ──────────────────────────────────────
+    // -- 3. Vérification du point-virgule --------------------------------------
     //
     // La flèche doit pointer à la FIN du nom (col + longueur du nom),
     // là où le ';' devrait se trouver.
@@ -196,3 +196,4 @@ const programMethods = {
 };
 
 export default programMethods;
+

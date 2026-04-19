@@ -1,4 +1,4 @@
-import { isValidVariableName } from './utils.js';
+﻿import { isValidVariableName } from './utils.js';
 
 const assignmentAnalysisMethods = {
   _analyzeAssign(node) {
@@ -31,7 +31,7 @@ const assignmentAnalysisMethods = {
        } else if (entry.isArray) {
           const _dims = entry.dimensions ?? 1;
           const _idxEx = _dims === 1
-            ? name + '[i]'
+            ?name + '[i]'
             : name + '[' + Array.from({length:_dims},(_,k)=>(['i','j','k'][k]||('i'+k))).join(', ') + ']';
           this._addError({
             message: `Affectation invalide : le tableau '${name}' ne peut pas recevoir une valeur scalaire`,
@@ -74,3 +74,4 @@ const assignmentAnalysisMethods = {
 };
 
 export default assignmentAnalysisMethods;
+

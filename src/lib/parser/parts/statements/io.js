@@ -1,4 +1,4 @@
-import TokenType from '../../../lexer/tokenTypes.js';
+﻿import TokenType from '../../../lexer/tokenTypes.js';
 import {
   ProgramNode, BlockNode, VarDeclNode, ArrayDeclNode, ConstDeclNode,
   NumberNode, StringNode, CharNode, BooleanNode, IdentifierNode,
@@ -133,7 +133,7 @@ const ioStatementMethods = {
       varTok = this._advance();
     }
 
-    // ── Accès Tableau : LIRE(Tableau T[i, j]) ou LIRE(T[i].nom) ──────────────────────────
+    // -- Accès Tableau : LIRE(Tableau T[i, j]) ou LIRE(T[i].nom) --------------------------
     let targetNode;
     let hasArrayAccess = false;
     if (this._match(TokenType.LBRACKET)) {
@@ -158,7 +158,7 @@ const ioStatementMethods = {
       targetNode = new ArrayAccessNode(varTok.value, indices, varTok);
     }
 
-    // Capture syntaxe incorrecte M[i][j] → erreur pédagogique
+    // Capture syntaxe incorrecte M[i][j] ? erreur pédagogique
     if (this._check(TokenType.LBRACKET)) {
       this._addError(this._makeError(
         `Syntaxe incorrecte pour l'accès matriciel`,
@@ -170,16 +170,14 @@ const ioStatementMethods = {
       if (this._check(TokenType.RBRACKET)) this._advance();
     }
 
-    // Fallback variable simple SEULEMENT si aucun accès indexé n'a été parsé
+    // Fallback variable simple SEULEMENT si aucun accès index? n'a été pars?
     if (!hasArrayAccess) {
       targetNode = new IdentifierNode(varTok.value, varTok);
     }
     
 
     // NOUVEAU : Lecture d'un champ d'enregistrement (ex: LIRE(e.nom) ou LIRE(T[i].nom))
-    let hasMemberAccess = false;
     while (this._match(TokenType.DOT)) {
-      hasMemberAccess = true;
       if (!this._check(TokenType.IDENTIFIER)) {
         this._addError(this._makeError(
           'Nom du champ attendu',
@@ -217,3 +215,4 @@ const ioStatementMethods = {
 };
 
 export default ioStatementMethods;
+
