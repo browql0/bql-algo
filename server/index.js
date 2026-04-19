@@ -11,7 +11,9 @@ function assertServerEnv() {
   const missing = [];
   if (!process.env.SUPABASE_URL) missing.push("SUPABASE_URL");
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) missing.push("SUPABASE_SERVICE_ROLE_KEY");
-  if (!process.env.SUBMISSION_ALLOWED_ORIGINS) missing.push("SUBMISSION_ALLOWED_ORIGINS");
+  if (!process.env.SUBMISSION_ALLOWED_ORIGINS && !process.env.VERCEL_URL) {
+    missing.push("SUBMISSION_ALLOWED_ORIGINS");
+  }
 
   if (missing.length > 0) {
     throw new Error(`Missing required environment variables: ${missing.join(", ")}`);

@@ -30,6 +30,15 @@ function sanitizeCase(testCase) {
   };
 }
 
+function hasExpectedOutput(testCase) {
+  const expected = testCase.output ?? testCase.expected ?? "";
+  return typeof expected === "string" && expected.trim() !== "";
+}
+
+function findInvalidTestCase(strictTests) {
+  return strictTests.findIndex((testCase) => !hasExpectedOutput(testCase));
+}
+
 export async function strictValidate({ code, exercise }) {
   const source = String(code || "");
   const strictTests = Array.isArray(exercise.strictTests) ?exercise.strictTests : [];
@@ -41,6 +50,24 @@ export async function strictValidate({ code, exercise }) {
       total: 0,
       errorCode: "TESTS_MISSING",
       message: "Aucun test serveur configure pour cet exercice.",
+      details: "Configuration de tests absente ou vide.",
+      cases: [],
+      publicCases: [],
+      constraints: null,
+      firstExecution: null,
+      engineError: null,
+    };
+  }
+
+  const invalidIndex = findInvalidTestCase(strictTests);
+  if (invalidIndex >= 0) {
+    return {
+      success: false,
+      passed: 0,
+      total: strictTests.length,
+      errorCode: "TESTS_MISSING",
+      message: "Configuration de tests invalide pour cet exercice.",
+      details: `Test ${invalidIndex + 1}: sortie attendue manquante.`,
       cases: [],
       publicCases: [],
       constraints: null,

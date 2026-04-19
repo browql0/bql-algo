@@ -56,6 +56,36 @@ npm install
 npm run dev
 ```
 
+## Validation API (CORS / origins)
+
+The validation endpoint (`/api/submit`) enforces an origin allowlist. Configure it with:
+
+* `SUBMISSION_ALLOWED_ORIGINS` - comma-separated list of allowed origins.
+  * Supports exact origins: `https://algo.example.com`
+  * Supports safe wildcard hostnames (single-label `*`):
+    * `https://your-project-*.vercel.app`
+    * `https://*.vercel.app` (broader; only use if you accept any Vercel app)
+* `VERCEL_URL` (provided by Vercel) is auto-allowed and can be used as a fallback.
+
+Local development:
+
+* The dev server accepts `http://localhost:<any>` and `http://127.0.0.1:<any>`.
+* You can still be explicit with `SUBMISSION_ALLOWED_ORIGINS` if you want to lock it down.
+
+Example `.env` for local dev:
+
+```
+SUBMISSION_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+```
+
+Example Vercel production + preview:
+
+```
+SUBMISSION_ALLOWED_ORIGINS=https://your-domain.com,https://your-project.vercel.app,https://your-project-*.vercel.app
+```
+
+Validation secrets live in `private.lesson_secrets` and are accessed via the `public.get_lesson_secrets` RPC so the `private` schema stays hidden. Run [database/validation_secrets_rpc.sql](database/validation_secrets_rpc.sql) in Supabase to install the function.
+
 Run checks:
 
 ```bash

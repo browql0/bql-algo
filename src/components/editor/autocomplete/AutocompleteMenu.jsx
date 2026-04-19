@@ -42,16 +42,21 @@ export default function AutocompleteMenu({
           const isActive = i === selectedIndex;
           return (
             <li
-              key={`${sug.type}-${sug.label}-${i}`}
+              key={`${sug.kind || sug.type}-${sug.label}-${i}`}
               className={`ac-item ${isActive ?'ac-item--active' : ''}`}
               onMouseEnter={() => setSelectedIndex(i)}
               onClick={() => onSelect(sug)}
             >
               <div className="ac-item-icon">
-                {getIconForType(sug.type)}
+                {getIconForType(sug.kind || sug.type)}
               </div>
               <div className="ac-item-content">
-                <span className="ac-item-label">{sug.label}</span>
+                <div className="ac-item-top">
+                  <span className="ac-item-label">
+                    {renderHighlightedLabel(sug.label, sug.matchStart, sug.matchEnd)}
+                  </span>
+                  {sug.kindLabel && <span className="ac-item-kind">{sug.kindLabel}</span>}
+                </div>
                 {sug.detail && <span className="ac-item-detail">{sug.detail}</span>}
               </div>
             </li>
@@ -68,6 +73,25 @@ function getIconForType(type) {
     case 'type':     return <Type size={14} color="#fb7185" />; 
     case 'snippet':  return <Zap size={14} color="#facc15" />; 
     case 'variable': return <CaseLower size={14} color="#60a5fa" />; 
+    case 'constant': return <CaseLower size={14} color="#38bdf8" />;
+    case 'field':    return <CaseLower size={14} color="#a78bfa" />;
+    case 'array':
+    case 'matrix':
+    case 'loop':
+      return <Box size={14} color="#fbbf24" />;
     default:         return <Box size={14} color="#94a3b8" />;
   }
+}
+
+function renderHighlightedLabel(label, matchStart, matchEnd) {
+  if (typeof matchStart !== 'number' || typeof matchEnd !== 'number') return label;
+  if (matchStart < 0 || matchEnd <= matchStart) return label;
+
+  return (
+    <>
+      {label.slice(0, matchStart)}
+      <span className="ac-item-match">{label.slice(matchStart, matchEnd)}</span>
+      {label.slice(matchEnd)}
+    </>
+  );
 }

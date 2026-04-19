@@ -8,7 +8,9 @@ function assertServerEnv() {
   const missing = [];
   if (!process.env.SUPABASE_URL) missing.push("SUPABASE_URL");
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) missing.push("SUPABASE_SERVICE_ROLE_KEY");
-  if (!process.env.SUBMISSION_ALLOWED_ORIGINS) missing.push("SUBMISSION_ALLOWED_ORIGINS");
+  if (!process.env.SUBMISSION_ALLOWED_ORIGINS && !process.env.VERCEL_URL) {
+    missing.push("SUBMISSION_ALLOWED_ORIGINS");
+  }
 
   if (missing.length > 0) {
     throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
@@ -58,13 +60,18 @@ function sendJson(res, status, body, headers = {}) {
 }
 
 function fallbackCorsHeaders(origin = "") {
-  return {
-    "Access-Control-Allow-Origin": origin || "*",
+  const headers = {
     "Access-Control-Allow-Methods": "POST,OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
   };
+
+  if (origin) {
+    headers["Access-Control-Allow-Origin"] = origin;
+  }
+
+  return headers;
 }
 
 export default async function handler(req, res) {

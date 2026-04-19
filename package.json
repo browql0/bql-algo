@@ -16,7 +16,8 @@
     "test:examples": "node src/lib/tests/validateExamples.js",
     "e2e": "playwright test",
     "e2e:list": "playwright test --list",
-    "check-all": "npm run lint && npm test && npm run e2e && npm run build"
+    "check-all": "npm run lint && npm test && npm run e2e && npm run build",
+    "audit:validation": "node scripts/auditValidationConfig.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.100.1",

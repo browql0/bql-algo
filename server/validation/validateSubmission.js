@@ -57,6 +57,7 @@ export async function validateSubmission({
     total: strictResult.total,
     message: messageFromResult(strictResult, diagnosis),
     errorCode: strictResult.success ?null : strictResult.errorCode,
+    details: strictResult.details || null,
     validationMode: exercise.validationMode,
     exerciseId: exercise.id,
     cases: strictResult.publicCases,

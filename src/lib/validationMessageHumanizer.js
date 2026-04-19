@@ -2,6 +2,8 @@ const SERVER_ERROR_CODES = new Set([
   'AUTH_REQUIRED',
   'INVALID_TOKEN',
   'SERVER_NOT_CONFIGURED',
+  'CORS_NOT_CONFIGURED',
+  'CORS_ORIGIN_DENIED',
   'BACKEND_TIMEOUT',
   'BACKEND_UNREACHABLE',
   'MALFORMED_VALIDATION_RESPONSE',
@@ -255,6 +257,14 @@ function humanizeServerError(input = {}, context = {}) {
       problem: "Le serveur de validation n'est pas configure.",
       fix: 'Ajoute les variables Supabase serveur, puis redemarre le serveur.',
     },
+    CORS_NOT_CONFIGURED: {
+      problem: "Le serveur de validation n'est pas configure pour accepter ce site.",
+      fix: "Contacte l'administrateur pour autoriser l'origine de ce site.",
+    },
+    CORS_ORIGIN_DENIED: {
+      problem: "La validation officielle est bloquee par la configuration du serveur.",
+      fix: "Reessaie plus tard ou contacte l'administrateur.",
+    },
     BACKEND_TIMEOUT: {
       problem: 'Le serveur a mis trop de temps a repondre.',
       fix: 'Reessaie dans quelques secondes.',
@@ -268,8 +278,8 @@ function humanizeServerError(input = {}, context = {}) {
       fix: 'Redemarre le serveur local et verifie que /api/submit pointe vers le backend.',
     },
     TESTS_MISSING: {
-      problem: "Aucun test serveur n'est configure pour cet exercice.",
-      fix: 'Ajoute des tests cachés avant de publier ce challenge.',
+      problem: "Ce defi n'est pas encore configure correctement cote plateforme.",
+      fix: "Ta solution n'est pas forcement en cause. Reessaie plus tard ou contacte l'administrateur.",
     },
   };
 

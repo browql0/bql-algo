@@ -52,12 +52,21 @@ function makeSupabaseAdmin({ lesson, secrets, rpcResults = [] } = {}) {
         },
       };
     },
-    rpc: async () => ({
-      data: state.rpcResults.length > 0
-        ? state.rpcResults.shift()
-        : { success: true, xpAwarded: 0 },
-      error: null,
-    }),
+    rpc: async (fnName) => {
+      if (fnName === "get_lesson_secrets") {
+        return {
+          data: state.secrets ? [state.secrets] : [],
+          error: null,
+        };
+      }
+
+      return {
+        data: state.rpcResults.length > 0
+          ? state.rpcResults.shift()
+          : { success: true, xpAwarded: 0 },
+        error: null,
+      };
+    },
   };
 }
 

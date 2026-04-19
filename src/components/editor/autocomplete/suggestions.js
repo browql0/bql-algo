@@ -6,9 +6,10 @@
  */
 
 export const KEYWORDS = [
-  'ALGORITHME', 'VARIABLES', 'VARIABLE', 'CONSTANTES', 'CONSTANTE', 'DEBUT', 'FIN', 
-  'ECRIRE', 'LIRE', 
-  'SI', 'ALORS', 'SINON', 'FINSI',
+  'ALGORITHME', 'VARIABLES', 'VARIABLE', 'CONSTANTES', 'CONSTANTE', 'DEBUT', 'FIN',
+  'ECRIRE', 'LIRE',
+  'SI', 'ALORS', 'SINONSI', 'SINON', 'FINSI',
+  'SELON', 'CAS', 'AUTRE', 'FINSELON',
   'POUR', 'ALLANT', 'DE', 'A', 'PAS', 'FINPOUR',
   'TANTQUE', 'FAIRE', 'FINTANTQUE',
   'REPETER', 'JUSQUA',
@@ -19,6 +20,21 @@ export const KEYWORDS = [
 export const TYPES = [
   'ENTIER', 'REEL', 'CHAINE', 'CARACTERE', 'BOOLEEN', 'CHAINE DE CARACTERE'
 ];
+
+export const KEYWORD_GROUPS = {
+  header: ['ALGORITHME', 'CONSTANTE', 'CONSTANTES', 'TYPE', 'VARIABLE', 'VARIABLES', 'DEBUT'],
+  declaration: ['CONSTANTE', 'CONSTANTES', 'TYPE', 'VARIABLE', 'VARIABLES', 'Tableau'],
+  body: [
+    'SI', 'SINONSI', 'SINON', 'FINSI',
+    'SELON', 'CAS', 'AUTRE', 'FINSELON',
+    'POUR', 'ALLANT', 'DE', 'A', 'PAS', 'FINPOUR',
+    'TANTQUE', 'FAIRE', 'FINTANTQUE',
+    'REPETER', 'JUSQUA',
+    'ECRIRE', 'LIRE',
+    'VRAI', 'FAUX', 'NON', 'ET', 'OU',
+    'Tableau',
+  ],
+};
 
 export const SNIPPETS = [
   {
@@ -53,8 +69,8 @@ export const SNIPPETS = [
     label: 'SELON (choix) faire',
     detail: 'Choix multiple',
     type: 'snippet',
-    insertText: 'SELON () FAIRE\n  cas  :\n  autre: ; \nFINSELON',
-    cursorOffset: -37,
+    insertText: 'SELON () FAIRE\n  CAS  :\n  AUTRE: \nFINSELON',
+    cursorOffset: -27,
   },
   {
     label: 'TANTQUE (boucle)',
@@ -128,38 +144,21 @@ export const SNIPPETS = [
   }
 ];
 
-// Mots-clés simples : ECRIRE et LIRE sont exclus ici car
-// ils ont leurs propres entrées keyword + snippet ci-dessous
-const KEYWORDS_NO_IO = KEYWORDS.filter(kw => kw !== 'ECRIRE' && kw !== 'LIRE');
+export const TYPE_SUGGESTIONS = TYPES.map((typeName) => ({
+  label: typeName,
+  detail: 'Type natif',
+  kind: 'type',
+  insertText: typeName,
+  priority: 50,
+}));
 
-export const globalSuggestions = [
-  ...SNIPPETS,
-  // Mots-clés sans ECRIRE/LIRE (pour éviter le doublon avec les snippets)
-  ...KEYWORDS_NO_IO.map(kw => ({
-    label: kw,
-    detail: 'Mot-clé',
-    type: 'keyword',
-    insertText: kw + (['VARIABLES', 'DEBUT', 'FIN'].includes(kw) ?'' : ' ')
-  })),
-  // ECRIRE : suggestion mot-clé simple
-  {
-    label: 'ECRIRE',
-    detail: 'Mot-clé (écriture)',
-    type: 'keyword',
-    insertText: 'ECRIRE ',
-  },
-  // LIRE : suggestion mot-clé simple
-  {
-    label: 'LIRE',
-    detail: 'Mot-clé (lecture)',
-    type: 'keyword',
-    insertText: 'LIRE ',
-  },
-  ...TYPES.map(t => ({
-    label: t,
-    detail: 'Type natif',
-    type: 'type',
-    insertText: t + ';'
-  }))
-];
+export function buildKeywordSuggestions(keywords) {
+  return (keywords || []).map((keyword) => ({
+    label: keyword,
+    detail: 'Mot-cle',
+    kind: 'keyword',
+    insertText: ['VARIABLES', 'DEBUT', 'FIN'].includes(keyword) ? keyword : `${keyword} `,
+    priority: 60,
+  }));
+}
 

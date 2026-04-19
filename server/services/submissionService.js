@@ -51,32 +51,44 @@ function hasValidationRules(secrets) {
   return hasExpectedOutput;
 }
 
-async function loadLessonSecrets(supabaseAdmin, lessonId) {
-  const privateResult = await supabaseAdmin
-    .schema("private")
-    .from("lesson_secrets")
-    .select("expected_output, test_cases")
-    .eq("lesson_id", lessonId)
-    .maybeSingle();
+function describeSecretsWarning(error) {
+  const message = error?.message || "";
+  if (message.toLowerCase().includes("invalid schema") && message.includes("private")) {
+    return "Schema 'private' non expose via Supabase API. Utilisez la RPC get_lesson_secrets pour eviter d'exposer ce schema.";
+  }
+  if (message.toLowerCase().includes("get_lesson_secrets") && message.toLowerCase().includes("does not exist")) {
+    return "RPC get_lesson_secrets manquante. Executez database/validation_secrets_rpc.sql dans Supabase.";
+  }
+  return message || null;
+}
 
-  if (hasValidationRules(privateResult.data)) {
+async function loadLessonSecrets(supabaseAdmin, lessonId) {
+  const rpcResult = await supabaseAdmin.rpc("get_lesson_secrets", {
+    p_lesson_id: lessonId,
+  });
+
+  const rpcData = Array.isArray(rpcResult.data)
+    ?rpcResult.data[0]
+    : rpcResult.data;
+
+  if (hasValidationRules(rpcData)) {
     return {
-      secrets: privateResult.data,
-      source: "private.lesson_secrets",
-      warning: privateResult.error?.message || null,
+      secrets: rpcData,
+      source: "rpc:get_lesson_secrets",
+      warning: rpcResult.error?.message || null,
     };
   }
 
   log("warn", "private lesson secrets missing", {
     lessonId,
-    error: privateResult.error?.message || null,
+    error: rpcResult.error?.message || null,
   });
 
   return {
     secrets: null,
     source: null,
     warning:
-      privateResult.error?.message ||
+      describeSecretsWarning(rpcResult.error) ||
       "No hidden tests were found in private.lesson_secrets.",
   };
 }

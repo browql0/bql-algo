@@ -6,7 +6,12 @@ const DEFAULT_DEV_ORIGINS = [
   "http://localhost:5173",
   "http://127.0.0.1:5173",
   "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "http://localhost:4173",
+  "http://127.0.0.1:4173",
 ];
+
+const LOCALHOST_HOSTS = new Set(["localhost", "127.0.0.1"]);
 
 const RATE_LIMIT_WINDOW_MS = Number(process.env.SUBMISSION_RATE_WINDOW_MS || 60_000);
 const RATE_LIMIT_MAX = Number(process.env.SUBMISSION_RATE_LIMIT || 60);
@@ -28,29 +33,131 @@ function log(level, event, payload = {}) {
   logger(`[submitHandler] ${event}`, payload);
 }
 
+function normalizeOrigin(value = "") {
+  try {
+    const url = new URL(value);
+    return `${url.protocol.toLowerCase()}//${url.host.toLowerCase()}`;
+  } catch {
+    return "";
+  }
+}
+
+function escapeRegex(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function parseOriginEntry(entry) {
+  const trimmed = String(entry || "").trim();
+  if (!trimmed) return null;
+
+  if (!trimmed.includes("*")) {
+    const normalized = normalizeOrigin(trimmed);
+    return normalized ? { type: "exact", value: normalized } : null;
+  }
+
+  const match = trimmed.match(/^(https?):\/\/([^/]+)$/i);
+  if (!match) return null;
+
+  const protocol = match[1].toLowerCase();
+  const hostWithPort = match[2].toLowerCase();
+  if (!hostWithPort.includes("*")) return null;
+
+  const [hostname, port] = hostWithPort.split(":");
+  if (!hostname || (port && port.includes("*"))) return null;
+
+  const hostRegex = new RegExp(
+    `^${escapeRegex(hostname).replace(/\\\*/g, "[a-z0-9-]+")}$`,
+    "i",
+  );
+
+  return {
+    type: "pattern",
+    protocol,
+    hostname: hostRegex,
+    port: port || "",
+  };
+}
+
+function compileAllowedOrigins(values = []) {
+  const exact = new Set();
+  const patterns = [];
+
+  values.forEach((value) => {
+    const parsed = parseOriginEntry(value);
+    if (!parsed) return;
+    if (parsed.type === "exact") {
+      exact.add(parsed.value);
+      return;
+    }
+    patterns.push(parsed);
+  });
+
+  return { exact, patterns };
+}
+
 function getAllowedOrigins() {
   const configured = (process.env.SUBMISSION_ALLOWED_ORIGINS || "")
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
 
-  if (configured.length > 0) return configured;
-  if (NODE_ENV === "production") {
-    throw new Error("SUBMISSION_ALLOWED_ORIGINS is required in production.");
+  const vercelUrl = process.env.VERCEL_URL || "";
+  if (vercelUrl) {
+    const vercelOrigin = vercelUrl.startsWith("http") ?vercelUrl : `https://${vercelUrl}`;
+    configured.push(vercelOrigin);
   }
 
-  return DEFAULT_DEV_ORIGINS;
+  if (configured.length > 0) return compileAllowedOrigins(configured);
+  if (NODE_ENV === "production") {
+    throw new Error(
+      "SUBMISSION_ALLOWED_ORIGINS (or VERCEL_URL) is required in production.",
+    );
+  }
+
+  return compileAllowedOrigins(DEFAULT_DEV_ORIGINS);
+}
+
+function isLocalhostOrigin(url) {
+  return (
+    (url.protocol === "http:" || url.protocol === "https:") &&
+    LOCALHOST_HOSTS.has(url.hostname)
+  );
+}
+
+function matchesAllowedPattern(url, patterns = []) {
+  return patterns.some((pattern) => {
+    if (`${pattern.protocol}:` !== url.protocol) return false;
+    const originPort = url.port || "";
+    if (pattern.port && pattern.port !== originPort) return false;
+    if (!pattern.port && originPort) return false;
+    return pattern.hostname.test(url.hostname);
+  });
 }
 
 function resolveOrigin(origin = "") {
-  const allowedOrigins = getAllowedOrigins();
   if (!origin) {
     return { allowed: true, allowOrigin: "" };
   }
 
+  let url;
+  try {
+    url = new URL(origin);
+  } catch {
+    return { allowed: false, allowOrigin: "" };
+  }
+
+  if (NODE_ENV !== "production" && isLocalhostOrigin(url)) {
+    return { allowed: true, allowOrigin: url.origin };
+  }
+
+  const { exact, patterns } = getAllowedOrigins();
+  const normalizedOrigin = normalizeOrigin(url.origin);
+
   return {
-    allowed: allowedOrigins.includes(origin),
-    allowOrigin: origin,
+    allowed:
+      Boolean(normalizedOrigin && exact.has(normalizedOrigin)) ||
+      matchesAllowedPattern(url, patterns),
+    allowOrigin: url.origin,
   };
 }
 
@@ -223,7 +330,10 @@ export async function handleSubmitRequest({ method, headers = {}, body }) {
         {
           success: false,
           errorCode: "CORS_ORIGIN_DENIED",
-          message: "Origine non autorisee.",
+          message: "La validation officielle est bloquee par la configuration du serveur.",
+          details: origin
+            ? `Origine actuelle non autorisee : ${origin}`
+            : "Origine actuelle non autorisee.",
         },
         responseHeaders,
       );

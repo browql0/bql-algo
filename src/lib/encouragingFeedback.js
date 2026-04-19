@@ -4,6 +4,8 @@ const SERVER_ERROR_CODES = new Set([
   'AUTH_REQUIRED',
   'INVALID_TOKEN',
   'SERVER_NOT_CONFIGURED',
+  'CORS_NOT_CONFIGURED',
+  'CORS_ORIGIN_DENIED',
   'BACKEND_TIMEOUT',
   'BACKEND_UNREACHABLE',
   'MALFORMED_VALIDATION_RESPONSE',
@@ -108,7 +110,16 @@ function buildProgressSignals(results = {}, primary = {}) {
   }
 
   if (hasBlockingServerIssue(results)) {
-    return ['Ton code est conserve: le probleme vient de la validation officielle, pas forcement de ta solution.'];
+    if (results.errorCode === 'TESTS_MISSING') {
+      return [
+        "Ce defi n'est pas encore configure correctement cote plateforme.",
+        "Ta solution n'est pas forcement en cause.",
+      ];
+    }
+
+    return [
+      "Ton code semble correct jusqu'ici : la validation officielle est bloquee par la configuration du serveur.",
+    ];
   }
 
   if (!isSyntaxProblem(diagnostic)) {

@@ -6,10 +6,11 @@
  * -----------------------------------------------------------------------------
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { getCaretCoordinates } from './getCaretCoordinates';
-import { getCurrentWord, parseVariables } from './getContext';
-import { globalSuggestions } from './suggestions';
+import { getAutocompleteContext } from './getContext';
+import { extractSymbols } from './symbols';
+import { buildSuggestions, filterAndRankSuggestions } from './suggestionUtils';
 
 export function useAutocomplete(code, onChange, textareaRef) {
   const [isOpen, setIsOpen] = useState(false);
@@ -18,43 +19,39 @@ export function useAutocomplete(code, onChange, textareaRef) {
   const [coords, setCoords] = useState({ top: 0, left: 0 });
   const [currentWordState, setCurrentWordState] = useState({ word: '', start: 0, end: 0 });
 
+  const symbols = useMemo(() => extractSymbols(code), [code]);
+
   const handleInput = useCallback((e) => {
     const el = e.target;
     const cursorPos = el.selectionStart;
+    const context = getAutocompleteContext(code, cursorPos);
+    const prefix = context.word || '';
 
-    const wordInfo = getCurrentWord(code, cursorPos);
-    const word = wordInfo.word;
-
-    if (!word || word.length < 1) {
+    if (!context.isMemberAccess && prefix.length < 1) {
       setIsOpen(false);
       return;
     }
 
-    const variables = parseVariables(code);
-    const upperWord = word.toUpperCase();
-    const allCandidates = [...variables, ...globalSuggestions];
+    const allSuggestions = buildSuggestions({ symbols, context });
+    const matches = filterAndRankSuggestions(allSuggestions, prefix, context);
 
-    let matches = allCandidates.filter(c => c.label.toUpperCase().startsWith(upperWord));
     if (matches.length === 0) {
-      matches = allCandidates.filter(c => c.label.toUpperCase().includes(upperWord));
-    }
-
-    if (matches.length > 0) {
-      setCurrentWordState(wordInfo);
-      setSuggestions(matches);
-      setSelectedIndex(0);
-
-      const caretCoords = getCaretCoordinates(el, cursorPos);
-      setCoords({
-        top: caretCoords.top + caretCoords.height + 4,
-        left: caretCoords.left,
-      });
-
-      setIsOpen(true);
-    } else {
       setIsOpen(false);
+      return;
     }
-  }, [code]);
+
+    setCurrentWordState({ word: prefix, start: context.replaceStart, end: context.replaceEnd });
+    setSuggestions(matches);
+    setSelectedIndex(0);
+
+    const caretCoords = getCaretCoordinates(el, cursorPos);
+    setCoords({
+      top: caretCoords.top + caretCoords.height + 4,
+      left: caretCoords.left,
+    });
+
+    setIsOpen(true);
+  }, [code, symbols]);
 
   const closeMenu = useCallback(() => setIsOpen(false), []);
 
@@ -69,11 +66,11 @@ export function useAutocomplete(code, onChange, textareaRef) {
     const indentMatch = currentLine.match(/^\s*/);
     const currentIndent = indentMatch ?indentMatch[0] : '';
 
-    let textToInsert = suggestion.insertText;
+    let textToInsert = suggestion.insertText || suggestion.label || '';
     const originalLength = textToInsert.length;
     
     // Si c'est un snippet multi-lignes, on injecte l'indentation parente
-    if (suggestion.type === 'snippet' && textToInsert.includes('\n')) {
+    if ((suggestion.kind === 'snippet' || suggestion.type === 'snippet') && textToInsert.includes('\n')) {
       // On n'indente pas la première ligne, mais toutes les suivantes
       const lines = textToInsert.split('\n');
       textToInsert = lines[0] + '\n' + lines.slice(1).map(l => currentIndent + l).join('\n');

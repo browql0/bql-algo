@@ -181,6 +181,7 @@ function SuccessContent({ results, onClose, onContinue }) {
 
 function ErrorContent({ results, onClose }) {
   const feedback = buildEncouragingFeedback(results);
+  const isServerIssue = feedback.tone === 'server';
 
   return (
     <div className="validation-content error">
@@ -218,8 +219,8 @@ function ErrorContent({ results, onClose }) {
       </div>
 
       <div className="action-buttons">
-        <button className="btn-primary" onClick={onClose}>
-          Corriger mon code
+        <button className={isServerIssue ? 'btn-secondary' : 'btn-primary'} onClick={onClose}>
+          {isServerIssue ? 'Fermer' : 'Corriger mon code'}
         </button>
       </div>
     </div>
