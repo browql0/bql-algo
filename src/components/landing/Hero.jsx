@@ -34,7 +34,7 @@ const Hero = ({ onStart }) => {
             </div>
             <div className="stat-divider"></div>
             <div className="stat-item">
-              <span className="stat-value">0clair</span>
+              <span className="stat-value">clair</span>
               <span className="stat-label">Compilation rapide</span>
             </div>
             <div className="stat-divider"></div>
